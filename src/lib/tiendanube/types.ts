@@ -6,3 +6,9 @@ export type TiendanubeOAuthTokenResponse = {
   scope: string;
   user_id: string;
 };
+
+export type TiendanubeStoreMetadata = {
+  country?: string | null;
+  currency?: string | null;
+  name?: string | null;
+};
