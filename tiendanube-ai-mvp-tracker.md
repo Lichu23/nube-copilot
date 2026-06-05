@@ -2,7 +2,7 @@
 
 Date: 2026-06-04
 
-## Current status snapshot (updated 2026-06-05)
+## Current status snapshot (updated 2026-06-06)
 
 What is ALREADY true in the repo right now:
 
@@ -16,23 +16,46 @@ What is ALREADY true in the repo right now:
 - [x] Supabase URL and publishable/secret keys are already available locally.
 - [x] Groq API key is already available locally.
 - [x] `npm run build` passes.
+- [x] Tiendanube OAuth start/callback flow is implemented.
+- [x] Tiendanube OAuth flow was tested end-to-end against a real store.
+- [x] `stores` row is persisted after OAuth success.
+- [x] `store_connections` row is persisted after OAuth success.
+- [x] Access token is stored encrypted, not plaintext.
 
 What is NOT done yet:
 
 - [x] MVP dependencies beyond the default Next.js setup are installed.
 - [x] Drizzle is configured with migration generation and push scripts.
 - [ ] Supabase client/server helpers are not created yet.
-- [ ] Tiendanube OAuth routes are not implemented yet.
+- [x] Tiendanube OAuth routes are implemented.
 - [ ] Sync logic is not implemented yet.
 - [ ] Dashboard routes/components are not implemented yet.
 - [ ] AI chat routes/tools are not implemented yet.
-- [ ] Business logic inside those routes is still placeholder-only.
+- [ ] Store metadata hydration after OAuth is not implemented yet.
+- [ ] Business logic outside the OAuth connection flow is still placeholder-only.
 
 Important corrections:
 
-- [ ] `TIENDANUBE_REDIRECT_URI` should point to the OAuth callback route, not `/dashboard`.
-- [ ] `DATABASE_URL` still needs the real database password instead of the placeholder.
-- [ ] `GROQ_MODEL` should be filled explicitly.
+- [x] `TIENDANUBE_REDIRECT_URI` points to the OAuth callback route.
+- [x] `DATABASE_URL` uses the real database password.
+- [x] `GROQ_MODEL` is filled explicitly.
+
+## Immediate next implementation step
+
+**Next up:** store metadata hydration after OAuth.
+
+Why this is next:
+
+- OAuth connection already works end-to-end.
+- We already persist `tiendanube_store_id` and encrypted token correctly.
+- `stores.name`, `stores.country`, and `stores.currency` are still `NULL` after OAuth success.
+
+What to add:
+
+- [ ] After successful token exchange, fetch store metadata from Tiendanube API.
+- [ ] Persist `name`, `country`, and `currency` in `stores`.
+- [ ] Keep the existing encrypted token persistence flow unchanged.
+- [ ] Re-verify `stores` and `store_connections` after the metadata hydration change.
 
 ## Product goal
 
@@ -68,13 +91,13 @@ You need:
 - [x] `TIENDANUBE_CLIENT_SECRET`
 - [x] `TIENDANUBE_REDIRECT_URI`
 - [x] App install/authorization URL
-- [ ] App scopes
+- [x] App scopes
 
 Recommended MVP scopes:
 
-- [ ] `read_orders`
-- [ ] `read_products`
-- [ ] `read_customers` only if customer/repeat-buyer metrics are included
+- [x] `read_orders`
+- [x] `read_products`
+- [x] `read_customers` only if customer/repeat-buyer metrics are included
 
 Confirmed from docs:
 
@@ -134,7 +157,7 @@ MVP options:
 
 Recommended MVP:
 
-- [ ] Use Tiendanube OAuth as the first connection flow.
+- [x] Use Tiendanube OAuth as the first connection flow.
 - [ ] Add Supabase Auth only if you need non-Tiendanube login/users.
 
 ### 1.5 Hosting/deployment
@@ -163,8 +186,8 @@ Optional later:
 - [x] TypeScript
 - [x] Tailwind CSS
 - [ ] shadcn/ui
-- [ ] Supabase Postgres
-- [ ] Drizzle ORM
+- [x] Supabase Postgres
+- [x] Drizzle ORM
 - [ ] Vercel AI SDK
 - [ ] Groq Chat Completions API / tool calling
 - [ ] Recharts through shadcn/ui chart components
