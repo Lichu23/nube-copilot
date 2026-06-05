@@ -115,7 +115,7 @@ You need:
 - [x] `NEXT_PUBLIC_SUPABASE_URL`
 - [x] `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - [x] `SUPABASE_SECRET_KEY` or server-side database connection string
-- [ ] `DATABASE_URL`
+- [x] `DATABASE_URL`
 
 Use Supabase Postgres for:
 

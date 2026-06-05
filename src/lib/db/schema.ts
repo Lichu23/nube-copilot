@@ -1,7 +1,9 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
   integer,
+  pgPolicy,
   jsonb,
   numeric,
   pgTable,
@@ -11,6 +13,30 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+const serviceRolePolicies = (tableName: string) => ({
+  serviceRoleSelect: pgPolicy(`${tableName}_service_role_select`, {
+    for: "select",
+    to: "service_role",
+    using: sql`true`,
+  }),
+  serviceRoleInsert: pgPolicy(`${tableName}_service_role_insert`, {
+    for: "insert",
+    to: "service_role",
+    withCheck: sql`true`,
+  }),
+  serviceRoleUpdate: pgPolicy(`${tableName}_service_role_update`, {
+    for: "update",
+    to: "service_role",
+    using: sql`true`,
+    withCheck: sql`true`,
+  }),
+  serviceRoleDelete: pgPolicy(`${tableName}_service_role_delete`, {
+    for: "delete",
+    to: "service_role",
+    using: sql`true`,
+  }),
+});
+
 export const stores = pgTable("stores", {
   id: uuid("id").defaultRandom().primaryKey(),
   tiendanubeStoreId: text("tiendanube_store_id").notNull().unique(),
@@ -19,7 +45,9 @@ export const stores = pgTable("stores", {
   currency: text("currency"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, () => ({
+  ...serviceRolePolicies("stores"),
+})).enableRLS();
 
 export const storeConnections = pgTable("store_connections", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -33,7 +61,8 @@ export const storeConnections = pgTable("store_connections", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   storeIdIdx: index("store_connections_store_id_idx").on(table.storeId),
-}));
+  ...serviceRolePolicies("store_connections"),
+})).enableRLS();
 
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -51,7 +80,8 @@ export const products = pgTable("products", {
     table.storeId,
     table.tiendanubeProductId,
   ),
-}));
+  ...serviceRolePolicies("products"),
+})).enableRLS();
 
 export const productVariants = pgTable("product_variants", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -73,7 +103,8 @@ export const productVariants = pgTable("product_variants", {
     table.storeId,
     table.tiendanubeVariantId,
   ),
-}));
+  ...serviceRolePolicies("product_variants"),
+})).enableRLS();
 
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -100,7 +131,8 @@ export const orders = pgTable("orders", {
     table.storeId,
     table.tiendanubeOrderId,
   ),
-}));
+  ...serviceRolePolicies("orders"),
+})).enableRLS();
 
 export const orderItems = pgTable("order_items", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -119,7 +151,8 @@ export const orderItems = pgTable("order_items", {
 }, (table) => ({
   storeIdIdx: index("order_items_store_id_idx").on(table.storeId),
   orderIdIdx: index("order_items_order_id_idx").on(table.orderId),
-}));
+  ...serviceRolePolicies("order_items"),
+})).enableRLS();
 
 export const customers = pgTable("customers", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -137,7 +170,8 @@ export const customers = pgTable("customers", {
     table.storeId,
     table.tiendanubeCustomerId,
   ),
-}));
+  ...serviceRolePolicies("customers"),
+})).enableRLS();
 
 export const syncJobs = pgTable("sync_jobs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -153,7 +187,8 @@ export const syncJobs = pgTable("sync_jobs", {
 }, (table) => ({
   storeIdIdx: index("sync_jobs_store_id_idx").on(table.storeId),
   statusIdx: index("sync_jobs_status_idx").on(table.status),
-}));
+  ...serviceRolePolicies("sync_jobs"),
+})).enableRLS();
 
 export const chatMessages = pgTable("chat_messages", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -167,7 +202,8 @@ export const chatMessages = pgTable("chat_messages", {
 }, (table) => ({
   storeIdIdx: index("chat_messages_store_id_idx").on(table.storeId),
   createdAtIdx: index("chat_messages_created_at_idx").on(table.createdAt),
-}));
+  ...serviceRolePolicies("chat_messages"),
+})).enableRLS();
 
 export const aiToolCalls = pgTable("ai_tool_calls", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -183,4 +219,5 @@ export const aiToolCalls = pgTable("ai_tool_calls", {
   storeIdIdx: index("ai_tool_calls_store_id_idx").on(table.storeId),
   chatMessageIdIdx: index("ai_tool_calls_chat_message_id_idx").on(table.chatMessageId),
   createdAtIdx: index("ai_tool_calls_created_at_idx").on(table.createdAt),
-}));
+  ...serviceRolePolicies("ai_tool_calls"),
+})).enableRLS();
