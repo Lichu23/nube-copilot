@@ -9,6 +9,7 @@ type SyncControlProps = {
   lastSyncFinishedAt: string | null;
   lastSyncMessage: string;
   lastSyncStatus: string | null;
+  orderCount: number;
   productCount: number;
   storeId?: string;
   variantCount: number;
@@ -36,6 +37,7 @@ export function SyncControl({
   lastSyncFinishedAt,
   lastSyncMessage,
   lastSyncStatus,
+  orderCount,
   productCount,
   storeId,
   variantCount,
@@ -125,6 +127,9 @@ export function SyncControl({
             <p>
               Synced catalog: <span className="font-medium text-zinc-950">{productCount}</span> products and{" "}
               <span className="font-medium text-zinc-950">{variantCount}</span> variants
+            </p>
+            <p>
+              Synced orders: <span className="font-medium text-zinc-950">{orderCount}</span> orders
             </p>
             <p>
               Last completed sync:{" "}

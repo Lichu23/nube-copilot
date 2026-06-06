@@ -49,6 +49,40 @@ export type TiendanubeRateLimitInfo = {
 
 export type TiendanubeProductSource = "v1" | "2025-03";
 
+export type TiendanubeCustomerResponse = {
+  email?: string | null;
+  id?: number | string | null;
+  name?: string | null;
+  phone?: string | null;
+};
+
+export type TiendanubeOrderProductResponse = {
+  id: number | string;
+  name?: string | null;
+  price?: string | number | null;
+  product_id?: number | string | null;
+  quantity?: number | string | null;
+  variant_id?: number | string | null;
+};
+
+export type TiendanubeOrderResponse = {
+  cancelled_at?: string | null;
+  contact_email?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  created_at?: string | null;
+  currency?: string | null;
+  customer?: TiendanubeCustomerResponse | null;
+  id: number | string;
+  number?: number | string | null;
+  paid_at?: string | null;
+  payment_status?: string | null;
+  products?: TiendanubeOrderProductResponse[] | null;
+  shipping_status?: string | null;
+  status?: string | null;
+  total?: string | number | null;
+};
+
 export function getLocalizedValue(
   field: TiendanubeLocalizedField,
   preferredLanguage?: string | null,

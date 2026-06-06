@@ -19,9 +19,21 @@ export default async function DashboardPage({
     summary.latestSyncJob?.metadata && typeof summary.latestSyncJob.metadata === "object"
       ? (summary.latestSyncJob.metadata as Record<string, unknown>)
       : null;
+  const latestImportedProductCount =
+    latestSyncMetadata && typeof latestSyncMetadata.productCount === "number"
+      ? latestSyncMetadata.productCount
+      : summary.productCount;
+  const latestImportedVariantCount =
+    latestSyncMetadata && typeof latestSyncMetadata.variantCount === "number"
+      ? latestSyncMetadata.variantCount
+      : summary.variantCount;
+  const latestImportedOrderCount =
+    latestSyncMetadata && typeof latestSyncMetadata.orderCount === "number"
+      ? latestSyncMetadata.orderCount
+      : summary.orderCount;
   const latestSyncMessage = summary.connection
     ? latestSyncStatus === "succeeded"
-      ? `Latest sync captured ${summary.productCount} products and ${summary.variantCount} variants.`
+      ? `Latest sync captured ${latestImportedProductCount} products, ${latestImportedVariantCount} variants, and ${latestImportedOrderCount} orders.`
       : latestSyncStatus === "failed"
         ? String(summary.latestSyncJob?.errorMessage ?? "Latest sync failed.")
         : "Ready to run your first sync."
@@ -35,9 +47,9 @@ export default async function DashboardPage({
     >
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Revenue this week"
-          value="$0"
-          helper={summary.productCount > 0 ? "Catalog sync done. Orders sync is next." : "Connect and sync a store to load real data."}
+          label="Synced orders"
+          value={String(summary.orderCount)}
+          helper={summary.connection ? "Orders imported from the last 90 days." : "Connect and sync a store to load real data."}
         />
         <MetricCard
           label="Catalog products"
@@ -57,6 +69,7 @@ export default async function DashboardPage({
         lastSyncFinishedAt={summary.latestSyncJob?.finishedAt?.toISOString() ?? null}
         lastSyncMessage={latestSyncMessage}
         lastSyncStatus={latestSyncStatus}
+        orderCount={summary.orderCount}
         productCount={summary.productCount}
         storeId={summary.connection?.storeId}
         variantCount={summary.variantCount}
@@ -72,7 +85,7 @@ export default async function DashboardPage({
               : latestSyncStatus === "failed"
                 ? `The last sync failed. ${summary.latestSyncJob?.errorMessage ?? "Check the sync job details."}`
                 : summary.connection
-                  ? "Insights will improve after you sync products and then import orders."
+                  ? "Insights will improve now that products and orders are syncing into Postgres."
                   : "Connect a store first, then sync products to start building insights."
           }
         />

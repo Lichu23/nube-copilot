@@ -42,20 +42,19 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** Tiendanube orders sync foundation.
+**Next up:** SQL metrics foundation for dashboard + AI tools.
 
 Why this is next:
 
-- OAuth connection already works end-to-end.
-- We already persist `tiendanube_store_id`, encrypted token, store metadata, products, and product variants correctly.
-- The next product milestone requires real orders/customers in Postgres so analytics can move beyond catalog trust checks.
+- OAuth connection and initial sync already work end-to-end.
+- We already persist `tiendanube_store_id`, encrypted token, store metadata, products, product variants, orders, order items, and linked customers correctly.
+- The next product milestone is trustworthy SQL metrics on top of those synced orders.
 
 What to add:
 
-- [ ] Fetch orders for the last 90 days.
-- [ ] Persist normalized orders and order items in Postgres.
-- [ ] Attach customers to orders when scope/data is available.
-- [ ] Extend sync job metadata for orders import counts/errors.
+- [ ] Build SQL metric queries on top of synced orders and order items.
+- [ ] Surface recent order/revenue trust checks on the dashboard.
+- [ ] Reuse those backend metric functions later as AI tools.
 
 ## Product goal
 
@@ -564,8 +563,8 @@ MVP initial sync:
 
 - [x] Fetch products.
 - [x] Fetch variants from product payload or variant endpoint if needed.
-- [ ] Fetch orders for last 90 days.
-- [ ] Fetch customers only if `read_customers` is enabled.
+  - [x] Fetch orders for last 90 days.
+  - [x] Fetch customers only if `read_customers` is enabled.
 - [x] Upsert products and variants by Tiendanube IDs.
 - [x] Save raw JSON in `raw` columns for debugging.
 
@@ -919,8 +918,8 @@ Done when:
 
 - [x] Build API client.
 - [x] Fetch products.
-- [ ] Fetch orders from last 90 days.
-- [ ] Fetch customers if scope enabled.
+  - [x] Fetch orders from last 90 days.
+  - [x] Fetch customers if scope enabled.
 - [x] Upsert normalized product + variant rows.
 - [x] Save sync job status.
 - [x] Add sync button/status UI.
@@ -928,7 +927,8 @@ Done when:
 
 Done when:
 
-- [x] Dashboard shows real catalog sync state and counts.
+  - [x] Dashboard shows real catalog sync state and counts.
+  - [x] Initial sync imports real orders, order items, and linked customers for the test store.
 
 ### Phase 6 — AI chat with tools
 

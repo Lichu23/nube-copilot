@@ -2,11 +2,12 @@ import {
   createSyncJob,
   finishSyncJob,
   getActiveTiendanubeConnection,
+  upsertOrdersWithItems,
   upsertProductsWithVariants,
 } from "@/lib/db/client";
 import { getTiendanubeOAuthConfig } from "@/lib/env/tiendanube";
 import { decryptSecret } from "@/lib/security/encryption";
-import { fetchAllTiendanubeProducts } from "@/lib/tiendanube/client";
+import { fetchAllTiendanubeOrders, fetchAllTiendanubeProducts } from "@/lib/tiendanube/client";
 import { getLocalizedValue } from "@/lib/tiendanube/types";
 
 type RunInitialSyncInput = {
@@ -34,6 +35,36 @@ function getVariantStock(variant: {
   }
 
   return inventoryStocks.reduce((total, stock) => total + stock, 0);
+}
+
+function getDateOrNull(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getNumericString(value: number | string | null | undefined) {
+  if (value == null) {
+    return null;
+  }
+
+  return String(value);
+}
+
+function getQuantity(value: number | string | null | undefined) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
 }
 
 export async function runInitialSync(input: RunInitialSyncInput = {}) {
@@ -89,8 +120,75 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       storeId: connection.storeId,
     });
 
+    const ordersCreatedAtMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const {
+      orders,
+      rateLimit: ordersRateLimit,
+      totalCountHeader: ordersTotalCountHeader,
+      visitedPages: visitedOrderPages,
+    } = await fetchAllTiendanubeOrders(connection.storeExternalId, accessToken, {
+      createdAtMin: ordersCreatedAtMin,
+    });
+
+    const normalizedOrders = orders.map((order) => ({
+      cancelledAt: getDateOrNull(order.cancelled_at),
+      createdAtTiendanube: getDateOrNull(order.created_at),
+      currency: order.currency ?? null,
+      customer: order.customer?.id
+        ? {
+            email: order.customer.email ?? order.contact_email ?? null,
+            name: order.customer.name ?? order.contact_name ?? null,
+            phone: order.customer.phone ?? order.contact_phone ?? null,
+            raw: order.customer,
+            tiendanubeCustomerId: String(order.customer.id),
+          }
+        : null,
+      items: (order.products ?? []).map((item) => {
+        const quantity = getQuantity(item.quantity);
+        const unitPrice = getNumericString(item.price);
+        const computedTotal =
+          unitPrice && quantity > 0 ? String(Number(unitPrice) * quantity) : unitPrice;
+
+        return {
+          productName: item.name ?? null,
+          quantity,
+          tiendanubeProductId: item.product_id == null ? null : String(item.product_id),
+          tiendanubeVariantId: item.variant_id == null ? null : String(item.variant_id),
+          totalPrice: computedTotal,
+          unitPrice,
+        };
+      }),
+      orderNumber: order.number == null ? null : String(order.number),
+      paidAt: getDateOrNull(order.paid_at),
+      paymentStatus: order.payment_status ?? null,
+      raw: order,
+      shippingStatus: order.shipping_status ?? null,
+      status: order.status ?? null,
+      storeId: connection.storeId,
+      tiendanubeOrderId: String(order.id),
+      total: getNumericString(order.total),
+    }));
+
+    const persistedOrders = await upsertOrdersWithItems({
+      ordersToUpsert: normalizedOrders,
+      storeId: connection.storeId,
+    });
+
     const metadata = {
       apiVersion,
+      customerLinkedCount: persistedOrders.customerLinkedCount,
+      itemCount: persistedOrders.itemCount,
+      orderCount: persistedOrders.orderCount,
+      ordersCreatedAtMin,
+      ordersRateLimit,
+      ordersResponsePreview: normalizedOrders.slice(0, 3).map((order) => ({
+        itemCount: order.items.length,
+        orderNumber: order.orderNumber,
+        paymentStatus: order.paymentStatus,
+        status: order.status,
+        tiendanubeOrderId: order.tiendanubeOrderId,
+      })),
+      ordersTotalCountHeader,
       productCount: persisted.productCount,
       rateLimit,
       responsePreview: normalizedProducts.slice(0, 3).map((product) => ({
@@ -101,6 +199,7 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       })),
       totalCountHeader,
       variantCount: persisted.variantCount,
+      visitedOrderPages,
       visitedPages,
     };
 
@@ -121,7 +220,7 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
         storeName: connection.storeName,
       },
       jobId: syncJob.id,
-      message: "Initial Tiendanube product sync completed.",
+      message: "Initial Tiendanube catalog and orders sync completed.",
       ok: true,
       status: 200,
     };
@@ -146,7 +245,7 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
     return {
       error: message,
       jobId: syncJob.id,
-      message: "Initial Tiendanube product sync failed.",
+      message: "Initial Tiendanube catalog and orders sync failed.",
       ok: false,
       status: 500,
     };
