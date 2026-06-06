@@ -28,8 +28,8 @@ What is NOT done yet:
 - [x] Drizzle is configured with migration generation and push scripts.
 - [ ] Supabase client/server helpers are not created yet.
 - [x] Tiendanube OAuth routes are implemented.
-- [ ] Sync logic is not implemented yet.
-- [ ] Dashboard routes/components are not implemented yet.
+- [x] Product sync foundation is implemented and verified with a real store.
+- [x] Dashboard sync controls/status are implemented.
 - [ ] AI chat routes/tools are not implemented yet.
 - [x] Store metadata hydration after OAuth is implemented and verified with a real store.
 - [ ] Business logic outside the OAuth connection flow is still placeholder-only.
@@ -42,20 +42,20 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** Tiendanube initial sync foundation.
+**Next up:** Tiendanube orders sync foundation.
 
 Why this is next:
 
 - OAuth connection already works end-to-end.
-- We already persist `tiendanube_store_id`, encrypted token, and store metadata correctly.
-- The next product milestone requires real products/orders/customers in Postgres, not just the connected store record.
+- We already persist `tiendanube_store_id`, encrypted token, store metadata, products, and product variants correctly.
+- The next product milestone requires real orders/customers in Postgres so analytics can move beyond catalog trust checks.
 
 What to add:
 
-- [ ] Build the first real Tiendanube API client flow for authenticated store requests.
-- [ ] Fetch products as the first sync slice.
-- [ ] Persist normalized product rows in Postgres.
-- [ ] Record sync job status so the app can show whether the first import succeeded.
+- [ ] Fetch orders for the last 90 days.
+- [ ] Persist normalized orders and order items in Postgres.
+- [ ] Attach customers to orders when scope/data is available.
+- [ ] Extend sync job metadata for orders import counts/errors.
 
 ## Product goal
 
@@ -548,26 +548,26 @@ https://www.tiendanube.com/apps/{app_id}/authorize
 
 ### 8.3 API client
 
-- [ ] Build `lib/tiendanube/client.ts`.
-- [ ] Base URL: `https://api.tiendanube.com/v1/{store_id}`.
-- [ ] Add authentication bearer token header.
-- [ ] Add clear user-agent/app identification if required by app review.
-- [ ] Parse rate-limit headers:
+- [x] Build `lib/tiendanube/client.ts`.
+- [x] Base URL: `https://api.tiendanube.com/v1/{store_id}`.
+- [x] Add authentication bearer token header.
+- [x] Add clear user-agent/app identification if required by app review.
+- [x] Parse rate-limit headers:
   - `x-rate-limit-limit`
   - `x-rate-limit-remaining`
   - `x-rate-limit-reset`
-- [ ] Handle HTTP 429 with retry/backoff.
+- [x] Handle HTTP 429 with retry/backoff.
 
 ### 8.4 Initial sync
 
 MVP initial sync:
 
-- [ ] Fetch products.
-- [ ] Fetch variants from product payload or variant endpoint if needed.
+- [x] Fetch products.
+- [x] Fetch variants from product payload or variant endpoint if needed.
 - [ ] Fetch orders for last 90 days.
 - [ ] Fetch customers only if `read_customers` is enabled.
-- [ ] Upsert everything by Tiendanube IDs.
-- [ ] Save raw JSON in `raw` columns for debugging.
+- [x] Upsert products and variants by Tiendanube IDs.
+- [x] Save raw JSON in `raw` columns for debugging.
 
 Rate-limit rule:
 
@@ -917,17 +917,18 @@ Done when:
 
 ### Phase 5 — Tiendanube initial sync
 
-- [ ] Build API client.
-- [ ] Fetch products.
+- [x] Build API client.
+- [x] Fetch products.
 - [ ] Fetch orders from last 90 days.
 - [ ] Fetch customers if scope enabled.
-- [ ] Upsert normalized rows.
-- [ ] Save sync job status.
-- [ ] Add sync button/status UI.
+- [x] Upsert normalized product + variant rows.
+- [x] Save sync job status.
+- [x] Add sync button/status UI.
+- [x] Auto-start the first sync after successful connect.
 
 Done when:
 
-- [ ] Dashboard shows real Tiendanube data.
+- [x] Dashboard shows real catalog sync state and counts.
 
 ### Phase 6 — AI chat with tools
 

@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { getTiendanubeOAuthConfig } from "@/lib/env/tiendanube";
 import { getTiendanubeApiBaseUrl, getTiendanubeApiHeaders } from "@/lib/tiendanube/client";
+import { getLocalizedValue } from "@/lib/tiendanube/types";
 import type {
-  TiendanubeLocalizedField,
   TiendanubeOAuthTokenResponse,
   TiendanubeStoreMetadata,
   TiendanubeStoreResponse,
@@ -51,34 +51,6 @@ export async function exchangeCodeForToken(code: string) {
   }
 
   return (await response.json()) as TiendanubeOAuthTokenResponse;
-}
-
-function getLocalizedValue(field: TiendanubeLocalizedField, mainLanguage?: string | null) {
-  if (typeof field === "string") {
-    return field;
-  }
-
-  if (!field) {
-    return null;
-  }
-
-  if (mainLanguage && field[mainLanguage]) {
-    return field[mainLanguage];
-  }
-
-  if (field.es) {
-    return field.es;
-  }
-
-  if (field.pt) {
-    return field.pt;
-  }
-
-  if (field.en) {
-    return field.en;
-  }
-
-  return Object.values(field).find((value) => Boolean(value)) ?? null;
 }
 
 export async function fetchTiendanubeStoreMetadata(
