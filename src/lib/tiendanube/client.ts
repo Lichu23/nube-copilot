@@ -1,10 +1,12 @@
 import type {
+  TiendanubeOrderResponse,
   TiendanubeProductResponse,
   TiendanubeProductSource,
   TiendanubeRateLimitInfo,
 } from "@/lib/tiendanube/types";
 
 const DEFAULT_PRODUCTS_PER_PAGE = 100;
+const DEFAULT_ORDERS_PER_PAGE = 100;
 const DEFAULT_RETRY_ATTEMPTS = 3;
 const FALLBACK_PRODUCT_API_VERSION = "2025-03";
 
@@ -21,6 +23,20 @@ type ProductFetchResult = {
   rateLimit: TiendanubeRateLimitInfo;
   totalCountHeader: number | null;
   visitedPages: FetchedProductsPage[];
+};
+
+type FetchedOrdersPage = {
+  batchSize: number;
+  page: number;
+  totalCountHeader: number | null;
+  url: string;
+};
+
+type OrderFetchResult = {
+  orders: TiendanubeOrderResponse[];
+  rateLimit: TiendanubeRateLimitInfo;
+  totalCountHeader: number | null;
+  visitedPages: FetchedOrdersPage[];
 };
 
 function sleep(ms: number) {
@@ -226,4 +242,129 @@ export async function fetchAllTiendanubeProducts(storeId: string, accessToken: s
   }
 
   return primaryResult;
+}
+
+type FetchAllTiendanubeOrdersInput = {
+  createdAtMin?: string;
+};
+
+export async function fetchAllTiendanubeOrders(
+  storeId: string,
+  accessToken: string,
+  input: FetchAllTiendanubeOrdersInput = {},
+): Promise<OrderFetchResult> {
+  const orders: TiendanubeOrderResponse[] = [];
+  let page = 1;
+  let nextUrl: string | null = new URL(`${getTiendanubeApiBaseUrl(storeId)}/orders`).toString();
+  let lastBatchSize = 0;
+  let totalCountHeader: number | null = null;
+  let lastRateLimit: TiendanubeRateLimitInfo = {
+    limit: null,
+    remaining: null,
+    resetMs: null,
+  };
+  const visitedPages: FetchedOrdersPage[] = [];
+
+  while (nextUrl) {
+    const url = new URL(nextUrl);
+
+    if (!url.searchParams.has("page")) {
+      url.searchParams.set("page", String(page));
+    }
+
+    if (!url.searchParams.has("per_page")) {
+      url.searchParams.set("per_page", String(DEFAULT_ORDERS_PER_PAGE));
+    }
+
+    if (input.createdAtMin && !url.searchParams.has("created_at_min")) {
+      url.searchParams.set("created_at_min", input.createdAtMin);
+    }
+
+    if (!url.searchParams.has("fields")) {
+      url.searchParams.set(
+        "fields",
+        [
+          "id",
+          "number",
+          "status",
+          "payment_status",
+          "shipping_status",
+          "total",
+          "currency",
+          "created_at",
+          "paid_at",
+          "cancelled_at",
+          "contact_name",
+          "contact_email",
+          "contact_phone",
+          "customer",
+          "products",
+        ].join(","),
+      );
+    }
+
+    const { data, headers, rateLimit } = await tiendanubeFetch<TiendanubeOrderResponse[]>(url, accessToken);
+    orders.push(...data);
+    lastBatchSize = data.length;
+    lastRateLimit = rateLimit;
+    totalCountHeader = parseTotalCount(headers);
+    visitedPages.push({
+      batchSize: data.length,
+      page,
+      totalCountHeader,
+      url: url.toString(),
+    });
+
+    console.info("[tiendanube-sync] fetched orders page", {
+      batchSize: data.length,
+      page,
+      rateLimit,
+      storeId,
+      totalCountHeader,
+      url: url.toString(),
+    });
+
+    nextUrl = getNextLink(headers.get("link"));
+    page += 1;
+
+    if (!nextUrl && lastBatchSize === DEFAULT_ORDERS_PER_PAGE) {
+      const followUpUrl = new URL(`${getTiendanubeApiBaseUrl(storeId)}/orders`);
+      followUpUrl.searchParams.set("page", String(page));
+      followUpUrl.searchParams.set("per_page", String(DEFAULT_ORDERS_PER_PAGE));
+
+      if (input.createdAtMin) {
+        followUpUrl.searchParams.set("created_at_min", input.createdAtMin);
+      }
+
+      followUpUrl.searchParams.set(
+        "fields",
+        [
+          "id",
+          "number",
+          "status",
+          "payment_status",
+          "shipping_status",
+          "total",
+          "currency",
+          "created_at",
+          "paid_at",
+          "cancelled_at",
+          "contact_name",
+          "contact_email",
+          "contact_phone",
+          "customer",
+          "products",
+        ].join(","),
+      );
+
+      nextUrl = followUpUrl.toString();
+    }
+  }
+
+  return {
+    orders,
+    rateLimit: lastRateLimit,
+    totalCountHeader,
+    visitedPages,
+  };
 }
