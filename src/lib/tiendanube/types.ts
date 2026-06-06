@@ -21,3 +21,55 @@ export type TiendanubeStoreMetadata = {
   currency?: string | null;
   name?: string | null;
 };
+
+export type TiendanubeProductVariantResponse = {
+  id: number | string;
+  price?: string | number | null;
+  sku?: string | null;
+  stock?: number | null;
+};
+
+export type TiendanubeProductResponse = {
+  id: number | string;
+  handle?: TiendanubeLocalizedField;
+  name?: TiendanubeLocalizedField;
+  published?: boolean | null;
+  variants?: TiendanubeProductVariantResponse[] | null;
+};
+
+export type TiendanubeRateLimitInfo = {
+  limit: number | null;
+  remaining: number | null;
+  resetMs: number | null;
+};
+
+export function getLocalizedValue(
+  field: TiendanubeLocalizedField,
+  preferredLanguage?: string | null,
+) {
+  if (typeof field === "string") {
+    return field;
+  }
+
+  if (!field) {
+    return null;
+  }
+
+  if (preferredLanguage && field[preferredLanguage]) {
+    return field[preferredLanguage];
+  }
+
+  if (field.es) {
+    return field.es;
+  }
+
+  if (field.pt) {
+    return field.pt;
+  }
+
+  if (field.en) {
+    return field.en;
+  }
+
+  return Object.values(field).find((value) => Boolean(value)) ?? null;
+}

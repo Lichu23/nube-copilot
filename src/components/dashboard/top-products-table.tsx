@@ -2,12 +2,16 @@ const rows = [
   { name: "No data yet", units: "-", revenue: "-" },
 ];
 
-export function TopProductsTable() {
+type TopProductsTableProps = {
+  helperLabel?: string;
+};
+
+export function TopProductsTable({ helperLabel = "Waiting for initial sync" }: TopProductsTableProps) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Top products</h2>
-        <span className="text-xs text-zinc-500">Waiting for initial sync</span>
+        <span className="text-xs text-zinc-500">{helperLabel}</span>
       </div>
 
       <div className="mt-4 overflow-hidden rounded-xl border border-black/5">
