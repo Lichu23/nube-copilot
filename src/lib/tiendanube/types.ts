@@ -7,6 +7,15 @@ export type TiendanubeOAuthTokenResponse = {
   user_id: string;
 };
 
+export type TiendanubeLocalizedField = string | Record<string, string | null> | null;
+
+export type TiendanubeStoreResponse = {
+  country?: string | null;
+  main_currency?: string | null;
+  main_language?: string | null;
+  name?: TiendanubeLocalizedField;
+};
+
 export type TiendanubeStoreMetadata = {
   country?: string | null;
   currency?: string | null;
