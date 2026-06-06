@@ -31,7 +31,7 @@ What is NOT done yet:
 - [ ] Sync logic is not implemented yet.
 - [ ] Dashboard routes/components are not implemented yet.
 - [ ] AI chat routes/tools are not implemented yet.
-- [ ] Store metadata hydration after OAuth is not implemented yet.
+- [x] Store metadata hydration after OAuth is implemented and verified with a real store.
 - [ ] Business logic outside the OAuth connection flow is still placeholder-only.
 
 Important corrections:
@@ -42,20 +42,20 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** store metadata hydration after OAuth.
+**Next up:** Tiendanube initial sync foundation.
 
 Why this is next:
 
 - OAuth connection already works end-to-end.
-- We already persist `tiendanube_store_id` and encrypted token correctly.
-- `stores.name`, `stores.country`, and `stores.currency` are still `NULL` after OAuth success.
+- We already persist `tiendanube_store_id`, encrypted token, and store metadata correctly.
+- The next product milestone requires real products/orders/customers in Postgres, not just the connected store record.
 
 What to add:
 
-- [ ] After successful token exchange, fetch store metadata from Tiendanube API.
-- [ ] Persist `name`, `country`, and `currency` in `stores`.
-- [ ] Keep the existing encrypted token persistence flow unchanged.
-- [ ] Re-verify `stores` and `store_connections` after the metadata hydration change.
+- [ ] Build the first real Tiendanube API client flow for authenticated store requests.
+- [ ] Fetch products as the first sync slice.
+- [ ] Persist normalized product rows in Postgres.
+- [ ] Record sync job status so the app can show whether the first import succeeded.
 
 ## Product goal
 
@@ -285,13 +285,13 @@ Current repo status:
 - [ ] `APP_SECRET`
 - [x] `TIENDANUBE_CLIENT_ID`
 - [x] `TIENDANUBE_CLIENT_SECRET`
-- [ ] `TIENDANUBE_REDIRECT_URI` should be corrected to `/api/tiendanube/oauth/callback`
+- [x] `TIENDANUBE_REDIRECT_URI` points to `/api/tiendanube/oauth/callback`
 - [x] `NEXT_PUBLIC_SUPABASE_URL`
 - [x] `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - [x] `SUPABASE_SECRET_KEY`
-- [ ] `DATABASE_URL` still needs the real password
+- [x] `DATABASE_URL` uses the real password
 - [x] `GROQ_API_KEY`
-- [ ] `GROQ_MODEL`
+- [x] `GROQ_MODEL`
 
 Never expose:
 
@@ -536,13 +536,15 @@ https://www.tiendanube.com/apps/{app_id}/authorize
 
 ### 8.2 OAuth callback route
 
-- [ ] Create `/api/tiendanube/oauth/callback`.
-- [ ] Validate `state`.
-- [ ] Read `code` from query params.
-- [ ] Exchange `code` for access token.
-- [ ] Save `user_id` as Tiendanube store ID.
-- [ ] Encrypt and save access token.
-- [ ] Redirect to `/dashboard?sync=initial`.
+- [x] Create `/api/tiendanube/oauth/callback`.
+- [x] Validate `state`.
+- [x] Read `code` from query params.
+- [x] Exchange `code` for access token.
+- [x] Save `user_id` as Tiendanube store ID.
+- [x] Encrypt and save access token.
+- [x] Redirect to `/dashboard?sync=initial`.
+- [x] Fetch store metadata after token exchange.
+- [x] Persist `name`, `country`, and `currency` in `stores`.
 
 ### 8.3 API client
 
@@ -899,17 +901,19 @@ Done when:
 
 ### Phase 4 — Tiendanube OAuth
 
-- [ ] Register Tiendanube app.
-- [ ] Configure redirect URI.
-- [ ] Build OAuth start route.
-- [ ] Build OAuth callback route.
-- [ ] Store encrypted access token.
-- [ ] Save store connection.
+- [x] Register Tiendanube app.
+- [x] Configure redirect URI.
+- [x] Build OAuth start route.
+- [x] Build OAuth callback route.
+- [x] Store encrypted access token.
+- [x] Save store connection.
+- [x] Persist store metadata after OAuth.
 
 Done when:
 
-- [ ] A test store can connect.
-- [ ] Store ID and token are saved.
+- [x] A test store can connect.
+- [x] Store ID and token are saved.
+- [x] Store metadata (`name`, `country`, `currency`) is saved for the real test store.
 
 ### Phase 5 — Tiendanube initial sync
 
