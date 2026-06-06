@@ -24,6 +24,10 @@ export type TiendanubeStoreMetadata = {
 
 export type TiendanubeProductVariantResponse = {
   id: number | string;
+  inventory_levels?: Array<{
+    location_id?: string;
+    stock?: number | null;
+  }> | null;
   price?: string | number | null;
   sku?: string | null;
   stock?: number | null;
@@ -42,6 +46,8 @@ export type TiendanubeRateLimitInfo = {
   remaining: number | null;
   resetMs: number | null;
 };
+
+export type TiendanubeProductSource = "v1" | "2025-03";
 
 export function getLocalizedValue(
   field: TiendanubeLocalizedField,

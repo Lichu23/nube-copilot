@@ -6,7 +6,13 @@ import { SyncControl } from "@/components/dashboard/sync-control";
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
 import { AppShell } from "@/components/layout/app-shell";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const autoSync = typeof params.autoSync === "string" && params.autoSync === "1";
   const summary = await getDashboardSyncSummary();
   const latestSyncStatus = summary.latestSyncJob?.status ?? null;
   const latestSyncMetadata =
@@ -46,6 +52,7 @@ export default async function DashboardPage() {
       </section>
 
       <SyncControl
+        autoRun={autoSync}
         hasConnection={Boolean(summary.connection)}
         lastSyncFinishedAt={summary.latestSyncJob?.finishedAt?.toISOString() ?? null}
         lastSyncMessage={latestSyncMessage}

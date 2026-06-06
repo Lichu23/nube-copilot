@@ -1,10 +1,27 @@
 import type {
   TiendanubeProductResponse,
+  TiendanubeProductSource,
   TiendanubeRateLimitInfo,
 } from "@/lib/tiendanube/types";
 
 const DEFAULT_PRODUCTS_PER_PAGE = 100;
 const DEFAULT_RETRY_ATTEMPTS = 3;
+const FALLBACK_PRODUCT_API_VERSION = "2025-03";
+
+type FetchedProductsPage = {
+  batchSize: number;
+  page: number;
+  totalCountHeader: number | null;
+  url: string;
+};
+
+type ProductFetchResult = {
+  apiVersion: TiendanubeProductSource;
+  products: TiendanubeProductResponse[];
+  rateLimit: TiendanubeRateLimitInfo;
+  totalCountHeader: number | null;
+  visitedPages: FetchedProductsPage[];
+};
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -54,8 +71,22 @@ function getNextLink(linkHeader: string | null) {
   return nextEntry?.match(/<([^>]+)>/)?.[1] ?? null;
 }
 
-export function getTiendanubeApiBaseUrl(storeId: string) {
-  return `${process.env.TIENDANUBE_API_BASE_URL ?? "https://api.tiendanube.com/v1"}/${storeId}`;
+function getApiOrigin() {
+  const baseUrl = process.env.TIENDANUBE_API_BASE_URL?.trim();
+
+  if (!baseUrl) {
+    return "https://api.tiendanube.com";
+  }
+
+  const parsed = new URL(baseUrl);
+  return parsed.origin;
+}
+
+export function getTiendanubeApiBaseUrl(storeId: string, version: TiendanubeProductSource = "v1") {
+  const apiOrigin = getApiOrigin();
+  const versionSegment = version === "v1" ? "v1" : FALLBACK_PRODUCT_API_VERSION;
+
+  return `${apiOrigin}/${versionSegment}/${storeId}`;
 }
 
 export function getTiendanubeApiHeaders(accessToken: string) {
@@ -100,10 +131,14 @@ export async function tiendanubeFetch<T>(
   };
 }
 
-export async function fetchAllTiendanubeProducts(storeId: string, accessToken: string) {
+async function fetchProductsForVersion(
+  storeId: string,
+  accessToken: string,
+  apiVersion: TiendanubeProductSource,
+): Promise<ProductFetchResult> {
   const products: TiendanubeProductResponse[] = [];
   let page = 1;
-  let nextUrl: string | null = new URL(`${getTiendanubeApiBaseUrl(storeId)}/products`).toString();
+  let nextUrl: string | null = new URL(`${getTiendanubeApiBaseUrl(storeId, apiVersion)}/products`).toString();
   let lastBatchSize = 0;
   let totalCountHeader: number | null = null;
   let lastRateLimit: TiendanubeRateLimitInfo = {
@@ -111,12 +146,7 @@ export async function fetchAllTiendanubeProducts(storeId: string, accessToken: s
     remaining: null,
     resetMs: null,
   };
-  const visitedPages: Array<{
-    batchSize: number;
-    page: number;
-    totalCountHeader: number | null;
-    url: string;
-  }> = [];
+  const visitedPages: FetchedProductsPage[] = [];
 
   while (nextUrl) {
     const url = new URL(nextUrl);
@@ -129,7 +159,7 @@ export async function fetchAllTiendanubeProducts(storeId: string, accessToken: s
       url.searchParams.set("per_page", String(DEFAULT_PRODUCTS_PER_PAGE));
     }
 
-    if (!url.searchParams.has("fields")) {
+    if (apiVersion === "v1" && !url.searchParams.has("fields")) {
       url.searchParams.set("fields", "id,name,handle,published,variants");
     }
 
@@ -146,6 +176,7 @@ export async function fetchAllTiendanubeProducts(storeId: string, accessToken: s
     });
 
     console.info("[tiendanube-sync] fetched products page", {
+      apiVersion,
       batchSize: data.length,
       page,
       rateLimit,
@@ -158,16 +189,41 @@ export async function fetchAllTiendanubeProducts(storeId: string, accessToken: s
     page += 1;
 
     if (!nextUrl && lastBatchSize === DEFAULT_PRODUCTS_PER_PAGE) {
-      nextUrl = new URL(
-        `${getTiendanubeApiBaseUrl(storeId)}/products?page=${page}&per_page=${DEFAULT_PRODUCTS_PER_PAGE}&fields=id,name,handle,published,variants`,
-      ).toString();
+      const followUpUrl = new URL(`${getTiendanubeApiBaseUrl(storeId, apiVersion)}/products`);
+      followUpUrl.searchParams.set("page", String(page));
+      followUpUrl.searchParams.set("per_page", String(DEFAULT_PRODUCTS_PER_PAGE));
+
+      if (apiVersion === "v1") {
+        followUpUrl.searchParams.set("fields", "id,name,handle,published,variants");
+      }
+
+      nextUrl = followUpUrl.toString();
     }
   }
 
   return {
+    apiVersion,
     products,
-    totalCountHeader,
     rateLimit: lastRateLimit,
+    totalCountHeader,
     visitedPages,
   };
+}
+
+export async function fetchAllTiendanubeProducts(storeId: string, accessToken: string) {
+  const primaryResult = await fetchProductsForVersion(storeId, accessToken, "v1");
+
+  if (primaryResult.totalCountHeader === 0 && primaryResult.products.length === 0) {
+    console.info("[tiendanube-sync] falling back to newer product api", {
+      fallbackVersion: FALLBACK_PRODUCT_API_VERSION,
+      storeId,
+      v1TotalCountHeader: primaryResult.totalCountHeader,
+    });
+
+    const fallbackResult = await fetchProductsForVersion(storeId, accessToken, "2025-03");
+
+    return fallbackResult;
+  }
+
+  return primaryResult;
 }

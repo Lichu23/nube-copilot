@@ -13,6 +13,29 @@ type RunInitialSyncInput = {
   storeId?: string;
 };
 
+function getVariantStock(variant: {
+  inventory_levels?: Array<{ stock?: number | null }> | null;
+  stock?: number | null;
+}) {
+  if (typeof variant.stock === "number") {
+    return variant.stock;
+  }
+
+  if (!variant.inventory_levels?.length) {
+    return null;
+  }
+
+  const inventoryStocks = variant.inventory_levels
+    .map((level) => level.stock)
+    .filter((stock): stock is number => typeof stock === "number");
+
+  if (inventoryStocks.length === 0) {
+    return null;
+  }
+
+  return inventoryStocks.reduce((total, stock) => total + stock, 0);
+}
+
 export async function runInitialSync(input: RunInitialSyncInput = {}) {
   const connection = await getActiveTiendanubeConnection(input.storeId);
 
@@ -40,7 +63,7 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
   });
 
   try {
-    const { products, rateLimit, totalCountHeader, visitedPages } = await fetchAllTiendanubeProducts(
+    const { apiVersion, products, rateLimit, totalCountHeader, visitedPages } = await fetchAllTiendanubeProducts(
       connection.storeExternalId,
       accessToken,
     );
@@ -52,10 +75,11 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       raw: product,
       tiendanubeProductId: String(product.id),
       variants: (product.variants ?? []).map((variant) => ({
+        inventoryLevels: variant.inventory_levels?.length ?? 0,
         price: variant.price == null ? null : String(variant.price),
         raw: variant,
         sku: variant.sku ?? null,
-        stock: variant.stock ?? null,
+        stock: getVariantStock(variant),
         tiendanubeVariantId: String(variant.id),
       })),
     }));
@@ -66,12 +90,14 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
     });
 
     const metadata = {
+      apiVersion,
       productCount: persisted.productCount,
       rateLimit,
       responsePreview: normalizedProducts.slice(0, 3).map((product) => ({
         name: product.name,
         tiendanubeProductId: product.tiendanubeProductId,
         variantCount: product.variants.length,
+        variantStocks: product.variants.map((variant) => variant.stock),
       })),
       totalCountHeader,
       variantCount: persisted.variantCount,

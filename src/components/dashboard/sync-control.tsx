@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 type SyncControlProps = {
+  autoRun?: boolean;
   hasConnection: boolean;
   lastSyncFinishedAt: string | null;
   lastSyncMessage: string;
@@ -30,6 +31,7 @@ function formatTimestamp(value: string | null) {
 }
 
 export function SyncControl({
+  autoRun = false,
   hasConnection,
   lastSyncFinishedAt,
   lastSyncMessage,
@@ -39,10 +41,17 @@ export function SyncControl({
   variantCount,
 }: SyncControlProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState(lastSyncMessage);
+  const hasAutoStartedRef = useRef(false);
 
   const statusTone = useMemo(() => {
+    if (isPending) {
+      return "text-amber-600";
+    }
+
     if (lastSyncStatus === "succeeded") {
       return "text-emerald-600";
     }
@@ -52,14 +61,14 @@ export function SyncControl({
     }
 
     return "text-zinc-500";
-  }, [lastSyncStatus]);
+  }, [isPending, lastSyncStatus]);
 
-  const handleSync = () => {
+  const triggerSync = useCallback((options?: { auto?: boolean }) => {
     if (!hasConnection) {
       return;
     }
 
-    setFeedback("Running sync...");
+    setFeedback(options?.auto ? "We connected your store. Running the first sync now..." : "Running sync...");
 
     startTransition(async () => {
       try {
@@ -75,12 +84,27 @@ export function SyncControl({
 
         const payload = (await response.json()) as SyncResponse;
         setFeedback(payload.message ?? (payload.ok ? "Sync completed." : "Sync failed."));
+        if (options?.auto) {
+          const nextParams = new URLSearchParams(searchParams.toString());
+          nextParams.delete("autoSync");
+          const nextQuery = nextParams.toString();
+          router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+        }
         router.refresh();
       } catch {
         setFeedback("Sync request failed before reaching the server.");
       }
     });
-  };
+  }, [hasConnection, pathname, router, searchParams, startTransition, storeId]);
+
+  useEffect(() => {
+    if (!autoRun || !hasConnection || hasAutoStartedRef.current) {
+      return;
+    }
+
+    hasAutoStartedRef.current = true;
+    triggerSync({ auto: true });
+  }, [autoRun, hasConnection, triggerSync]);
 
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
@@ -92,7 +116,9 @@ export function SyncControl({
           </div>
           <p className="text-sm text-zinc-600">
             {hasConnection
-              ? "Run the initial sync after adding products in your connected store."
+              ? autoRun && isPending
+                ? "Your store was connected successfully. We are syncing the first catalog import automatically."
+                : "Run the initial sync after adding products in your connected store."
               : "Connect a Tiendanube store first to enable syncing."}
           </p>
           <div className="text-sm text-zinc-600">
@@ -109,7 +135,7 @@ export function SyncControl({
 
         <button
           type="button"
-          onClick={handleSync}
+          onClick={() => triggerSync()}
           disabled={!hasConnection || isPending}
           className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
@@ -119,7 +145,7 @@ export function SyncControl({
 
       <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 px-4 py-3 text-sm">
         <p className={statusTone}>
-          Status: <span className="font-medium">{lastSyncStatus ?? "idle"}</span>
+          Status: <span className="font-medium">{isPending ? "running" : (lastSyncStatus ?? "idle")}</span>
         </p>
         <p className="mt-1 text-zinc-600">{feedback}</p>
       </div>
