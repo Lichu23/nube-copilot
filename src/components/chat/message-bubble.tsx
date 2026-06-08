@@ -12,6 +12,7 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
         className={`max-w-2xl rounded-2xl px-4 py-3 text-sm ${
           isUser ? "bg-zinc-950 text-white" : "border border-black/10 bg-zinc-50 text-zinc-800"
         }`}
+        style={{ whiteSpace: "pre-wrap" }}
       >
         {content}
       </div>

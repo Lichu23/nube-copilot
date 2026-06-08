@@ -1,6 +1,6 @@
-import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
-import { orderItems, orders, products, stores } from "@/lib/db/schema";
+import { orderItems, orders, products, productVariants, stores } from "@/lib/db/schema";
 
 type MetricsDateRangeInput = {
   endDate: Date;
@@ -27,6 +27,14 @@ export type TopProductRow = {
   orderCount: number;
   revenue: number;
   unitsSold: number;
+};
+
+export type LowStockOpportunityRow = {
+  name: string;
+  raw: unknown;
+  recentUnitsSold: number;
+  sku: string | null;
+  stock: number;
 };
 
 export type ComparedMetric = {
@@ -138,6 +146,77 @@ export async function getTopProducts(
     revenue: row.revenue ?? 0,
     unitsSold: row.unitsSold ?? 0,
   }));
+}
+
+export async function getLowStockOpportunities(input: {
+  limit?: number;
+  recentDays?: number;
+  stockThreshold?: number;
+  storeId: string;
+}): Promise<LowStockOpportunityRow[]> {
+  const db = getDb();
+  const endDate = new Date();
+  const requestedLimit = input.limit ?? 5;
+  const recentDays = input.recentDays ?? 30;
+  const startDate = new Date(endDate.getTime() - recentDays * 24 * 60 * 60 * 1000);
+  const threshold = input.stockThreshold ?? 5;
+
+  const lowStockVariants = await db
+    .select({
+      productId: products.id,
+      variantId: productVariants.id,
+      name: sql<string>`coalesce(${products.name}, 'Unknown product')`,
+      raw: productVariants.raw,
+      sku: productVariants.sku,
+      stock: sql<number>`coalesce(${productVariants.stock}, 0)`,
+    })
+    .from(productVariants)
+    .innerJoin(products, eq(productVariants.productId, products.id))
+    .where(and(eq(productVariants.storeId, input.storeId), lte(productVariants.stock, threshold)))
+    .limit(Math.max(requestedLimit * 4, 20));
+
+  if (lowStockVariants.length === 0) {
+    return [];
+  }
+
+  const variantIds = lowStockVariants.map((variant) => variant.variantId);
+  const recentSalesRows = await db
+    .select({
+      recentUnitsSold: sql<number>`coalesce(sum(${orderItems.quantity})::int, 0)`,
+      variantId: orderItems.variantId,
+    })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(
+      and(
+        inArray(orderItems.variantId, variantIds),
+        gte(orders.createdAtTiendanube, startDate),
+        lte(orders.createdAtTiendanube, endDate),
+        isNull(orders.cancelledAt),
+      ),
+    )
+    .groupBy(orderItems.variantId);
+
+  const salesByVariantId = new Map(
+    recentSalesRows.map((row) => [row.variantId, row.recentUnitsSold ?? 0] as const),
+  );
+
+  return lowStockVariants
+    .map((variant) => ({
+      name: variant.name,
+      raw: variant.raw,
+      recentUnitsSold: salesByVariantId.get(variant.variantId) ?? 0,
+      sku: variant.sku ?? null,
+      stock: variant.stock ?? 0,
+    }))
+    .sort((left, right) => {
+      if (right.recentUnitsSold !== left.recentUnitsSold) {
+        return right.recentUnitsSold - left.recentUnitsSold;
+      }
+
+      return left.stock - right.stock;
+    })
+    .slice(0, requestedLimit);
 }
 
 function compareMetric(current: number, previous: number): ComparedMetric {
