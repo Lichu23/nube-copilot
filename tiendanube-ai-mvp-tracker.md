@@ -2,7 +2,7 @@
 
 Date: 2026-06-04
 
-## Current status snapshot (updated 2026-06-06)
+## Current status snapshot (updated 2026-06-08)
 
 What is ALREADY true in the repo right now:
 
@@ -30,15 +30,16 @@ What is NOT done yet:
 - [x] Tiendanube OAuth routes are implemented.
 - [x] Product sync foundation is implemented and verified with a real store.
 - [x] Dashboard sync controls/status are implemented.
-- [x] AI chat route and deterministic analyst tool flows are implemented for local validation.
+- [x] AI chat route and Groq-orchestrated analyst tool flows are implemented and validated against real synced-store SQL metrics.
 - [x] Store metadata hydration after OAuth is implemented and verified with a real store.
 - [x] Business logic beyond the OAuth connection flow now includes sync, SQL metrics, dashboard trust layer, and deterministic analyst responses.
 
-Known follow-up after local AI chat validation:
+Known follow-up after AI chat validation:
 
 - [ ] Hide/remove AI chat evidence cards and structured tool-result debug panels in production. Keep them available only for local/staging validation behind a feature flag or equivalent gating.
 - [x] Add deterministic analyst intents for low-stock opportunities and weekly business snapshot.
 - [ ] Add deterministic product-to-product comparison after MVP validation.
+- [ ] Surface weekly snapshot insight outside chat so the value is visible on dashboard/share surfaces too.
 
 Important corrections:
 
@@ -48,19 +49,18 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** SQL metrics foundation for dashboard + AI tools.
+**Next up:** Phase 7 weekly snapshot productization.
 
 Why this is next:
 
-- OAuth connection and initial sync already work end-to-end.
-- We already persist `tiendanube_store_id`, encrypted token, store metadata, products, product variants, orders, order items, and linked customers correctly.
-- The next product milestone is trustworthy SQL metrics on top of those synced orders.
+- SQL metrics, sync, and Groq-orchestrated AI chat are already working on top of real synced-store data.
+- The next MVP value is not more chat plumbing; it is making the weekly insight visible and shareable outside the chat surface.
 
 What to add:
 
-- [ ] Build SQL metric queries on top of synced orders and order items.
-- [ ] Surface recent order/revenue trust checks on the dashboard.
-- [ ] Reuse those backend metric functions later as AI tools.
+- [ ] Show weekly snapshot on the dashboard.
+- [ ] Add a “copy summary” action for WhatsApp/share flows.
+- [ ] Decide whether dashboard/share copy should reuse Groq summary wording or a deterministic template.
 
 ## Product goal
 
@@ -116,11 +116,11 @@ Confirmed from docs:
 You need:
 
 - [x] `GROQ_API_KEY`
-- [ ] `GROQ_MODEL`
+- [x] `GROQ_MODEL`
 
 Recommended starting model:
 
-- [ ] `llama-3.3-70b-versatile` for better reasoning/tool-use quality.
+- [x] `llama-3.3-70b-versatile` for better reasoning/tool-use quality.
 - [ ] fallback for cheaper/faster tests: `llama-3.1-8b-instant`.
 - [ ] evaluate Groq's currently available models before locking this for production.
 
@@ -193,8 +193,8 @@ Optional later:
 - [ ] shadcn/ui
 - [x] Supabase Postgres
 - [x] Drizzle ORM
-- [ ] Vercel AI SDK
-- [ ] Groq Chat Completions API / tool calling
+- [x] Vercel AI SDK
+- [x] Groq Chat Completions API / tool calling
 - [ ] Recharts through shadcn/ui chart components
 - [ ] Zod for validation
 
@@ -718,9 +718,9 @@ Returns:
 
 The chat should answer business questions like:
 
-- [ ] “What were my best-selling products this month?”
-- [ ] “Compare this week vs last week.”
-- [ ] “Which products should I restock?”
+- [x] “What were my best-selling products this month?”
+- [x] “Compare this week vs last week.”
+- [x] “Which products should I restock?”
 - [ ] “What changed this week?”
 - [ ] “Give me 3 actions for this week.”
 
@@ -751,12 +751,12 @@ UI renders answer + structured table/chart
 
 ### 11.3 Allowed AI tools for MVP
 
-- [ ] `get_sales_summary`
-- [ ] `get_top_products`
-- [ ] `compare_periods`
+- [x] `get_sales_summary`
+- [x] `get_top_products`
+- [x] `compare_periods`
 - [ ] `compare_product_sales`
-- [ ] `get_low_stock_opportunities`
-- [ ] `get_weekly_business_snapshot`
+- [x] `get_low_stock_opportunities`
+- [x] `get_weekly_business_snapshot`
 
 ### 11.4 AI response schema
 
@@ -790,24 +790,29 @@ type AiAnalystResponse = {
 ### 11.5 AI system rules
 
 - [ ] Answer in simple Spanish first.
-- [ ] Never invent numbers.
-- [ ] Use tools for metrics.
-- [ ] If the data is missing, say what sync/data is missing.
-- [ ] Keep answers short.
-- [ ] Always include evidence when giving a recommendation.
-- [ ] Prefer tables for comparisons.
-- [ ] Prefer charts for trends over time.
+- [x] Never invent numbers.
+- [x] Use tools for metrics.
+- [x] If the data is missing, say what sync/data is missing.
+- [x] Keep answers short.
+- [x] Always include evidence when giving a recommendation.
+- [x] Prefer tables for comparisons.
+- [x] Prefer charts for trends over time.
 
 ### 11.6 Groq implementation notes
 
-- [ ] Install `@ai-sdk/groq` instead of `@ai-sdk/openai`.
-- [ ] Use `GROQ_API_KEY` in `.env.local`.
-- [ ] In `/api/chat`, import `groq` from `@ai-sdk/groq`.
+- [x] Install `@ai-sdk/groq` instead of `@ai-sdk/openai`.
+- [x] Use `GROQ_API_KEY` in `.env.local`.
+- [x] In `/api/chat`, import `groq` from `@ai-sdk/groq`.
 - [ ] Use `streamText` from `ai` for streaming chat responses.
-- [ ] Start with `groq(process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile')`.
-- [ ] Keep tool results structured and backend-generated.
-- [ ] Validate final table/chart payloads with Zod before rendering.
-- [ ] If Groq returns malformed JSON/tool output, fail safely and ask the user to retry or simplify the question.
+- [x] Start with `groq(process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile')`.
+- [x] Keep tool results structured and backend-generated.
+- [x] Validate final table/chart payloads with Zod before rendering.
+- [x] If Groq returns malformed JSON/tool output, fail safely and ask the user to retry or simplify the question.
+
+Implementation notes validated in this branch:
+
+- [x] Final response shaping is deterministic app code built from backend tool results, not model-authored JSON contracts.
+- [x] Groq orchestration is constrained to one tool step plus one answer-only step to avoid hallucinated follow-up tool names.
 
 Example route skeleton:
 
@@ -939,7 +944,7 @@ Done when:
 ### Phase 6 — AI chat with tools
 
 - [x] Build `/api/chat`.
-- [ ] Add Vercel AI SDK/Groq integration with `@ai-sdk/groq`.
+- [x] Add Vercel AI SDK/Groq integration with `@ai-sdk/groq`.
 - [x] Define Zod schemas for tool arguments.
 - [x] Expose metric functions as AI tools.
 - [x] Store chat messages.
@@ -950,10 +955,14 @@ Done when:
 Done when:
 
 - [x] User can ask “compare this week vs last week” and receive answer + table/chart from real SQL metrics.
-
-Pending to finish Phase 6:
-
-- [ ] Replace the deterministic local router with real Vercel AI SDK + Groq orchestration, or explicitly redefine Phase 6 as deterministic-only.
+- [x] Supported prompts were manually validated end-to-end with Groq orchestration and real synced-store SQL metrics:
+  - [x] compare this week vs last week
+  - [x] compare the last 7 days vs the previous 7 days
+  - [x] sales summary for the last 30 days
+  - [x] top products for the last 30 days
+  - [x] weekly snapshot
+  - [x] what products are at risk of going out of stock?
+  - [x] how can you help me?
 
 ### Phase 7 — Weekly snapshot
 
@@ -961,6 +970,7 @@ Pending to finish Phase 6:
 - [x] Build deterministic analyst summary from metric output.
 - [ ] Show weekly snapshot on dashboard.
 - [ ] Add “copy summary” button for WhatsApp.
+- [ ] Decide whether dashboard snapshot copy should reuse Groq chat wording or a separate deterministic dashboard/share template.
 
 Done when:
 
