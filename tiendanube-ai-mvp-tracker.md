@@ -30,9 +30,15 @@ What is NOT done yet:
 - [x] Tiendanube OAuth routes are implemented.
 - [x] Product sync foundation is implemented and verified with a real store.
 - [x] Dashboard sync controls/status are implemented.
-- [ ] AI chat routes/tools are not implemented yet.
+- [x] AI chat route and deterministic analyst tool flows are implemented for local validation.
 - [x] Store metadata hydration after OAuth is implemented and verified with a real store.
-- [ ] Business logic outside the OAuth connection flow is still placeholder-only.
+- [x] Business logic beyond the OAuth connection flow now includes sync, SQL metrics, dashboard trust layer, and deterministic analyst responses.
+
+Known follow-up after local AI chat validation:
+
+- [ ] Hide/remove AI chat evidence cards and structured tool-result debug panels in production. Keep them available only for local/staging validation behind a feature flag or equivalent gating.
+- [x] Add deterministic analyst intents for low-stock opportunities and weekly business snapshot.
+- [ ] Add deterministic product-to-product comparison after MVP validation.
 
 Important corrections:
 
@@ -932,23 +938,27 @@ Done when:
 
 ### Phase 6 — AI chat with tools
 
-- [ ] Build `/api/chat`.
+- [x] Build `/api/chat`.
 - [ ] Add Vercel AI SDK/Groq integration with `@ai-sdk/groq`.
-- [ ] Define Zod schemas for tool arguments.
-- [ ] Expose metric functions as AI tools.
-- [ ] Store chat messages.
-- [ ] Store AI tool calls.
-- [ ] Render structured tables in chat.
-- [ ] Render structured charts in chat if returned.
+- [x] Define Zod schemas for tool arguments.
+- [x] Expose metric functions as AI tools.
+- [x] Store chat messages.
+- [x] Store AI tool calls.
+- [x] Render structured tables in chat for local evidence/debug validation.
+- [x] Render structured charts in chat if returned.
 
 Done when:
 
-- [ ] User can ask “compare this week vs last week” and receive answer + table/chart from real SQL metrics.
+- [x] User can ask “compare this week vs last week” and receive answer + table/chart from real SQL metrics.
+
+Pending to finish Phase 6:
+
+- [ ] Replace the deterministic local router with real Vercel AI SDK + Groq orchestration, or explicitly redefine Phase 6 as deterministic-only.
 
 ### Phase 7 — Weekly snapshot
 
-- [ ] Build weekly snapshot metric function.
-- [ ] Build AI summary from metric output.
+- [x] Build weekly snapshot metric function.
+- [x] Build deterministic analyst summary from metric output.
 - [ ] Show weekly snapshot on dashboard.
 - [ ] Add “copy summary” button for WhatsApp.
 

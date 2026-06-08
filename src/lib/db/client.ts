@@ -3,6 +3,8 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
+  aiToolCalls,
+  chatMessages,
   customers,
   orderItems,
   orders,
@@ -13,6 +15,12 @@ import {
   syncJobs,
 } from "@/lib/db/schema";
 import type { TiendanubeStoreMetadata } from "@/lib/tiendanube/types";
+
+type PersistedToolCallInput = {
+  arguments: unknown;
+  resultSummary: unknown;
+  toolName: string;
+};
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 
@@ -496,6 +504,60 @@ export async function finishSyncJob(
       status: input.status,
     })
     .where(eq(syncJobs.id, jobId));
+}
+
+export async function persistChatExchange(input: {
+  assistantMessage: {
+    content: string;
+    structuredPayload?: unknown;
+  };
+  storeId: string;
+  toolCalls?: PersistedToolCallInput[];
+  userMessage: {
+    content: string;
+    structuredPayload?: unknown;
+  };
+}) {
+  const db = getDb();
+
+  return db.transaction(async (tx) => {
+    const [savedUserMessage] = await tx
+      .insert(chatMessages)
+      .values({
+        content: input.userMessage.content,
+        role: "user",
+        storeId: input.storeId,
+        structuredPayload: input.userMessage.structuredPayload ?? null,
+      })
+      .returning({ id: chatMessages.id });
+
+    const [savedAssistantMessage] = await tx
+      .insert(chatMessages)
+      .values({
+        content: input.assistantMessage.content,
+        role: "assistant",
+        storeId: input.storeId,
+        structuredPayload: input.assistantMessage.structuredPayload ?? null,
+      })
+      .returning({ id: chatMessages.id });
+
+    if ((input.toolCalls?.length ?? 0) > 0) {
+      await tx.insert(aiToolCalls).values(
+        input.toolCalls!.map((toolCall) => ({
+          arguments: toolCall.arguments,
+          chatMessageId: savedAssistantMessage.id,
+          resultSummary: toolCall.resultSummary,
+          storeId: input.storeId,
+          toolName: toolCall.toolName,
+        })),
+      );
+    }
+
+    return {
+      assistantMessageId: savedAssistantMessage.id,
+      userMessageId: savedUserMessage.id,
+    };
+  });
 }
 
 export async function getDashboardSyncSummary() {

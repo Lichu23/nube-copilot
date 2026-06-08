@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export const chatMessageSchema = z.object({
+  content: z.string().trim().min(1).max(4_000),
+  role: z.enum(["user", "assistant"]),
+});
+
+export const chatRequestSchema = z.object({
+  messages: z.array(chatMessageSchema).min(1).max(20),
+});
+
 export const aiAnalystResponseSchema = z.object({
   answer: z.string(),
   confidence: z.enum(["high", "medium", "low"]),
@@ -12,3 +21,5 @@ export const aiAnalystResponseSchema = z.object({
     }),
   ),
 });
+
+export type ChatMessage = z.infer<typeof chatMessageSchema>;
