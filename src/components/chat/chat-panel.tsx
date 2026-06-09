@@ -45,9 +45,13 @@ function formatAssistantMessage(result: AnalystResponse) {
   return sections.join("\n\n");
 }
 
-export function ChatPanel() {
+type ChatPanelProps = {
+  initialInput?: string;
+};
+
+export function ChatPanel({ initialInput = "" }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialInput);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [latestResult, setLatestResult] = useState<Pick<
@@ -144,6 +148,8 @@ export function ChatPanel() {
           <div className="flex items-center justify-between gap-3">
             {error ? (
               <p className="text-sm text-red-600">{error}</p>
+            ) : initialInput ? (
+              <p className="text-sm text-zinc-500">Prompt loaded from the dashboard snapshot. Edit it or send it as-is.</p>
             ) : (
               <p className="text-sm text-zinc-500">Evidence-first answers only.</p>
             )}

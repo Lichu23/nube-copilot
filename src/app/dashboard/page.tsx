@@ -7,11 +7,12 @@ import { SalesTrendChart } from "@/components/dashboard/sales-trend-chart";
 import { SyncControl } from "@/components/dashboard/sync-control";
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
 import { AppShell } from "@/components/layout/app-shell";
+import { buildWeeklySnapshotCardContent } from "@/lib/weekly-snapshot";
 
 const compareWindowConfig = {
   "1d": { days: 1, label: "1d", title: "Last 1 day" },
-  "30d": { days: 30, label: "30d", title: "Last 30 days" },
   "7d": { days: 7, label: "7d", title: "Last 7 days" },
+  "30d": { days: 30, label: "30d", title: "Last 30 days" },
 } as const;
 
 type CompareWindowKey = keyof typeof compareWindowConfig;
@@ -46,10 +47,10 @@ function formatSignedPercent(value: number | null, label: string) {
 
 function getCompareWindow(value: string | string[] | undefined): CompareWindowKey {
   if (typeof value !== "string") {
-    return "30d";
+    return "7d";
   }
 
-  return value in compareWindowConfig ? (value as CompareWindowKey) : "30d";
+  return value in compareWindowConfig ? (value as CompareWindowKey) : "7d";
 }
 
 function parseAsOfDate(value: string | string[] | undefined) {
@@ -118,6 +119,12 @@ export default async function DashboardPage({
   const trendStartDate = startDate;
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(previousEndDate.getTime() - windowConfig.days * 24 * 60 * 60 * 1000);
+  const weeklyWindowDays = 7;
+  const weeklyStartDate = new Date(endDate.getTime() - weeklyWindowDays * 24 * 60 * 60 * 1000);
+  const weeklyPreviousEndDate = new Date(weeklyStartDate.getTime() - 1);
+  const weeklyPreviousStartDate = new Date(
+    weeklyPreviousEndDate.getTime() - weeklyWindowDays * 24 * 60 * 60 * 1000,
+  );
 
   const metrics = summary.connection
     ? await getSalesSummary({
@@ -150,10 +157,45 @@ export default async function DashboardPage({
         storeId: summary.connection.storeId,
       })
     : [];
-  const topProduct = topProducts[0] ?? null;
+  const weeklySnapshotMetrics = summary.connection
+    ? await getSalesSummary({
+        endDate,
+        startDate: weeklyStartDate,
+        storeId: summary.connection.storeId,
+      })
+    : null;
+  const weeklySnapshotComparison = summary.connection
+    ? await comparePeriods({
+        currentEnd: endDate,
+        currentStart: weeklyStartDate,
+        previousEnd: weeklyPreviousEndDate,
+        previousStart: weeklyPreviousStartDate,
+        storeId: summary.connection.storeId,
+      })
+    : null;
+  const weeklySnapshotTopProducts = summary.connection
+    ? await getTopProducts({
+        endDate,
+        limit: 1,
+        startDate: weeklyStartDate,
+        storeId: summary.connection.storeId,
+      })
+    : [];
+  const weeklySnapshotTopProduct = weeklySnapshotTopProducts[0] ?? null;
   const grossProductSales = topProducts.reduce((total, product) => total + product.revenue, 0);
   const revenueDifference = grossProductSales - (metrics?.revenue ?? 0);
   const hasReconciliationData = Boolean(summary.connection && metrics);
+  const snapshotCard = buildWeeklySnapshotCardContent({
+    comparison: weeklySnapshotComparison,
+    metrics: weeklySnapshotMetrics,
+    topProduct: weeklySnapshotTopProduct,
+    windowLabel: "last 7 days",
+  });
+  const snapshotChatHref = snapshotCard
+    ? `/?${new URLSearchParams({
+        prompt: snapshotCard.askAiPrompt,
+      }).toString()}`
+    : undefined;
 
   return (
     <AppShell
@@ -302,16 +344,18 @@ export default async function DashboardPage({
         <InsightCard
           title="Weekly snapshot"
           body={
-            topProduct
-              ? `${topProduct.name} leads the last ${windowConfig.label} with ${topProduct.unitsSold} units and ${formatCurrency(topProduct.revenue, metrics?.currency ?? null)} in gross product sales. Net revenue is ${formatSignedPercent(periodComparison?.revenue.percentageChange ?? null, windowConfig.label)}.`
-              : latestSyncStatus === "succeeded"
-                ? `Latest sync completed successfully. Last job id: ${summary.latestSyncJob?.id}.`
-                : latestSyncStatus === "failed"
-                  ? `The last sync failed. ${summary.latestSyncJob?.errorMessage ?? "Check the sync job details."}`
-                  : summary.connection
-                    ? "Insights will improve now that products and orders are syncing into Postgres."
-                    : "Connect a store first, then sync products to start building insights."
+            snapshotCard?.summary ??
+            (latestSyncStatus === "succeeded"
+              ? `Latest sync completed successfully. Last job id: ${summary.latestSyncJob?.id}.`
+              : latestSyncStatus === "failed"
+                ? `The last sync failed. ${summary.latestSyncJob?.errorMessage ?? "Check the sync job details."}`
+                : summary.connection
+                  ? "Insights will improve now that products and orders are syncing into Postgres."
+                  : "Connect a store first, then sync products to start building insights.")
           }
+          chatHref={snapshotChatHref}
+          evidence={snapshotCard?.evidence}
+          shareText={snapshotCard?.shareText}
         />
       </section>
 

@@ -14,7 +14,14 @@ function getLatestUserMessage(messages: Array<{ content: string; role: "assistan
   return latestUserMessage;
 }
 
+function createRequestId() {
+  return `chat-${crypto.randomUUID()}`;
+}
+
 export async function POST(request: Request) {
+  const requestId = createRequestId();
+  const startedAt = Date.now();
+
   try {
     const body = chatRequestSchema.parse(await request.json());
     console.info("[ai-chat] /api/chat request", {
@@ -24,9 +31,10 @@ export async function POST(request: Request) {
         index,
         role: message.role,
       })),
+      requestId,
     });
 
-    const result = await generateAnalystResponse(body.messages);
+    const result = await generateAnalystResponse(body.messages, { requestId });
     const latestUserMessage = getLatestUserMessage(body.messages);
     const activeConnection = await getActiveTiendanubeConnection();
 
@@ -49,7 +57,28 @@ export async function POST(request: Request) {
           },
         },
       });
+
+      console.info("[ai-chat] /api/chat persistence:success", {
+        durationMs: Date.now() - startedAt,
+        requestId,
+        storeId: activeConnection.storeId,
+        toolCallCount: result.toolResults.length,
+      });
+    } else {
+      console.warn("[ai-chat] /api/chat persistence:skipped", {
+        durationMs: Date.now() - startedAt,
+        reason: "no-active-connection",
+        requestId,
+      });
     }
+
+    console.info("[ai-chat] /api/chat response", {
+      confidence: result.confidence,
+      durationMs: Date.now() - startedAt,
+      evidenceCount: result.evidence.length,
+      requestId,
+      toolCallCount: result.toolResults.length,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -71,7 +100,9 @@ export async function POST(request: Request) {
     const status = message.includes("configured") ? 500 : 400;
 
     console.error("[ai-chat] /api/chat error", {
+      durationMs: Date.now() - startedAt,
       message,
+      requestId,
       status,
       stack: error instanceof Error ? error.stack : undefined,
     });

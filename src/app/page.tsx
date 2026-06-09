@@ -1,33 +1,38 @@
 import Link from "next/link";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { AppShell } from "@/components/layout/app-shell";
 
-const quickLinks = [
+const supportingLinks = [
   {
     href: "/connect",
     title: "Connect store",
-    description: "Start the Tiendanube OAuth flow and manage store connections.",
+    description: "Start the Tiendanube OAuth flow so the analyst can answer with real store data.",
   },
   {
     href: "/dashboard",
     title: "Dashboard",
-    description: "Review the trust layer with cards, charts, and operational tables.",
-  },
-  {
-    href: "/chat",
-    title: "AI chat",
-    description: "Ask business questions and render structured evidence.",
+    description: "Review the trust layer with charts, metrics, and the weekly snapshot outside chat.",
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const prompt = typeof params.prompt === "string" ? params.prompt : "";
+
   return (
     <AppShell
-      eyebrow="Tiendanube AI Business Analyst"
+      eyebrow="AI analyst"
       title="Ask your store what happened, what changed, and what to do next."
-      description="This scaffold is ready for OAuth, sync, metrics, and AI chat implementation."
+      description="Chat is the primary product surface. The dashboard stays available as the trust layer behind the answers."
     >
-      <section className="grid gap-4 md:grid-cols-3">
-        {quickLinks.map((link) => (
+      <ChatPanel initialInput={prompt} />
+
+      <section className="grid gap-4 md:grid-cols-2">
+        {supportingLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}
