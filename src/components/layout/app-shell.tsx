@@ -9,10 +9,9 @@ type AppShellProps = {
 };
 
 const navigation = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "AI Analyst" },
   { href: "/connect", label: "Connect" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/chat", label: "Chat" },
 ];
 
 export function AppShell({ eyebrow, title, description, children }: AppShellProps) {

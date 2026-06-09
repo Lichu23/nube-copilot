@@ -2,7 +2,7 @@ import { groq } from "@ai-sdk/groq";
 import { generateText, stepCountIs } from "ai";
 import { analystSystemPrompt } from "@/lib/ai/prompts";
 import type { ChatMessage } from "@/lib/ai/schemas";
-import { buildAiTools } from "@/lib/ai/tools";
+import { buildAiTools, executeWeeklyBusinessSnapshotTool } from "@/lib/ai/tools";
 import { getLocalizedValue } from "@/lib/tiendanube/types";
 
 type AnalystToolResult = {
@@ -639,6 +639,22 @@ function buildResponseFromToolResults(answer: string, toolResults: AnalystToolRe
   }
 }
 
+async function executeForcedToolFallback(toolName: string): Promise<AnalystToolResult[] | null> {
+  switch (toolName) {
+    case "get_weekly_business_snapshot":
+      return [
+        {
+          input: {},
+          output: await executeWeeklyBusinessSnapshotTool(),
+          toolCallId: "fallback-weekly-snapshot",
+          toolName,
+        },
+      ];
+    default:
+      return null;
+  }
+}
+
 export async function generateAnalystResponse(
   messages: ChatMessage[],
   options?: { requestId?: string },
@@ -774,9 +790,28 @@ export async function generateAnalystResponse(
 
     return response;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown AI error";
+
+    if (forcedToolName && errorMessage.includes("Failed to call a function")) {
+      const fallbackToolResults = await executeForcedToolFallback(forcedToolName);
+
+      if (fallbackToolResults) {
+        const fallbackResponse = buildResponseFromToolResults("", fallbackToolResults);
+
+        console.warn("[ai-chat] generateAnalystResponse:fallback", {
+          durationMs: Date.now() - startedAt,
+          reason: "groq-function-call-failed",
+          requestId,
+          toolName: forcedToolName,
+        });
+
+        return fallbackResponse;
+      }
+    }
+
     console.error("[ai-chat] generateAnalystResponse:error", {
       durationMs: Date.now() - startedAt,
-      message: error instanceof Error ? error.message : "Unknown AI error",
+      message: errorMessage,
       mode: "groq-tool-orchestration-pipeline",
       modelId,
       requestId,

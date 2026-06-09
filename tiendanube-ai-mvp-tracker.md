@@ -39,7 +39,7 @@ Known follow-up after AI chat validation:
 - [ ] Hide/remove AI chat evidence cards and structured tool-result debug panels in production. Keep them available only for local/staging validation behind a feature flag or equivalent gating.
 - [x] Add deterministic analyst intents for low-stock opportunities and weekly business snapshot.
 - [ ] Add deterministic product-to-product comparison after MVP validation.
-- [ ] Surface weekly snapshot insight outside chat so the value is visible on dashboard/share surfaces too.
+- [x] Surface weekly snapshot insight outside chat so the value is visible on dashboard/share surfaces too.
 
 Important corrections:
 
@@ -49,18 +49,20 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** Phase 7 weekly snapshot productization.
+**Next up:** Phase 8 private beta.
 
 Why this is next:
 
 - SQL metrics, sync, and Groq-orchestrated AI chat are already working on top of real synced-store data.
-- The next MVP value is not more chat plumbing; it is making the weekly insight visible and shareable outside the chat surface.
+- The next MVP value is validating whether real merchants keep using the product and whether the weekly snapshot plus chat workflow solves repeated store questions.
 
 What to add:
 
-- [ ] Show weekly snapshot on the dashboard.
-- [ ] Add a “copy summary” action for WhatsApp/share flows.
-- [ ] Decide whether dashboard/share copy should reuse Groq summary wording or a deterministic template.
+- [ ] Connect 2–3 real stores.
+- [ ] Track the questions merchants ask.
+- [ ] Track unsupported questions.
+- [ ] Fix only repeated problems.
+- [ ] Ask whether merchants would pay for weekly AI reports/chat.
 
 ## Product goal
 
@@ -968,13 +970,13 @@ Done when:
 
 - [x] Build weekly snapshot metric function.
 - [x] Build deterministic analyst summary from metric output.
-- [ ] Show weekly snapshot on dashboard.
-- [ ] Add “copy summary” button for WhatsApp.
-- [ ] Decide whether dashboard snapshot copy should reuse Groq chat wording or a separate deterministic dashboard/share template.
+- [x] Show weekly snapshot on dashboard.
+- [x] Add “copy summary” button for WhatsApp.
+- [x] Decide whether dashboard snapshot copy should reuse Groq chat wording or a separate deterministic dashboard/share template.
 
 Done when:
 
-- [ ] Store owner gets a useful weekly report inside the app.
+- [x] Store owner gets a useful weekly report inside the app.
 
 ### Phase 8 — Private beta
 
