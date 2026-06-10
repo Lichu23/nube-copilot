@@ -16,20 +16,8 @@ const compareWindowConfig = {
 } as const;
 
 type CompareWindowKey = keyof typeof compareWindowConfig;
+import { formatCurrency, formatSignedCurrency } from "@/lib/formatting";
 
-function formatCurrency(value: number, currency: string | null) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-    style: "currency",
-  }).format(value);
-}
-
-function formatSignedCurrency(value: number, currency: string | null) {
-  const absolute = formatCurrency(Math.abs(value), currency);
-  return value < 0 ? `-${absolute}` : absolute;
-}
 
 function formatSignedNumber(value: number) {
   return value > 0 ? `+${value}` : String(value);

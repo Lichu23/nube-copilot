@@ -1,25 +1,7 @@
-type ToolResult = {
-  input: unknown;
-  output: unknown;
-  toolCallId: string;
-  toolName: string;
-};
 
-function formatScalar(value: unknown) {
-  if (typeof value === "number") {
-    return Number.isInteger(value) ? String(value) : value.toFixed(2);
-  }
 
-  if (typeof value === "string" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  if (value == null) {
-    return "—";
-  }
-
-  return JSON.stringify(value);
-}
+import type { ToolResult } from "@/lib/types"; 
+import { formatScalar } from "@/lib/formatting";
 
 function renderObject(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {

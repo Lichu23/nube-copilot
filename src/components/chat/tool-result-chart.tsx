@@ -1,11 +1,10 @@
 "use client";
 
-type ToolResult = {
-  input: unknown;
-  output: unknown;
-  toolCallId: string;
-  toolName: string;
-};
+import type { ToolResult } from "@/lib/types";
+
+import { asRecord, asNumber } from "@/lib/type-guards"; 
+import { formatCurrency } from "@/lib/formatting";
+
 
 type ChartBar = {
   label: string;
@@ -19,22 +18,8 @@ type ChartModel = {
   title: string;
 };
 
-function formatCurrency(value: number, currency: string | null | undefined) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-    style: "currency",
-  }).format(value);
-}
 
-function asRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
-}
 
-function asNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
 
 function buildChartModel(item: ToolResult): ChartModel | null {
   const output = asRecord(item.output);
