@@ -9,7 +9,7 @@ function formatDayLabel(value: string) {
 
   return Number.isNaN(date.getTime())
     ? value
-    : new Intl.DateTimeFormat("en", {
+    : new Intl.DateTimeFormat("es-AR", {
         day: "numeric",
         month: "short",
       }).format(date);
@@ -20,10 +20,10 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
 
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
-      <h2 className="text-lg font-semibold">Sales trend</h2>
+      <h2 className="text-lg font-semibold">Tendencia de ventas</h2>
       {data.length === 0 ? (
         <div className="mt-4 flex h-64 items-center justify-center rounded-xl border border-dashed border-black/10 bg-zinc-50 text-sm text-zinc-500">
-          No recent order data yet.
+          Todavia no hay datos recientes de pedidos.
         </div>
       ) : (
         <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 p-4">
@@ -36,11 +36,11 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
                   <div
                     className="w-full rounded-t-lg bg-black/80"
                     style={{ height: `${height}%` }}
-                    title={`${point.revenue.toFixed(2)} revenue across ${point.orderCount} orders`}
+                    title={`${point.revenue.toFixed(2)} de facturacion en ${point.orderCount} pedidos`}
                   />
                   <div className="text-center text-xs text-zinc-500">
                     <div>{formatDayLabel(point.day)}</div>
-                    <div>{point.orderCount} orders</div>
+                    <div>{point.orderCount} pedidos</div>
                   </div>
                 </div>
               );

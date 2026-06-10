@@ -8,7 +8,7 @@ function getLatestUserMessage(messages: Array<{ content: string; role: "assistan
   const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
 
   if (!latestUserMessage) {
-    throw new Error("A user message is required.");
+    throw new Error("Se requiere un mensaje del usuario.");
   }
 
   return latestUserMessage;
@@ -89,14 +89,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           ok: false,
-          message: "Invalid chat payload.",
+          message: "La solicitud del chat es inválida.",
           issues: error.issues,
         },
         { status: 400 },
       );
     }
 
-    const message = error instanceof Error ? error.message : "Chat request failed.";
+    const message = error instanceof Error ? error.message : "Falló la solicitud del chat.";
     const status = message.includes("configured") ? 500 : 400;
 
     console.error("[ai-chat] /api/chat error", {

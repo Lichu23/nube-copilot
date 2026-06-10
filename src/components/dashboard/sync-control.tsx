@@ -22,10 +22,10 @@ type SyncResponse = {
 
 function formatTimestamp(value: string | null) {
   if (!value) {
-    return "Not synced yet";
+    return "Todavia no sincronizado";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("es-AR", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -70,7 +70,7 @@ export function SyncControl({
       return;
     }
 
-    setFeedback(options?.auto ? "We connected your store. Running the first sync now..." : "Running sync...");
+    setFeedback(options?.auto ? "Conectamos tu tienda. Estamos corriendo la primera sincronizacion..." : "Corriendo sincronizacion...");
 
     startTransition(async () => {
       try {
@@ -85,7 +85,7 @@ export function SyncControl({
         });
 
         const payload = (await response.json()) as SyncResponse;
-        setFeedback(payload.message ?? (payload.ok ? "Sync completed." : "Sync failed."));
+        setFeedback(payload.message ?? (payload.ok ? "Sincronizacion completada." : "La sincronizacion fallo."));
         if (options?.auto) {
           const nextParams = new URLSearchParams(searchParams.toString());
           nextParams.delete("autoSync");
@@ -94,7 +94,7 @@ export function SyncControl({
         }
         router.refresh();
       } catch {
-        setFeedback("Sync request failed before reaching the server.");
+        setFeedback("La solicitud de sincronizacion fallo antes de llegar al servidor.");
       }
     });
   }, [hasConnection, pathname, router, searchParams, startTransition, storeId]);
@@ -113,26 +113,26 @@ export function SyncControl({
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium text-zinc-500">Catalog sync</p>
-            <h2 className="text-lg font-semibold">Pull products from Tiendanube</h2>
+            <p className="text-sm font-medium text-zinc-500">Sincronizacion de catalogo</p>
+            <h2 className="text-lg font-semibold">Traer productos desde Tiendanube</h2>
           </div>
           <p className="text-sm text-zinc-600">
             {hasConnection
               ? autoRun && isPending
-                ? "Your store was connected successfully. We are syncing the first catalog import automatically."
-                : "Run the initial sync after adding products in your connected store."
-              : "Connect a Tiendanube store first to enable syncing."}
+                ? "Tu tienda se conecto bien. Estamos sincronizando la primera importacion de catalogo automaticamente."
+                : "Corre la sincronizacion inicial despues de agregar productos en tu tienda conectada."
+              : "Conecta primero una tienda Tiendanube para habilitar la sincronizacion."}
           </p>
           <div className="text-sm text-zinc-600">
             <p>
-              Synced catalog: <span className="font-medium text-zinc-950">{productCount}</span> products and{" "}
-              <span className="font-medium text-zinc-950">{variantCount}</span> variants
+              Catalogo sincronizado: <span className="font-medium text-zinc-950">{productCount}</span> productos y{" "}
+              <span className="font-medium text-zinc-950">{variantCount}</span> variantes
             </p>
             <p>
-              Synced orders: <span className="font-medium text-zinc-950">{orderCount}</span> orders
+              Pedidos sincronizados: <span className="font-medium text-zinc-950">{orderCount}</span> pedidos
             </p>
             <p>
-              Last completed sync:{" "}
+              Ultima sincronizacion completada:{" "}
               <span className="font-medium text-zinc-950">{formatTimestamp(lastSyncFinishedAt)}</span>
             </p>
           </div>
@@ -144,13 +144,13 @@ export function SyncControl({
           disabled={!hasConnection || isPending}
           className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
-          {isPending ? "Syncing..." : "Sync now"}
+          {isPending ? "Sincronizando..." : "Sincronizar ahora"}
         </button>
       </div>
 
       <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 px-4 py-3 text-sm">
         <p className={statusTone}>
-          Status: <span className="font-medium">{isPending ? "running" : (lastSyncStatus ?? "idle")}</span>
+          Estado: <span className="font-medium">{isPending ? "corriendo" : (lastSyncStatus ?? "idle")}</span>
         </p>
         <p className="mt-1 text-zinc-600">{feedback}</p>
       </div>

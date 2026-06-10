@@ -9,8 +9,8 @@ type AppShellProps = {
 };
 
 const navigation = [
-  { href: "/", label: "AI Analyst" },
-  { href: "/connect", label: "Connect" },
+  { href: "/", label: "Analista IA" },
+  { href: "/connect", label: "Conectar" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 
@@ -21,7 +21,7 @@ export function AppShell({ eyebrow, title, description, children }: AppShellProp
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
             <p className="text-sm font-semibold">NubeCopilot</p>
-            <p className="text-xs text-zinc-500">Tiendanube AI business analyst MVP</p>
+            <p className="text-xs text-zinc-500">MVP de analista IA para Tiendanube</p>
           </div>
           <nav className="flex gap-4 text-sm text-zinc-600">
             {navigation.map((item) => (

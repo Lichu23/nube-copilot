@@ -3,21 +3,21 @@ import Link from "next/link";
 
 const statusContent = {
   error: {
-    description: "The connection did not complete. Review the reason below and try again.",
-    title: "Connection failed",
+    description: "La conexion no se completo. Revisa el motivo abajo y volve a intentar.",
+    title: "La conexion fallo",
     tone: "border-red-200 bg-red-50 text-red-900",
   },
   success: {
-    description: "Tiendanube returned successfully and the connection was saved.",
-    title: "Store connected",
+    description: "Tiendanube respondio bien y guardamos la conexion.",
+    title: "Tienda conectada",
     tone: "border-emerald-200 bg-emerald-50 text-emerald-900",
   },
 } as const;
 
 const reasonCopy: Record<string, string> = {
-  config: "Missing or invalid OAuth configuration. Add the required env values before trying again.",
-  exchange: "The callback reached the app, but token exchange or persistence failed.",
-  state: "The OAuth callback state was missing or invalid, so the request was rejected.",
+  config: "Falta configuracion de OAuth o no es valida. Agrega las variables necesarias antes de volver a intentar.",
+  exchange: "El callback llego a la app, pero fallo el intercambio del token o la persistencia.",
+  state: "El estado del callback de OAuth faltaba o no era valido, asi que rechazamos la solicitud.",
 };
 
 export default async function ConnectPage({
@@ -34,32 +34,32 @@ export default async function ConnectPage({
 
   return (
     <AppShell
-      eyebrow="Connection"
-      title="Connect a Tiendanube store"
-      description="Start the Tiendanube OAuth flow, return safely to the app, and verify the connection result."
+      eyebrow="Conexion"
+      title="Conecta una tienda Tiendanube"
+      description="Inicia el flujo OAuth de Tiendanube, volve a la app de forma segura y verifica el resultado de la conexion."
     >
       <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-950">Install flow</h2>
+          <h2 className="text-lg font-semibold text-zinc-950">Flujo de instalacion</h2>
           <p className="mt-2 text-sm text-zinc-600">
-            Use the secure server-side OAuth start route. The callback validates state, encrypts
-            the token, and stores the connection before returning here.
+            Usa la ruta segura del servidor para iniciar OAuth. El callback valida el estado,
+            cifra el token y guarda la conexion antes de volver aca.
           </p>
           <Link
             href="/api/tiendanube/oauth/start"
             className="mt-5 inline-flex rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
           >
-            Connect Tiendanube store
+            Conectar tienda Tiendanube
           </Link>
         </div>
 
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-950">What this slice verifies</h2>
+          <h2 className="text-lg font-semibold text-zinc-950">Que valida esta pantalla</h2>
           <ul className="mt-3 space-y-2 text-sm text-zinc-600">
-            <li>- state cookie issuance and validation</li>
-            <li>- Tiendanube code exchange</li>
-            <li>- encrypted token persistence</li>
-            <li>- store and connection upsert</li>
+            <li>- emision y validacion de la cookie de estado</li>
+            <li>- intercambio del codigo de Tiendanube</li>
+            <li>- persistencia cifrada del token</li>
+            <li>- upsert de tienda y conexion</li>
           </ul>
         </div>
       </section>
@@ -70,8 +70,8 @@ export default async function ConnectPage({
           <p className="mt-1">{statusPanel.description}</p>
           {status === "error" && reasonParam ? (
             <p className="mt-3 text-sm">
-              <span className="font-medium">Reason:</span>{" "}
-              {reasonCopy[reasonParam] ?? "Unknown callback error. Check server logs for details."}
+              <span className="font-medium">Motivo:</span>{" "}
+              {reasonCopy[reasonParam] ?? "Error desconocido en el callback. Revisa los logs del servidor."}
             </p>
           ) : null}
         </div>

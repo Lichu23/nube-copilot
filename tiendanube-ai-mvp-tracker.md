@@ -2,7 +2,7 @@
 
 Date: 2026-06-04
 
-## Current status snapshot (updated 2026-06-08)
+## Current status snapshot (updated 2026-06-09)
 
 What is ALREADY true in the repo right now:
 
@@ -41,6 +41,16 @@ Known follow-up after AI chat validation:
 - [ ] Add deterministic product-to-product comparison after MVP validation.
 - [x] Surface weekly snapshot insight outside chat so the value is visible on dashboard/share surfaces too.
 
+New product/UI follow-up after UX research:
+
+- [ ] Rebuild the AI analyst UX as **mobile-first conversational analytics**, not as desktop-first split panes.
+- [ ] Keep chat as the primary interaction surface on all devices.
+- [ ] On mobile, open each rich answer into a dedicated detail view / sheet instead of forcing full tables and trust details inline in the feed.
+- [ ] On desktop, keep a companion analysis canvas so the currently selected answer can be inspected without scroll fatigue.
+- [ ] Make the dashboard explicitly a trust/validation surface plus pinned reports, not the main workflow.
+- [ ] Redesign AI responses as compact report cards with summary, KPI strip, mini chart/table preview, and quick actions.
+- [ ] Move raw evidence/SQL/debug details behind a progressive trust layer.
+
 Important corrections:
 
 - [x] `TIENDANUBE_REDIRECT_URI` points to the OAuth callback route.
@@ -49,20 +59,24 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** Phase 8 private beta.
+**Next up:** Phase 8 UI/UX rebuild (mobile-first, desktop-adaptive).
 
 Why this is next:
 
 - SQL metrics, sync, and Groq-orchestrated AI chat are already working on top of real synced-store data.
-- The next MVP value is validating whether real merchants keep using the product and whether the weekly snapshot plus chat workflow solves repeated store questions.
+- The current product logic is ahead of the product experience; the UX now needs to match the real workflow of asking, inspecting, and verifying.
+- If we push private beta before fixing the interaction model, feedback will mix product value with avoidable UX friction.
+- Mobile-first changes the architecture: the app should be chat-first on phone, with expandable report details, while desktop can add a persistent analysis canvas.
 
 What to add:
 
-- [ ] Connect 2–3 real stores.
-- [ ] Track the questions merchants ask.
-- [ ] Track unsupported questions.
-- [ ] Fix only repeated problems.
-- [ ] Ask whether merchants would pay for weekly AI reports/chat.
+- [ ] Define the canonical mobile answer card.
+- [ ] Define the mobile analysis detail screen / bottom sheet.
+- [ ] Define the desktop chat + analysis canvas layout.
+- [ ] Define the trust layer interaction model for both breakpoints.
+- [ ] Define quick actions: pin, export, copy for WhatsApp/Slack, follow-up prompts.
+- [ ] Remove or gate raw debug evidence from the primary production UI.
+- [ ] After rebuild, move to private beta with 2–3 real stores.
 
 ## Product goal
 
@@ -73,6 +87,12 @@ Positioning:
 > Ask your Tiendanube what happened, what changed, and what to do next.
 
 Important: this is **not** just a dashboard. The main difference is the **AI chat analyst**. The dashboard exists only so the user can manually verify the data.
+
+UX clarification after June 2026 research:
+
+- Mobile-first base pattern: **chat feed + expandable report cards + detail view/sheet**
+- Desktop adaptation: **chat + analysis canvas + trust layer**
+- Product model: **Chat = ask**, **Canvas/detail view = inspect**, **Trust layer = verify**, **Dashboard = save/monitor**
 
 ---
 
@@ -859,6 +879,65 @@ export async function POST(req: Request) {
 - [ ] Add a fallback when Groq fails.
 - [ ] Do not send customer emails/phones to AI.
 
+### 11.7 UX architecture rules (mobile + desktop)
+
+Core rule:
+
+- [ ] Treat the AI experience as **conversational analytics**, not as a plain chatbot and not as a dashboard-first BI clone.
+
+Mobile-first interaction model:
+
+- [ ] Main screen is the chat feed.
+- [ ] Each assistant answer is a compact report card, not a giant fully expanded analytics block.
+- [ ] Report cards should include:
+  - [ ] short summary
+  - [ ] KPI strip
+  - [ ] mini chart or table preview
+  - [ ] quick follow-up actions
+  - [ ] CTA to open full analysis
+- [ ] Tapping a card opens a dedicated detail screen or bottom sheet with:
+  - [ ] full chart
+  - [ ] full table
+  - [ ] trust layer
+  - [ ] share/export/pin actions
+- [ ] Do not render full-width dense tables inline in the mobile feed by default.
+
+Desktop adaptation:
+
+- [ ] Keep chat on the left as the primary workflow.
+- [ ] Show the selected answer in an analysis canvas on the right.
+- [ ] Keep conversation history visible while the current report stays stable on screen.
+- [ ] Allow desktop users to inspect trust details without losing chat context.
+
+Trust layer rules:
+
+- [ ] Default to friendly business explanations first.
+- [ ] Put raw rows, source metadata, query logic, and debug evidence behind collapsible sections/tabs.
+- [ ] Always show source, date range, filters, and last sync status near the answer.
+- [ ] If a question is out of scope, fail clearly and suggest one supported next question.
+
+Quick actions:
+
+- [ ] Pin report to dashboard.
+- [ ] Export CSV / image.
+- [ ] Copy formatted summary for WhatsApp/Slack.
+- [ ] Ask suggested follow-up questions.
+- [ ] Save reusable report/prompt later if beta users ask for it.
+
+Suggested shadcn/ui building blocks to prioritize:
+
+- [ ] `Card`
+- [ ] `Tabs`
+- [ ] `Table`
+- [ ] `Badge`
+- [ ] `Skeleton`
+- [ ] `Dialog`
+- [ ] `Sheet`
+- [ ] `DropdownMenu`
+- [ ] `Collapsible`
+- [ ] `Tooltip`
+- [ ] shadcn `Chart` components with Recharts
+
 ---
 
 ## 12. Build phases with concrete tasks
@@ -978,7 +1057,24 @@ Done when:
 
 - [x] Store owner gets a useful weekly report inside the app.
 
-### Phase 8 — Private beta
+### Phase 8 — UI/UX rebuild (mobile-first)
+
+- [ ] Redesign chat answers into compact report cards.
+- [ ] Build mobile-first chat feed spacing, hierarchy, and input UX.
+- [ ] Build mobile analysis detail view / bottom sheet.
+- [ ] Build desktop chat + analysis canvas adaptation.
+- [ ] Add trust layer tabs/collapsibles for source, rows, and query logic.
+- [ ] Add quick actions: pin, export, copy summary, follow-up prompts.
+- [ ] Hide or feature-flag local debug/evidence panels from the default production UI.
+- [ ] Validate the rebuilt UX on both phone-sized and laptop-sized layouts.
+
+Done when:
+
+- [ ] A merchant can ask a question on mobile, understand the answer quickly, and drill into trust details without getting lost in the feed.
+- [ ] A merchant can continue the same workflow on desktop with a stable analysis canvas.
+- [ ] The dashboard clearly acts as a trust layer / pinned insights surface, not as the primary workflow.
+
+### Phase 9 — Private beta
 
 - [ ] Connect 2–3 real stores.
 - [ ] Track questions users ask.
@@ -1015,6 +1111,8 @@ Do not build these in MVP unless necessary.
 - [x] MVP is read-only.
 - [x] Chat is the main product difference.
 - [x] Dashboard is support/trust layer.
+- [x] Mobile-first UX should be chat-first, with expandable report cards and a separate analysis detail view.
+- [x] Desktop UX should adapt by adding an analysis canvas, not by replacing chat with a dashboard.
 - [x] Metrics come from SQL/backend functions.
 - [x] AI explains and recommends; it does not invent/calculate raw metrics.
 - [x] Start with Tiendanube only.
@@ -1034,6 +1132,11 @@ Do not build these in MVP unless necessary.
 - shadcn/ui charts are built with Recharts.
 - Vercel AI SDK supports Groq through `@ai-sdk/groq` and streaming text generation.
 - Groq exposes an OpenAI-compatible Chat Completions API, supports tools/function calling, uses `GROQ_API_KEY`, and documents structured-output limitations with tool use/streaming.
+- Defog presents analytics results through table/chart/SQL views instead of raw chat-only prose.
+- Veezoo emphasizes follow-up questions, smart suggestions, dashboard generation, and share/export flows around conversational analytics.
+- Polar positions AI outputs as editable custom reports grounded in a semantic layer and explicitly prefers error-over-guessing when requests fall outside the governed model.
+- Whaly separates single-question reports from dashboards and exposes visualization/data/SQL tabs for trust and inspection.
+- AMP/Lifetimely positions AI insights and recommendations as actionable cards with review/approve/chat flows, reinforcing the report-card pattern over long freeform chat blocks.
 
 Sources:
 
@@ -1054,3 +1157,21 @@ Sources:
 - https://console.groq.com/docs/quickstart
 - https://console.groq.com/docs/api-reference
 - https://console.groq.com/docs/structured-outputs
+- https://docs.defog.ai/query-data
+- https://www.veezoo.com/product/agentic-analytics
+- https://www.veezoo.com/product/dashboards
+- https://www.veezoo.com/product/collaboration
+- https://docs.veezoo.com/api/beta/questions/ask-question/
+- https://veezoo.com/search-and-visualize/
+- https://www.polaranalytics.com/ask-polar
+- https://intercom.help/polar-app/en/articles/13017453-ask-polar-2-0
+- https://www.polaranalytics.com/post/introducing-ask-polar-the-future-of-data-analysis-for-ecommerce
+- https://www.polaranalytics.com/post/ai-analytics-agents-semantic-layer-shopify
+- https://www.polaranalytics.com/slack-ai-agent-for-ecommerce
+- https://www.polaranalytics.com/post/query-polar-analytics-from-slack-with-claude
+- https://docs.whaly.io/data-consumption/questions
+- https://docs.whaly.io/workspace/sharing-and-collaboration
+- https://useamp.com/products/analytics
+- https://help.useamp.com/article/1244-cortex-ai-setup-and-user-guide
+- https://help.useamp.com/article/1364-lifetimely-connect-lifetimely-to-chatgpt
+- https://beprofit.co/
