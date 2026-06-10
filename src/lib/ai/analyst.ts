@@ -120,6 +120,8 @@ export type AnalystResponse = {
   toolResults: AnalystToolResult[];
 };
 
+import { formatCurrency, formatPercent } from "@/lib/formatting";
+
 function summarizeForLog(value: unknown) {
   if (value == null) {
     return value;
@@ -179,23 +181,8 @@ function getLatestUserMessage(messages: ChatMessage[]) {
   return latestUserMessage.content.trim();
 }
 
-function formatCurrency(value: number, currency: string | null) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-    style: "currency",
-  }).format(value);
-}
 
-function formatPercent(value: number | null) {
-  if (value == null) {
-    return "no disponible";
-  }
 
-  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
-  return `${sign}${Math.abs(value).toFixed(1)}%`;
-}
 
 function describePeriodChange(metricLabel: string, currentLabel: string, previousLabel: string, percentageChange: number | null) {
   if (percentageChange == null) {
@@ -471,10 +458,10 @@ function normalizeToolResults(toolResults: unknown) {
 function extractAllToolResults(result: { steps?: unknown; toolResults?: unknown }) {
   const stepToolResults = Array.isArray(result.steps)
     ? result.steps.flatMap((step) =>
-        normalizeToolResults(
-          step && typeof step === "object" ? (step as { toolResults?: unknown }).toolResults : [],
-        ),
-      )
+      normalizeToolResults(
+        step && typeof step === "object" ? (step as { toolResults?: unknown }).toolResults : [],
+      ),
+    )
     : [];
 
   if (stepToolResults.length > 0) {
@@ -557,12 +544,12 @@ function buildTopProductsResponse(_answer: string, output: TopProductsOutput, to
   return {
     answer: topProduct
       ? [
-          `Productos top de los últimos ${window.days} días:`,
-          `${topProduct.name} lidera con ${formatCurrency(topProduct.revenue, summary.currency)} a partir de ${topProduct.unitsSold} unidades en ${topProduct.orderCount} pedidos.`,
-          products.length === 1
-            ? "Dejé en la evidencia el producto principal para esta respuesta."
-            : `Dejé en la evidencia los ${products.length} productos principales para esta respuesta.`,
-        ].join(" ")
+        `Productos top de los últimos ${window.days} días:`,
+        `${topProduct.name} lidera con ${formatCurrency(topProduct.revenue, summary.currency)} a partir de ${topProduct.unitsSold} unidades en ${topProduct.orderCount} pedidos.`,
+        products.length === 1
+          ? "Dejé en la evidencia el producto principal para esta respuesta."
+          : `Dejé en la evidencia los ${products.length} productos principales para esta respuesta.`,
+      ].join(" ")
       : `No encontré ventas de productos en los últimos ${window.days} días.`,
     confidence: products.length > 0 ? "high" : "medium",
     evidence: products.slice(0, Math.min(products.length, 3)).map((product, index) => ({
@@ -573,9 +560,9 @@ function buildTopProductsResponse(_answer: string, output: TopProductsOutput, to
     recommendedActions:
       products.length > 0
         ? [
-            "Revisá si tus productos más vendidos tienen stock suficiente para sostener la demanda.",
-            "Usá la lista de productos top para definir promos o bundles.",
-          ]
+          "Revisá si tus productos más vendidos tienen stock suficiente para sostener la demanda.",
+          "Usá la lista de productos top para definir promos o bundles.",
+        ]
         : ["Corré una revisión de sync y confirmá que hubo pedidos completados en la ventana elegida."],
     toolResults,
   };
@@ -599,8 +586,7 @@ function buildWeeklySnapshotResponse(_answer: string, output: WeeklySnapshotOutp
       { metric: "Facturación", period: output.window.label, value: formatCurrency(output.summary.summary.revenue, currency) },
       { metric: "Pedidos", period: output.window.label, value: output.summary.summary.orderCount },
       { metric: "Unidades vendidas", period: output.window.label, value: output.summary.summary.unitsSold },
-      { metric: "Facturación vs semana anterior", period: output.window.label, value: formatPercent(output.comparison.comparison.revenue.percentageChange) },
-      ...(topProduct
+      { metric: "Facturación vs semana anterior", period: output.window.label, value: formatPercent(output.comparison.comparison.revenue.percentageChange ?? 0) }, ...(topProduct
         ? [{ metric: `Producto top: ${topProduct.name}`, period: output.window.label, value: formatCurrency(topProduct.revenue, currency) }]
         : []),
     ],
@@ -622,10 +608,10 @@ function buildLowStockResponse(_answer: string, output: LowStockOutput, toolResu
   return {
     answer: topRisk
       ? [
-          `Oportunidades de stock bajo: ${outOfStockItems.length} variante${outOfStockItems.length === 1 ? " ya está" : "s ya están"} sin stock${atRiskItems.length > 0 ? ` y ${atRiskItems.length} variante${atRiskItems.length === 1 ? " está" : "s están"} en riesgo por debajo de ${stockThreshold} unidades` : ""}.`,
-          `${topRisk.name} - ${getVariantDescriptor(topRisk.raw)} ${topRisk.stock <= 0 ? "ya está en 0 unidades" : `tiene ${topRisk.stock} unidades disponibles`} y vendió ${topRisk.recentUnitsSold} unidades en los últimos ${recentDays} días.`,
-          `Dejé en la evidencia los ${output.opportunities.length} productos con mayor riesgo de stock.`,
-        ].join(" ")
+        `Oportunidades de stock bajo: ${outOfStockItems.length} variante${outOfStockItems.length === 1 ? " ya está" : "s ya están"} sin stock${atRiskItems.length > 0 ? ` y ${atRiskItems.length} variante${atRiskItems.length === 1 ? " está" : "s están"} en riesgo por debajo de ${stockThreshold} unidades` : ""}.`,
+        `${topRisk.name} - ${getVariantDescriptor(topRisk.raw)} ${topRisk.stock <= 0 ? "ya está en 0 unidades" : `tiene ${topRisk.stock} unidades disponibles`} y vendió ${topRisk.recentUnitsSold} unidades en los últimos ${recentDays} días.`,
+        `Dejé en la evidencia los ${output.opportunities.length} productos con mayor riesgo de stock.`,
+      ].join(" ")
       : `No encontré oportunidades de stock bajo por debajo de ${stockThreshold} unidades en los últimos ${recentDays} días.`,
     confidence: output.opportunities.length > 0 ? "high" : "medium",
     evidence: output.opportunities.slice(0, Math.min(output.opportunities.length, 3)).map((item) => ({
@@ -636,9 +622,9 @@ function buildLowStockResponse(_answer: string, output: LowStockOutput, toolResu
     recommendedActions:
       output.opportunities.length > 0
         ? [
-            "Reponé primero las variantes que ya se quedaron sin stock.",
-            "Revisá la demanda de las variantes en riesgo antes de correr más promociones.",
-          ]
+          "Reponé primero las variantes que ya se quedaron sin stock.",
+          "Revisá la demanda de las variantes en riesgo antes de correr más promociones.",
+        ]
         : ["Probá con un umbral de stock más alto o una ventana de ventas más larga si esperás encontrar más riesgo."],
     toolResults,
   };
@@ -730,13 +716,13 @@ export async function generateAnalystResponse(
           ...(event.success
             ? { output: summarizeForLog(event.output) }
             : {
-                error:
-                  event.error instanceof Error
-                    ? event.error.message
-                    : typeof event.error === "string"
-                      ? event.error
-                      : "Unknown tool error",
-              }),
+              error:
+                event.error instanceof Error
+                  ? event.error.message
+                  : typeof event.error === "string"
+                    ? event.error
+                    : "Unknown tool error",
+            }),
         });
       },
       experimental_onToolCallStart: (event) => {

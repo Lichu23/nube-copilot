@@ -1,23 +1,8 @@
 import type { ComparePeriodsResult, SalesSummary, TopProductRow } from "@/lib/db/queries/metrics";
 
-function formatCurrency(value: number, currency: string | null) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-    style: "currency",
-  }).format(value);
-}
 
-function formatPercent(value: number | null) {
-  if (value == null) {
-    return "no disponible";
-  }
 
-  const rounded = Math.abs(value).toFixed(1);
-  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
-  return `${sign}${rounded}%`;
-}
+import { formatCurrency, formatPercent } from "@/lib/formatting";
 
 type WeeklySnapshotCardInput = {
   comparison: ComparePeriodsResult | null;
@@ -38,7 +23,8 @@ export function buildWeeklySnapshotCardContent(input: WeeklySnapshotCardInput): 
     return null;
   }
 
-  const revenueDelta = formatPercent(input.comparison?.revenue.percentageChange ?? null);
+  const revenueDelta = formatPercent(input.comparison?.revenue.percentageChange ?? 0);
+
   const currency = input.metrics.currency;
   const topProductLine = input.topProduct
     ? `${input.topProduct.name} lidera con ${formatCurrency(input.topProduct.revenue, currency)} en ventas.`
@@ -64,15 +50,17 @@ export function buildWeeklySnapshotCardContent(input: WeeklySnapshotCardInput): 
         value:
           input.comparison?.revenue.percentageChange == null
             ? "No disponible"
-            : formatPercent(input.comparison.revenue.percentageChange),
+            : formatPercent(input.comparison.revenue.percentageChange ?? 0),
+
+
       },
       ...(input.topProduct
         ? [
           {
-              label: "Producto top (7d)",
-              value: input.topProduct.name,
-            },
-          ]
+            label: "Producto top (7d)",
+            value: input.topProduct.name,
+          },
+        ]
         : []),
     ],
     shareText: summary,

@@ -1,6 +1,5 @@
 "use client";
 
-import { formatDistanceToNowStrict } from "date-fns";
 import {
   ArrowUp,
   ChartColumn,
@@ -14,51 +13,15 @@ import {
   Store,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AnalystResponse } from "@/lib/ai/analyst";
-import type { ChatMessage } from "@/lib/ai/schemas";
 
-type ToolResult = {
-  input: unknown;
-  output: unknown;
-  toolCallId: string;
-  toolName: string;
-};
+import type { AnalystResponse, CanvasModel, ChartDatum, ChartModel, ChatMessage, ToolResult, } from "@/lib/types";
 
-type MetricItem = {
-  helper?: string;
-  label: string;
-  value: string;
-};
-
-type ChartDatum = {
-  current: number;
-  label: string;
-  previous?: number;
-};
-
-type ChartModel = {
-  currentLabel?: string;
-  data: ChartDatum[];
-  previousLabel?: string;
-};
-
-type TableModel = {
-  columns: string[];
-  rows: string[][];
-};
-
-type CanvasModel = {
-  chart: ChartModel | null;
-  filters: string[];
-  metrics: MetricItem[];
-  source: string;
-  summary: string;
-  summaryPoints: string[];
-  table: TableModel | null;
-  title: string;
-  userQuestion: string;
-  windowLabel: string;
-};
+import {
+  formatCurrency,
+  formatDateRange,
+  formatScalar
+} from "@/lib/formatting";
+import { asNumber, asRecord } from "@/lib/type-guards";
 
 type ChatPanelProps = {
   hasConnection: boolean;
@@ -88,82 +51,6 @@ const emptyStatePrompts = [
 const showDebugEvidence =
   process.env.NEXT_PUBLIC_SHOW_CHAT_DEBUG_EVIDENCE === "true" || process.env.NODE_ENV !== "production";
 
-function asRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
-}
-
-function asNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function formatCurrency(value: number, currency: string | null | undefined) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
-
-function formatDateLabel(value: string) {
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(parsed);
-}
-
-function formatDateRange(start?: string | null, end?: string | null) {
-  if (!start && !end) {
-    return "Ventana sincronizada actual";
-  }
-
-  if (start && end) {
-    return `${formatDateLabel(start)} – ${formatDateLabel(end)}`;
-  }
-
-  return start ? formatDateLabel(start) : formatDateLabel(end ?? "");
-}
-
-function formatScalar(value: unknown) {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (typeof value === "number") {
-    return Number.isInteger(value) ? value.toLocaleString("es-AR") : value.toFixed(1);
-  }
-
-  if (typeof value === "boolean") {
-    return value ? "Sí" : "No";
-  }
-
-  if (value == null) {
-    return "—";
-  }
-
-  return JSON.stringify(value);
-}
-
-function getLastSyncLabel(lastSyncAt: string | null) {
-  if (!lastSyncAt) {
-    return "Todavía no sincronizado";
-  }
-
-  const date = new Date(lastSyncAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Sincronizado recién";
-  }
-
-  return `Sincronizado ${formatDistanceToNowStrict(date, { addSuffix: true })}`;
-}
-
 function getPrimaryToolResult(toolResults: ToolResult[]) {
   return toolResults[toolResults.length - 1] ?? null;
 }
@@ -173,6 +60,16 @@ function normalizeIntentText(value: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getLastSyncLabel(lastSyncAt: string | null): string {
+  if (!lastSyncAt) return "Todavía no sincronizado";
+  const d = new Date(lastSyncAt);
+  if (Number.isNaN(d.getTime())) return "Sincronizado recientemente";
+  return `Sincronizado ${d.toLocaleString("es-AR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  })}`;
 }
 
 function buildIntentTitle(toolName: string, userQuestion: string, options?: { days?: number; isSkuRisk?: boolean }) {
