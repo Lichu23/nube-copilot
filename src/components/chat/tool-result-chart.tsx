@@ -20,7 +20,7 @@ type ChartModel = {
 };
 
 function formatCurrency(value: number, currency: string | null | undefined) {
-  return new Intl.NumberFormat("en", {
+  return new Intl.NumberFormat("es-AR", {
     currency: currency ?? "USD",
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
@@ -57,9 +57,9 @@ function buildChartModel(item: ToolResult): ChartModel | null {
     const previousRevenue = asNumber(revenue.previous);
     const currency = typeof comparison.currency === "string" ? comparison.currency : null;
     const currentLabel =
-      typeof currentWindow?.label === "string" ? currentWindow.label : "Current period";
+      typeof currentWindow?.label === "string" ? currentWindow.label : "Periodo actual";
     const previousLabel =
-      typeof previousWindow?.label === "string" ? previousWindow.label : "Previous period";
+      typeof previousWindow?.label === "string" ? previousWindow.label : "Periodo anterior";
 
     if (currentRevenue == null || previousRevenue == null) {
       return null;
@@ -70,8 +70,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
         { label: currentLabel, value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
         { label: previousLabel, value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
-      subtitle: "Revenue comparison from real SQL metrics.",
-      title: "Period revenue",
+      subtitle: "Comparacion de facturacion con metricas SQL reales.",
+      title: "Facturacion por periodo",
     };
   }
 
@@ -108,8 +108,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars,
-      subtitle: "Revenue by top-selling products in the selected window.",
-      title: "Top product revenue",
+      subtitle: "Facturacion de los productos mas vendidos en la ventana elegida.",
+      title: "Facturacion de productos top",
     };
   }
 
@@ -132,7 +132,7 @@ function buildChartModel(item: ToolResult): ChartModel | null {
         return {
           label: record.name,
           value: recentUnitsSold,
-          valueLabel: `${recentUnitsSold} sold recently`,
+          valueLabel: `${recentUnitsSold} vendidas recientemente`,
         };
       })
       .filter((bar): bar is ChartBar => Boolean(bar));
@@ -143,8 +143,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars,
-      subtitle: "Recent units sold for the variants currently flagged as low stock.",
-      title: "Low-stock demand",
+      subtitle: "Unidades vendidas recientemente para variantes marcadas con stock bajo.",
+      title: "Demanda con stock bajo",
     };
   }
 
@@ -168,12 +168,12 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars: [
-        { label: "Revenue", value: revenue, valueLabel: formatCurrency(revenue, currency) },
-        { label: "Orders", value: orders, valueLabel: `${orders} orders` },
-        { label: "Units sold", value: unitsSold, valueLabel: `${unitsSold} units` },
+        { label: "Facturacion", value: revenue, valueLabel: formatCurrency(revenue, currency) },
+        { label: "Pedidos", value: orders, valueLabel: `${orders} pedidos` },
+        { label: "Unidades vendidas", value: unitsSold, valueLabel: `${unitsSold} unidades` },
       ],
-      subtitle: days ? `Summary for the last ${days} days.` : "Summary for the selected window.",
-      title: "Sales summary",
+      subtitle: days ? `Resumen de los ultimos ${days} dias.` : "Resumen de la ventana elegida.",
+      title: "Resumen de ventas",
     };
   }
 
@@ -194,11 +194,11 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars: [
-        { label: "Last 7 days", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
-        { label: "Previous 7 days", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
+        { label: "Ultimos 7 dias", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
+        { label: "7 dias anteriores", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
-      subtitle: "Revenue trend used by the weekly snapshot.",
-      title: "Weekly revenue trend",
+      subtitle: "Tendencia de facturacion usada por el resumen semanal.",
+      title: "Tendencia semanal de facturacion",
     };
   }
 

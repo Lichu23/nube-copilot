@@ -53,7 +53,7 @@ export function InsightCard({ title, body, chatHref, evidence = [], shareText }:
               onClick={handleCopy}
               className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
             >
-              {copyState === "done" ? "Copied summary" : copyState === "error" ? "Copy failed" : "Copy summary"}
+              {copyState === "done" ? "Resumen copiado" : copyState === "error" ? "Fallo al copiar" : "Copiar resumen"}
             </button>
           ) : null}
 
@@ -62,7 +62,7 @@ export function InsightCard({ title, body, chatHref, evidence = [], shareText }:
               href={chatHref}
               className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:text-zinc-950"
             >
-              Ask AI about this week
+              Preguntarle a la IA por esta semana
             </Link>
           ) : null}
         </div>
