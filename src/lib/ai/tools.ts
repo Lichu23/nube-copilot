@@ -11,8 +11,15 @@ export const aiToolNames = [
   "get_low_stock_opportunities",
 ] as const;
 
+const numericIntegerSchema = (min: number, max: number) =>
+  z.union([z.number().int().min(min).max(max), z.string().regex(/^\d+$/)]);
+
+function toInteger(value: number | string | undefined, fallback: number) {
+  return typeof value === "string" ? Number(value) : (value ?? fallback);
+}
+
 const dateWindowSchema = z.object({
-  days: z.coerce.number().int().min(1).max(90).default(7).describe("How many trailing days to analyze."),
+  days: numericIntegerSchema(1, 90).default(7).describe("How many trailing days to analyze."),
   endDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -22,14 +29,16 @@ const dateWindowSchema = z.object({
 
 function resolveDateWindow(input: z.infer<typeof dateWindowSchema>) {
   const endDate = input.endDate ? new Date(`${input.endDate}T23:59:59.999Z`) : new Date();
+  const days = toInteger(input.days, 7);
 
   if (Number.isNaN(endDate.getTime())) {
     throw new Error("Invalid endDate. Use YYYY-MM-DD.");
   }
 
-  const startDate = new Date(endDate.getTime() - input.days * 24 * 60 * 60 * 1000);
+  const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
 
   return {
+    days,
     endDate,
     startDate,
   };
@@ -47,9 +56,9 @@ async function requireActiveStoreId() {
 
 export async function executeComparePeriodsTool(input: z.infer<typeof dateWindowSchema>) {
   const storeId = await requireActiveStoreId();
-  const { endDate, startDate } = resolveDateWindow(input);
+  const { days, endDate, startDate } = resolveDateWindow(input);
   const previousEndDate = new Date(startDate.getTime() - 1);
-  const previousStartDate = new Date(previousEndDate.getTime() - input.days * 24 * 60 * 60 * 1000);
+  const previousStartDate = new Date(previousEndDate.getTime() - days * 24 * 60 * 60 * 1000);
 
   const comparison = await comparePeriods({
     currentEnd: endDate,
@@ -63,12 +72,12 @@ export async function executeComparePeriodsTool(input: z.infer<typeof dateWindow
     comparison,
     currentWindow: {
       endDate: endDate.toISOString().slice(0, 10),
-      label: `Ultimos ${input.days} dia${input.days === 1 ? "" : "s"}`,
+      label: `Ultimos ${days} dia${days === 1 ? "" : "s"}`,
       startDate: startDate.toISOString().slice(0, 10),
     },
     previousWindow: {
       endDate: previousEndDate.toISOString().slice(0, 10),
-      label: `Periodo anterior (${input.days} dia${input.days === 1 ? "" : "s"})`,
+      label: `Periodo anterior (${days} dia${days === 1 ? "" : "s"})`,
       startDate: previousStartDate.toISOString().slice(0, 10),
     },
   };
@@ -76,7 +85,7 @@ export async function executeComparePeriodsTool(input: z.infer<typeof dateWindow
 
 export async function executeSalesSummaryTool(input: z.infer<typeof dateWindowSchema>) {
   const storeId = await requireActiveStoreId();
-  const { endDate, startDate } = resolveDateWindow(input);
+  const { days, endDate, startDate } = resolveDateWindow(input);
   const summary = await getSalesSummary({
     endDate,
     startDate,
@@ -86,19 +95,20 @@ export async function executeSalesSummaryTool(input: z.infer<typeof dateWindowSc
   return {
     summary,
     window: {
-      days: input.days,
+      days,
       endDate: endDate.toISOString().slice(0, 10),
       startDate: startDate.toISOString().slice(0, 10),
     },
   };
 }
 
-export async function executeTopProductsTool(input: z.infer<typeof dateWindowSchema> & { limit?: number }) {
+export async function executeTopProductsTool(input: z.infer<typeof dateWindowSchema> & { limit?: number | string }) {
   const storeId = await requireActiveStoreId();
-  const { endDate, startDate } = resolveDateWindow(input);
+  const { days, endDate, startDate } = resolveDateWindow(input);
+  const limit = toInteger(input.limit, 5);
   const products = await getTopProducts({
     endDate,
-    limit: input.limit ?? 5,
+    limit,
     startDate,
     storeId,
   });
@@ -115,9 +125,9 @@ export async function executeTopProductsTool(input: z.infer<typeof dateWindowSch
       revenue: summary.revenue,
     },
     window: {
-      days: input.days,
+      days,
       endDate: endDate.toISOString().slice(0, 10),
-      limit: input.limit ?? 5,
+      limit,
       startDate: startDate.toISOString().slice(0, 10),
     },
   };
@@ -143,14 +153,14 @@ export async function executeWeeklyBusinessSnapshotTool() {
 }
 
 export async function executeLowStockOpportunitiesTool(input: {
-  limit?: number;
-  recentDays?: number;
-  stockThreshold?: number;
+  limit?: number | string;
+  recentDays?: number | string;
+  stockThreshold?: number | string;
 }) {
   const storeId = await requireActiveStoreId();
-  const limit = input.limit ?? 5;
-  const recentDays = input.recentDays ?? 30;
-  const stockThreshold = input.stockThreshold ?? 5;
+  const limit = toInteger(input.limit, 5);
+  const recentDays = toInteger(input.recentDays, 30);
+  const stockThreshold = toInteger(input.stockThreshold, 5);
   const opportunities = await getLowStockOpportunities({
     limit,
     recentDays,
@@ -185,7 +195,7 @@ export function buildAiTools() {
     get_top_products: tool({
       description: "Get top products by revenue for a trailing date window.",
       inputSchema: dateWindowSchema.extend({
-        limit: z.coerce.number().int().min(1).max(10).default(5).optional(),
+        limit: numericIntegerSchema(1, 10).default(5).optional(),
       }),
       execute: executeTopProductsTool,
     }),
@@ -197,9 +207,9 @@ export function buildAiTools() {
     get_low_stock_opportunities: tool({
       description: "Get products that have low stock and recent selling activity.",
       inputSchema: z.object({
-        limit: z.coerce.number().int().min(1).max(10).default(5).optional(),
-        recentDays: z.coerce.number().int().min(1).max(90).default(30).optional(),
-        stockThreshold: z.coerce.number().int().min(0).max(20).default(5).optional(),
+        limit: numericIntegerSchema(1, 10).default(5).optional(),
+        recentDays: numericIntegerSchema(1, 90).default(30).optional(),
+        stockThreshold: numericIntegerSchema(0, 20).default(5).optional(),
       }),
       execute: executeLowStockOpportunitiesTool,
     }),
