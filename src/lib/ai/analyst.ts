@@ -531,7 +531,7 @@ function buildSalesSummaryResponse(_answer: string, output: SalesSummaryOutput, 
     ],
     recommendedActions: [
       "Seguí si el resultado viene más por volumen de pedidos o por ticket promedio.",
-      "Compará este resumen contra el per?odo anterior para tener contexto de tendencia.",
+      "Compará este resumen contra el período anterior para tener contexto de tendencia.",
     ],
     toolResults,
   };
