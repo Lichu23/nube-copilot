@@ -4,9 +4,11 @@ export {
 } from "./currency";
 
 export {
+  formatDateTimeLabel,
   formatDateLabel,
   formatDateRange,
   formatLastSyncLabel,
+  formatShortDateLabel,
 } from "./date";
 
 export {

@@ -1,19 +1,9 @@
 import type { SalesTrendPoint } from "@/lib/db/queries/metrics";
+import { formatShortDateLabel } from "@/lib/formatting";
 
 type SalesTrendChartProps = {
   data: SalesTrendPoint[];
 };
-
-function formatDayLabel(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("es-AR", {
-        day: "numeric",
-        month: "short",
-      }).format(date);
-}
 
 export function SalesTrendChart({ data }: SalesTrendChartProps) {
   const maxRevenue = data.reduce((highest, point) => Math.max(highest, point.revenue), 0);
@@ -39,7 +29,7 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
                     title={`${point.revenue.toFixed(2)} de facturacion en ${point.orderCount} pedidos`}
                   />
                   <div className="text-center text-xs text-zinc-500">
-                    <div>{formatDayLabel(point.day)}</div>
+                    <div>{formatShortDateLabel(point.day)}</div>
                     <div>{point.orderCount} pedidos</div>
                   </div>
                 </div>
