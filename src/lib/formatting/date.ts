@@ -18,6 +18,42 @@ export function formatDateLabel(value: string): string {
 }
 
 /**
+ * Format a date string (YYYY-MM-DD) to a compact Argentine Spanish label.
+ */
+export function formatShortDateLabel(value: string): string {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "short",
+  }).format(parsed);
+}
+
+/**
+ * Format an ISO timestamp to Argentine Spanish date/time.
+ */
+export function formatDateTimeLabel(value: string | null): string {
+  if (!value) {
+    return "Todavia no sincronizado";
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(parsed);
+}
+
+/**
  * Format a date range (start and end dates)
  */
 export function formatDateRange(

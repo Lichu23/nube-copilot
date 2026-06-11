@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { formatDateTimeLabel } from "@/lib/formatting";
 
 type SyncControlProps = {
   autoRun?: boolean;
@@ -19,17 +20,6 @@ type SyncResponse = {
   message?: string;
   ok?: boolean;
 };
-
-function formatTimestamp(value: string | null) {
-  if (!value) {
-    return "Todavia no sincronizado";
-  }
-
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export function SyncControl({
   autoRun = false,
@@ -133,7 +123,7 @@ export function SyncControl({
             </p>
             <p>
               Ultima sincronizacion completada:{" "}
-              <span className="font-medium text-zinc-950">{formatTimestamp(lastSyncFinishedAt)}</span>
+              <span className="font-medium text-zinc-950">{formatDateTimeLabel(lastSyncFinishedAt)}</span>
             </p>
           </div>
         </div>

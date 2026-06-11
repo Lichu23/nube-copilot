@@ -1,19 +1,11 @@
 import type { TopProductRow } from "@/lib/db/queries/metrics";
+import { formatCurrency } from "@/lib/formatting";
 
 type TopProductsTableProps = {
   currency: string | null;
   helperLabel?: string;
   rows: TopProductRow[];
 };
-
-function formatRevenue(value: number, currency: string | null) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-    style: "currency",
-  }).format(value);
-}
 
 export function TopProductsTable({
   currency,
@@ -45,7 +37,14 @@ export function TopProductsTable({
               <tr key={row.name}>
                 <td className="px-4 py-3">{row.name}</td>
                 <td className="px-4 py-3">{hasRows ? row.unitsSold : "-"}</td>
-                <td className="px-4 py-3">{hasRows ? formatRevenue(row.revenue, currency) : "-"}</td>
+                <td className="px-4 py-3">
+                  {hasRows
+                    ? formatCurrency(row.revenue, currency, {
+                        maxFractionDigits: 2,
+                        minFractionDigits: 2,
+                      })
+                    : "-"}
+                </td>
               </tr>
             ))}
           </tbody>
