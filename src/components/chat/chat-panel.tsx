@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUp, LayoutGrid, Settings2, Sparkles, Store } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildCanvasModel } from "@/lib/ai/canvas-builders";
@@ -179,9 +180,14 @@ export function ChatPanel({
           </div>
 
           <div className="flex items-center gap-2 text-foreground">
-            <button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted">
+            <Link
+              href="/dashboard"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted"
+              aria-label="Open dashboard"
+              title="Open dashboard"
+            >
               <LayoutGrid className="h-4.5 w-4.5" />
-            </button>
+            </Link>
             <button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted">
               <Settings2 className="h-4.5 w-4.5" />
             </button>

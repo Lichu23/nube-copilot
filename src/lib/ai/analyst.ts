@@ -338,7 +338,10 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
 }
 
 function getIntentToolSelection(latestUserMessage: string) {
-  const normalized = latestUserMessage.toLowerCase();
+  const normalized = latestUserMessage
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
   if (
     normalized.includes("low stock") ||
@@ -351,7 +354,6 @@ function getIntentToolSelection(latestUserMessage: string) {
     normalized.includes("qued") ||
     normalized.includes("sin stock") ||
     normalized.includes("reponer") ||
-    normalized.includes("reposición") ||
     normalized.includes("reposicion")
   ) {
     return {
@@ -361,13 +363,11 @@ function getIntentToolSelection(latestUserMessage: string) {
   }
 
   if (
-    normalized.includes("qué producto vendió más") ||
     normalized.includes("que producto vendio mas") ||
     normalized.includes("producto top") ||
     normalized.includes("top product") ||
     normalized.includes("top products") ||
     normalized.includes("productos top") ||
-    normalized.includes("productos más vendidos") ||
     normalized.includes("productos mas vendidos") ||
     normalized.includes("mejores productos")
   ) {
@@ -398,8 +398,13 @@ function getIntentToolSelection(latestUserMessage: string) {
     normalized.includes("how did i do this week") ||
     normalized.includes("resumen semanal") ||
     normalized.includes("esta semana") ||
-    normalized.includes("qué cambió esta semana") ||
-    normalized.includes("que cambio esta semana")
+    normalized.includes("ultima semana") ||
+    normalized.includes("ultimos 7 dias") ||
+    normalized.includes("performance semanal") ||
+    normalized.includes("performance de la semana") ||
+    normalized.includes("performance de ultima semana") ||
+    normalized.includes("que cambio esta semana") ||
+    normalized.includes("que paso esta semana")
   ) {
     return {
       activeTools: ["get_weekly_business_snapshot"] as const,

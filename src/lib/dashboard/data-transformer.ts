@@ -1,0 +1,181 @@
+﻿import { comparePeriods, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
+import { buildWeeklySnapshotCardContent } from "@/lib/weekly-snapshot";
+import {
+  compareWindowConfig,
+  DEFAULT_COMPARE_WINDOW,
+  TOP_PRODUCTS_LIMIT,
+  WEEKLY_SNAPSHOT_DAYS,
+  WEEKLY_TOP_PRODUCTS_LIMIT,
+  type CompareWindowKey,
+} from "./config";
+
+type DashboardSyncSummary = Awaited<ReturnType<typeof import("@/lib/db/client").getDashboardSyncSummary>>;
+
+export function getCompareWindow(value: string | string[] | undefined): CompareWindowKey {
+  if (typeof value !== "string") {
+    return DEFAULT_COMPARE_WINDOW;
+  }
+
+  return value in compareWindowConfig ? (value as CompareWindowKey) : DEFAULT_COMPARE_WINDOW;
+}
+
+export function parseAsOfDate(value: string | string[] | undefined) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const parsed = new Date(`${value}T23:59:59.999Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function formatAsOfInputValue(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+export function buildDashboardHref(compareWindow: CompareWindowKey, asOf: string | null) {
+  const searchParams = new URLSearchParams({ compareWindow });
+
+  if (asOf) {
+    searchParams.set("asOf", asOf);
+  }
+
+  return `/dashboard?${searchParams.toString()}`;
+}
+
+export function buildDashboardDateWindows(input: { compareWindow: CompareWindowKey; endDate: Date }) {
+  const windowConfig = compareWindowConfig[input.compareWindow];
+  const startDate = new Date(input.endDate.getTime() - windowConfig.days * 24 * 60 * 60 * 1000);
+  const previousEndDate = new Date(startDate.getTime() - 1);
+  const previousStartDate = new Date(previousEndDate.getTime() - windowConfig.days * 24 * 60 * 60 * 1000);
+  const weeklyStartDate = new Date(input.endDate.getTime() - WEEKLY_SNAPSHOT_DAYS * 24 * 60 * 60 * 1000);
+  const weeklyPreviousEndDate = new Date(weeklyStartDate.getTime() - 1);
+  const weeklyPreviousStartDate = new Date(
+    weeklyPreviousEndDate.getTime() - WEEKLY_SNAPSHOT_DAYS * 24 * 60 * 60 * 1000,
+  );
+
+  return {
+    previousEndDate,
+    previousStartDate,
+    startDate,
+    weeklyPreviousEndDate,
+    weeklyPreviousStartDate,
+    weeklyStartDate,
+    windowConfig,
+  };
+}
+
+export function getLatestImportedCounts(summary: DashboardSyncSummary) {
+  const metadata =
+    summary.latestSyncJob?.metadata && typeof summary.latestSyncJob.metadata === "object"
+      ? (summary.latestSyncJob.metadata as Record<string, unknown>)
+      : null;
+
+  return {
+    orderCount: metadata && typeof metadata.orderCount === "number" ? metadata.orderCount : summary.orderCount,
+    productCount: metadata && typeof metadata.productCount === "number" ? metadata.productCount : summary.productCount,
+    variantCount: metadata && typeof metadata.variantCount === "number" ? metadata.variantCount : summary.variantCount,
+  };
+}
+
+export function getLatestSyncMessage(summary: DashboardSyncSummary) {
+  const latestSyncStatus = summary.latestSyncJob?.status ?? null;
+  const counts = getLatestImportedCounts(summary);
+
+  if (!summary.connection) {
+    return "Todavia no hay una conexion Tiendanube.";
+  }
+
+  if (latestSyncStatus === "succeeded") {
+    return `La ultima sincronizacion trajo ${counts.productCount} productos, ${counts.variantCount} variantes y ${counts.orderCount} pedidos.`;
+  }
+
+  if (latestSyncStatus === "failed") {
+    return String(summary.latestSyncJob?.errorMessage ?? "La ultima sincronizacion fallo.");
+  }
+
+  return "Listo para correr la primera sincronizacion.";
+}
+
+export async function getDashboardData(input: {
+  compareWindow: CompareWindowKey;
+  endDate: Date;
+  summary: DashboardSyncSummary;
+}) {
+  const windows = buildDashboardDateWindows({ compareWindow: input.compareWindow, endDate: input.endDate });
+  const storeId = input.summary.connection?.storeId;
+
+  if (!storeId) {
+    return {
+      grossProductSales: 0,
+      metrics: null,
+      periodComparison: null,
+      revenueDifference: 0,
+      snapshotCard: null,
+      snapshotChatHref: undefined,
+      topProducts: [],
+      trend: [],
+      weeklySnapshotComparison: null,
+      weeklySnapshotMetrics: null,
+      weeklySnapshotTopProduct: null,
+      windows,
+    };
+  }
+
+  const [metrics, trend, periodComparison, topProducts, weeklySnapshotMetrics, weeklySnapshotComparison, weeklySnapshotTopProducts] =
+    await Promise.all([
+      getSalesSummary({ endDate: input.endDate, startDate: windows.startDate, storeId }),
+      getSalesTrend({ endDate: input.endDate, startDate: windows.startDate, storeId }),
+      comparePeriods({
+        currentEnd: input.endDate,
+        currentStart: windows.startDate,
+        previousEnd: windows.previousEndDate,
+        previousStart: windows.previousStartDate,
+        storeId,
+      }),
+      getTopProducts({ endDate: input.endDate, limit: TOP_PRODUCTS_LIMIT, startDate: windows.startDate, storeId }),
+      getSalesSummary({ endDate: input.endDate, startDate: windows.weeklyStartDate, storeId }),
+      comparePeriods({
+        currentEnd: input.endDate,
+        currentStart: windows.weeklyStartDate,
+        previousEnd: windows.weeklyPreviousEndDate,
+        previousStart: windows.weeklyPreviousStartDate,
+        storeId,
+      }),
+      getTopProducts({
+        endDate: input.endDate,
+        limit: WEEKLY_TOP_PRODUCTS_LIMIT,
+        startDate: windows.weeklyStartDate,
+        storeId,
+      }),
+    ]);
+
+  const weeklySnapshotTopProduct = weeklySnapshotTopProducts[0] ?? null;
+  const grossProductSales = topProducts.reduce((total, product) => total + product.revenue, 0);
+  const revenueDifference = grossProductSales - metrics.revenue;
+  const snapshotCard = buildWeeklySnapshotCardContent({
+    comparison: weeklySnapshotComparison,
+    metrics: weeklySnapshotMetrics,
+    topProduct: weeklySnapshotTopProduct,
+    windowLabel: "ultimos 7 dias",
+  });
+  const snapshotChatHref = snapshotCard
+    ? `/?${new URLSearchParams({
+        prompt: snapshotCard.askAiPrompt,
+      }).toString()}`
+    : undefined;
+
+  return {
+    grossProductSales,
+    metrics,
+    periodComparison,
+    revenueDifference,
+    snapshotCard,
+    snapshotChatHref,
+    topProducts,
+    trend,
+    weeklySnapshotComparison,
+    weeklySnapshotMetrics,
+    weeklySnapshotTopProduct,
+    windows,
+  };
+}
