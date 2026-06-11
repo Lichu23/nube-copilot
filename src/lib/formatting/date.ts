@@ -38,7 +38,7 @@ export function formatShortDateLabel(value: string): string {
  */
 export function formatDateTimeLabel(value: string | null): string {
   if (!value) {
-    return "Todavia no sincronizado";
+    return "Todavía no sincronizado";
   }
 
   const parsed = new Date(value);
@@ -47,10 +47,15 @@ export function formatDateTimeLabel(value: string | null): string {
     return value;
   }
 
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed);
+  const day = parsed.getUTCDate();
+  const month = parsed.getUTCMonth() + 1;
+  const year = String(parsed.getUTCFullYear()).slice(-2);
+  const hours = parsed.getUTCHours();
+  const minutes = String(parsed.getUTCMinutes()).padStart(2, "0");
+  const period = hours >= 12 ? "p. m." : "a. m.";
+  const hour12 = hours % 12 || 12;
+
+  return `${day}/${month}/${year}, ${hour12}:${minutes} ${period}`;
 }
 
 /**
