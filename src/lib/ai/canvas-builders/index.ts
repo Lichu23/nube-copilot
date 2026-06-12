@@ -1,6 +1,6 @@
-﻿import type { AnalystResponse, CanvasModel } from "@/lib/types";
+import type { AnalystResponse, CanvasModel } from "@/lib/types";
 import { buildComparePeriodsCanvas } from "./compare-periods";
-import { buildDefaultCanvasModel, getPrimaryToolResult } from "./helpers";
+import { asNumber, asRecord, buildDefaultCanvasModel, buildSuggestedQuestions, getPrimaryToolResult } from "./helpers";
 import { buildLowStockCanvas } from "./low-stock";
 import { buildSalesSummaryCanvas } from "./sales-summary";
 import { buildTopProductsCanvas } from "./top-products";
@@ -12,18 +12,36 @@ export function buildCanvasModel(result: AnalystResponse | null, userQuestion: s
   const primary = getPrimaryToolResult(result.toolResults);
   if (!primary) return null;
 
+  let model: CanvasModel | null;
+
   switch (primary.toolName) {
     case "compare_periods":
-      return buildComparePeriodsCanvas(result, primary, userQuestion);
+      model = buildComparePeriodsCanvas(result, primary, userQuestion);
+      break;
     case "get_sales_summary":
-      return buildSalesSummaryCanvas(result, primary, userQuestion);
+      model = buildSalesSummaryCanvas(result, primary, userQuestion);
+      break;
     case "get_top_products":
-      return buildTopProductsCanvas(result, primary, userQuestion);
+      model = buildTopProductsCanvas(result, primary, userQuestion);
+      break;
     case "get_weekly_business_snapshot":
-      return buildWeeklySnapshotCanvas(result, primary, userQuestion);
+      model = buildWeeklySnapshotCanvas(result, primary, userQuestion);
+      break;
     case "get_low_stock_opportunities":
-      return buildLowStockCanvas(result, primary, userQuestion);
+      model = buildLowStockCanvas(result, primary, userQuestion);
+      break;
     default:
-      return buildDefaultCanvasModel(result, primary, userQuestion);
+      model = buildDefaultCanvasModel(result, primary, userQuestion);
   }
+
+  if (!model) return null;
+
+  const output = asRecord(primary.output);
+  const window = asRecord(output?.window);
+  const days = asNumber(window?.days) ?? asNumber(window?.recentDays) ?? undefined;
+
+  return {
+    ...model,
+    suggestedQuestions: buildSuggestedQuestions(primary.toolName, { days }),
+  };
 }

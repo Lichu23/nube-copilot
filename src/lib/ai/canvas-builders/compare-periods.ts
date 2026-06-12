@@ -28,6 +28,8 @@ export function buildComparePeriodsCanvas(result: AnalystResponse, primary: Tool
             },
           ],
           previousLabel,
+          title: "Facturación actual vs período anterior",
+          variant: "comparison",
         }
       : null,
     filters: ["Solo pedidos pagos", "Comparación entre períodos"],

@@ -35,6 +35,8 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
           };
         })
         .filter((item): item is ChartDatum => Boolean(item)),
+      title: "Ranking por facturación",
+      variant: "ranking",
     },
     filters: ["Ordenado por facturación bruta del producto"],
     metrics: [

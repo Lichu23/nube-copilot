@@ -4,9 +4,39 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
   const maxValue = chart.data.reduce((highest, item) => {
     return Math.max(highest, item.current, item.previous ?? 0);
   }, 0);
+  const isRankingChart = chart.variant === "ranking" || chart.variant === "risk";
+
+  if (isRankingChart) {
+    return (
+      <div className="mt-5 rounded-[1.5rem] bg-muted p-4">
+        {chart.title ? <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{chart.title}</p> : null}
+        <div className="space-y-4">
+          {chart.data.map((item) => {
+            const width = maxValue > 0 ? Math.max((item.current / maxValue) * 100, 6) : 6;
+
+            return (
+              <div key={item.label}>
+                <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                  <p className="line-clamp-1 text-foreground">{item.label}</p>
+                  <p className="shrink-0 font-medium text-muted-foreground">{item.current}</p>
+                </div>
+                <div className="h-3 rounded-full bg-card">
+                  <div
+                    className={`h-3 rounded-full ${chart.variant === "risk" ? "bg-orange-500" : "bg-accent"}`}
+                    style={{ width: `${width}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-5 rounded-[1.5rem] bg-muted p-4">
+      {chart.title ? <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{chart.title}</p> : null}
       <div className="flex h-48 items-stretch gap-3">
         {chart.data.map((item) => {
           const currentHeight = maxValue > 0 ? Math.max((item.current / maxValue) * 100, 8) : 8;

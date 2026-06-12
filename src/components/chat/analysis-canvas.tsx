@@ -20,7 +20,7 @@ export function AnalysisCanvas({
   model: CanvasModel | null;
   isPending?: boolean;
 }) {
-  const [activeTab, setActiveTab] = useState<"chart" | "summary" | "table">("chart");
+  const [activeTab, setActiveTab] = useState<"chart" | "table">("chart");
   const [showTrust, setShowTrust] = useState(false);
   const [isVisible, setIsVisible] = useState(!!model);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,11 +91,11 @@ export function AnalysisCanvas({
         </header>
 
         {model.metrics.length > 0 ? (
-          <section className="mt-8 grid gap-4 xl:grid-cols-4">
+          <section className="mt-8 grid items-start gap-4 xl:grid-cols-4">
             {model.metrics.map((metric) => (
-              <article key={metric.label} className="surface-card rounded-[1.5rem] p-5">
+              <article key={metric.label} className="surface-card self-start rounded-[1.5rem] p-5">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{metric.label}</p>
-                <p className="mt-2 text-[3rem] font-semibold text-foreground">{metric.value}</p>
+                  <p className="mt-2 break-words text-[2.35rem] font-semibold leading-tight text-foreground">{metric.value}</p>
                 {metric.helper ? <p className="mt-3 text-[0.95rem] text-success">{metric.helper}</p> : null}
               </article>
             ))}
@@ -107,9 +107,24 @@ export function AnalysisCanvas({
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-card/70">
               <Sparkles className="h-6 w-6 text-accent" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-accent">Resumen IA</p>
               <p className="mt-2 text-[1.55rem] leading-10 text-foreground">{model.summary}</p>
+              {model.summaryPoints.length > 0 ? (
+                <div className="mt-5 rounded-[1.25rem] border border-accent/20 bg-card/70 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Acciones sugeridas
+                  </p>
+                  <ul className="mt-3 space-y-2">
+                    {model.summaryPoints.map((point) => (
+                      <li key={point} className="flex gap-3 text-[1.05rem] leading-7 text-foreground">
+                        <span className="mt-3 h-1.5 w-1.5 rounded-full bg-accent" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -119,7 +134,6 @@ export function AnalysisCanvas({
             {[
               ["chart", "Gráfico"],
               ["table", "Tabla"],
-              ["summary", "Resumen"],
             ].map(([key, label]) => {
               const isActive = activeTab === key;
 
@@ -127,7 +141,7 @@ export function AnalysisCanvas({
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setActiveTab(key as "chart" | "summary" | "table")}
+                  onClick={() => setActiveTab(key as "chart" | "table")}
                   className={`border-b-2 px-1 py-4 text-lg transition ${
                     isActive
                       ? "border-accent text-foreground"
@@ -184,21 +198,6 @@ export function AnalysisCanvas({
               )
             ) : null}
 
-            {activeTab === "summary" ? (
-              <div className="rounded-[1.25rem] bg-muted p-6">
-                <p className="text-[1.35rem] leading-9 text-foreground">{model.summary}</p>
-                {model.summaryPoints.length > 0 ? (
-                  <ul className="mt-5 space-y-3">
-                    {model.summaryPoints.map((point) => (
-                      <li key={point} className="flex gap-3 text-[1.1rem] leading-8 text-foreground">
-                        <span className="mt-3 h-1.5 w-1.5 rounded-full bg-accent" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
           </div>
         </section>
 

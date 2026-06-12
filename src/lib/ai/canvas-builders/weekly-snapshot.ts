@@ -27,6 +27,8 @@ export function buildWeeklySnapshotCanvas(result: AnalystResponse, primary: Tool
         },
       ],
       previousLabel: "7 días anteriores",
+      title: "Facturación semanal vs semana anterior",
+      variant: "comparison",
     },
     filters: ["Solo pedidos pagos", "Vista de resumen semanal"],
     metrics: [

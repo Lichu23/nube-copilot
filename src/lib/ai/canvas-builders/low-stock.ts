@@ -35,6 +35,8 @@ export function buildLowStockCanvas(result: AnalystResponse, primary: ToolResult
           };
         })
         .filter((item): item is ChartDatum => Boolean(item)),
+      title: "Demanda reciente con stock bajo",
+      variant: "risk",
     },
     filters: [`Umbral de stock: ${threshold} unidades`, "Las ventas recientes ordenan la urgencia"],
     metrics: [
