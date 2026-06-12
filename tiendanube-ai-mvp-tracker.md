@@ -59,24 +59,25 @@ Important corrections:
 
 ## Immediate next implementation step
 
-**Next up:** Phase 8 UI/UX rebuild (mobile-first, desktop-adaptive).
+**Next up:** Phase 8 product hardening before beta.
 
 Why this is next:
 
 - SQL metrics, sync, and Groq-orchestrated AI chat are already working on top of real synced-store data.
-- The current product logic is ahead of the product experience; the UX now needs to match the real workflow of asking, inspecting, and verifying.
-- If we push private beta before fixing the interaction model, feedback will mix product value with avoidable UX friction.
-- Mobile-first changes the architecture: the app should be chat-first on phone, with expandable report details, while desktop can add a persistent analysis canvas.
+- The current product logic is ahead of the product experience; the most important fixes now are trust, clarity, and actionability.
+- If we push private beta before fixing the trust layer and production polish, feedback will mix product value with avoidable UX friction.
+- The UI rebuild still matters, but the first win is making the current product feel reliable, readable, and decision-ready.
 
 What to add:
 
-- [ ] Define the canonical mobile answer card.
-- [ ] Define the mobile analysis detail screen / bottom sheet.
-- [ ] Define the desktop chat + analysis canvas layout.
-- [ ] Define the trust layer interaction model for both breakpoints.
-- [ ] Define quick actions: pin, export, copy for WhatsApp/Slack, follow-up prompts.
-- [ ] Remove or gate raw debug evidence from the primary production UI.
-- [ ] After rebuild, move to private beta with 2–3 real stores.
+- [x] Fix all Spanish encoding / mojibake regressions in the UI.
+- [x] Make metric definitions visible per report and in the trust layer.
+- [x] Turn Pin / Export / Copy into real persistence and share actions.
+- [x] Gate raw debug evidence out of the default production UI.
+- [x] Add stronger next-best actions to AI answers and report cards.
+- [x] Surface weekly snapshot and low-stock alerts outside chat.
+- [x] Improve empty states, loading states, and unsupported-question feedback.
+- [ ] After hardening, continue into the mobile-first UX rebuild.
 
 ## Product goal
 
@@ -966,10 +967,10 @@ Implementation approach:
 
 Suggested Spanish regression prompts:
 
-- [ ] `Dame un resumen de ventas de los ?ltimos 30 d?as`
-- [ ] `Compar? los ?ltimos 30 d?as contra los 30 d?as anteriores`
-- [ ] `?Cu?les fueron mis productos m?s vendidos en los ?ltimos 14 d?as?`
-- [ ] `?Qu? productos est?n en riesgo de quedarse sin stock?`
+- [ ] `Dame un resumen de ventas de los últimos 30 días`
+- [ ] `Compará los últimos 30 días contra los 30 días anteriores`
+- [ ] `¿Cuáles fueron mis productos más vendidos en los últimos 14 días?`
+- [ ] `¿Qué productos están en riesgo de quedarse sin stock?`
 
 Suggested shadcn/ui building blocks to prioritize:
 
@@ -1104,7 +1105,23 @@ Done when:
 
 - [x] Store owner gets a useful weekly report inside the app.
 
-### Phase 8 — UI/UX rebuild (mobile-first)
+### Phase 8 — Product hardening before beta
+
+- [x] Fix all Spanish encoding / mojibake regressions in the UI.
+- [x] Show metric definitions and calculation context for each report.
+- [x] Turn Pin / Export / Copy into real actions with persistence.
+- [x] Remove or feature-flag raw debug evidence from the default production UI.
+- [x] Make AI answers more action-oriented with clear next steps.
+- [x] Surface weekly snapshot and low-stock insights outside chat.
+- [x] Improve empty states, loading states, and unsupported-question feedback.
+
+Done when:
+
+- [x] Users can trust what each metric means without guessing.
+- [x] Reports can be saved, shared, and revisited.
+- [x] The primary UI is clean and production-ready.
+
+### Phase 9 — UI/UX rebuild (mobile-first)
 
 - [ ] Redesign chat answers into compact report cards.
 - [x] Remove duplicated summary text between `Resumen IA` and the `Resumen` tab.
@@ -1126,7 +1143,7 @@ Done when:
 - [ ] A merchant can continue the same workflow on desktop with a stable analysis canvas.
 - [ ] The dashboard clearly acts as a trust layer / pinned insights surface, not as the primary workflow.
 
-### Phase 9 — Private beta
+### Phase 10 — Private beta
 
 - [ ] Connect 2–3 real stores.
 - [ ] Track questions users ask.

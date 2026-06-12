@@ -12,8 +12,11 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
     <section className="rounded-2xl border border-black/10 bg-white p-5">
       <h2 className="text-lg font-semibold">Tendencia de ventas</h2>
       {data.length === 0 ? (
-        <div className="mt-4 flex h-64 items-center justify-center rounded-xl border border-dashed border-black/10 bg-zinc-50 text-sm text-zinc-500">
-          Todavia no hay datos recientes de pedidos.
+        <div className="mt-4 flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-zinc-50 px-6 text-center">
+          <p className="text-sm font-semibold text-zinc-800">Todavia no hay ventas recientes para graficar.</p>
+          <p className="mt-2 max-w-md text-sm text-zinc-500">
+            Sin pedidos sincronizados en esta ventana, el grafico queda vacio. Sincroniza la tienda o cambia la ventana de comparacion.
+          </p>
         </div>
       ) : (
         <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 p-4">

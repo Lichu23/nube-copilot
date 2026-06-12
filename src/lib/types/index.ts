@@ -3,6 +3,7 @@ export type {
   CanvasModel,
   ChartDatum,
   ChartModel,
+  MetricDefinition,
   MetricItem,
   TableModel,
   ToolResult,

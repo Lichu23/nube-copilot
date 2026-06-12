@@ -1,4 +1,5 @@
 ﻿import type { AnalystResponse, CanvasModel, ToolResult } from "@/lib/types";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 import { asNumber, asRecord, buildIntentTitle, formatCurrency, formatScalar } from "./helpers";
 
 export function buildWeeklySnapshotCanvas(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel | null {
@@ -30,12 +31,18 @@ export function buildWeeklySnapshotCanvas(result: AnalystResponse, primary: Tool
       title: "Facturación semanal vs semana anterior",
       variant: "comparison",
     },
+    definitions: [
+      metricDefinitions.netRevenue,
+      metricDefinitions.orderCount,
+      metricDefinitions.averageOrderValue,
+      metricDefinitions.unitsSold,
+    ],
     filters: ["Solo pedidos pagos", "Vista de resumen semanal"],
     metrics: [
-      { label: "Facturación", value: formatCurrency(revenue, currency) },
-      { label: "Pedidos", value: formatScalar(orders) },
-      { label: "AOV", value: formatCurrency(averageOrderValue, currency) },
-      { label: "Unidades vendidas", value: formatScalar(unitsSold) },
+      { definition: metricDefinitions.netRevenue, label: "Facturación", value: formatCurrency(revenue, currency) },
+      { definition: metricDefinitions.orderCount, label: "Pedidos", value: formatScalar(orders) },
+      { definition: metricDefinitions.averageOrderValue, label: "AOV", value: formatCurrency(averageOrderValue, currency) },
+      { definition: metricDefinitions.unitsSold, label: "Unidades vendidas", value: formatScalar(unitsSold) },
     ],
     source: "Tiendanube · API de órdenes",
     summary: result.answer,

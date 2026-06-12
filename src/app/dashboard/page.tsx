@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { InsightCard } from "@/components/dashboard/insight-card";
+import { LowStockAlertCard } from "@/components/dashboard/low-stock-alert-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
+import { PinnedReportsPanel } from "@/components/dashboard/pinned-reports-panel";
 import { SalesTrendChart } from "@/components/dashboard/sales-trend-chart";
 import { SyncControl } from "@/components/dashboard/sync-control";
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
@@ -17,6 +19,7 @@ import {
 import { formatRevenueComparisonHelper, formatSignedNumber, formatSignedPercent } from "@/lib/dashboard/formatters";
 import { getDashboardSyncSummary } from "@/lib/db/client";
 import { formatCurrency, formatSignedCurrency } from "@/lib/formatting";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 
 export default async function DashboardPage({
   searchParams,
@@ -35,6 +38,8 @@ export default async function DashboardPage({
   const latestSyncMessage = getLatestSyncMessage(summary);
   const {
     grossProductSales,
+    lowStockAlert,
+    lowStockChatHref,
     metrics,
     periodComparison,
     revenueDifference,
@@ -119,6 +124,7 @@ export default async function DashboardPage({
 
       <section className="grid gap-4 md:grid-cols-3">
         <MetricCard
+          definition={metricDefinitions.netRevenue}
           label={`Facturacion neta (${windowConfig.label})`}
           value={metrics ? formatCurrency(metrics.revenue, metrics.currency) : "$0.00"}
           helper={
@@ -133,6 +139,7 @@ export default async function DashboardPage({
           }
         />
         <MetricCard
+          definition={metricDefinitions.orderCount}
           label={`Pedidos (${windowConfig.label})`}
           value={String(metrics?.orderCount ?? 0)}
           helper={
@@ -142,6 +149,7 @@ export default async function DashboardPage({
           }
         />
         <MetricCard
+          definition={metricDefinitions.averageOrderValue}
           label={`Ticket promedio (${windowConfig.label})`}
           value={metrics ? formatCurrency(metrics.averageOrderValue, metrics.currency) : "$0.00"}
           helper={
@@ -213,6 +221,10 @@ export default async function DashboardPage({
           shareText={snapshotCard?.shareText}
         />
       </section>
+
+      <LowStockAlertCard alert={lowStockAlert} chatHref={lowStockChatHref} />
+
+      <PinnedReportsPanel />
 
       <TopProductsTable
         currency={metrics?.currency ?? null}

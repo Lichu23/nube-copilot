@@ -1,4 +1,5 @@
 ﻿import type { AnalystResponse, CanvasModel, ToolResult } from "@/lib/types";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 import { asNumber, asRecord, buildIntentTitle, formatCurrency, formatDateRange, formatScalar } from "./helpers";
 
 export function buildSalesSummaryCanvas(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel | null {
@@ -26,12 +27,18 @@ export function buildSalesSummaryCanvas(result: AnalystResponse, primary: ToolRe
       title: "Métricas principales",
       variant: "metric-bars",
     },
+    definitions: [
+      metricDefinitions.netRevenue,
+      metricDefinitions.orderCount,
+      metricDefinitions.averageOrderValue,
+      metricDefinitions.unitsSold,
+    ],
     filters: ["Solo pedidos pagos"],
     metrics: [
-      { label: "Facturación", value: formatCurrency(revenue, currency) },
-      { label: "Pedidos", value: formatScalar(orderCount) },
-      { label: "AOV", value: formatCurrency(averageOrderValue, currency) },
-      { label: "Unidades vendidas", value: formatScalar(unitsSold) },
+      { definition: metricDefinitions.netRevenue, label: "Facturación", value: formatCurrency(revenue, currency) },
+      { definition: metricDefinitions.orderCount, label: "Pedidos", value: formatScalar(orderCount) },
+      { definition: metricDefinitions.averageOrderValue, label: "AOV", value: formatCurrency(averageOrderValue, currency) },
+      { definition: metricDefinitions.unitsSold, label: "Unidades vendidas", value: formatScalar(unitsSold) },
     ],
     source: "Tiendanube · API de órdenes",
     summary: result.answer,

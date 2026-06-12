@@ -1,4 +1,5 @@
 ﻿import type { AnalystResponse, CanvasModel, ToolResult } from "@/lib/types";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 import { asNumber, asRecord, buildIntentTitle, formatCurrency, formatDateRange, formatScalar } from "./helpers";
 
 export function buildComparePeriodsCanvas(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel | null {
@@ -32,12 +33,18 @@ export function buildComparePeriodsCanvas(result: AnalystResponse, primary: Tool
           variant: "comparison",
         }
       : null,
+    definitions: [
+      metricDefinitions.netRevenue,
+      metricDefinitions.orderCount,
+      metricDefinitions.averageOrderValue,
+      metricDefinitions.unitsSold,
+    ],
     filters: ["Solo pedidos pagos", "Comparación entre períodos"],
     metrics: [
-      { helper: currentLabel, label: "Facturación", value: formatCurrency(asNumber(revenue?.current) ?? 0, currency) },
-      { helper: currentLabel, label: "Pedidos", value: formatScalar(asNumber(orders?.current) ?? 0) },
-      { helper: currentLabel, label: "AOV", value: formatCurrency(asNumber(averageOrderValue?.current) ?? 0, currency) },
-      { helper: currentLabel, label: "Unidades vendidas", value: formatScalar(asNumber(unitsSold?.current) ?? 0) },
+      { definition: metricDefinitions.netRevenue, helper: currentLabel, label: "Facturación", value: formatCurrency(asNumber(revenue?.current) ?? 0, currency) },
+      { definition: metricDefinitions.orderCount, helper: currentLabel, label: "Pedidos", value: formatScalar(asNumber(orders?.current) ?? 0) },
+      { definition: metricDefinitions.averageOrderValue, helper: currentLabel, label: "AOV", value: formatCurrency(asNumber(averageOrderValue?.current) ?? 0, currency) },
+      { definition: metricDefinitions.unitsSold, helper: currentLabel, label: "Unidades vendidas", value: formatScalar(asNumber(unitsSold?.current) ?? 0) },
     ],
     source: "Tiendanube · API de órdenes",
     summary: result.answer,

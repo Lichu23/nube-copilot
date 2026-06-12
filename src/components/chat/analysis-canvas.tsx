@@ -3,13 +3,14 @@
 import { Copy, Download, Image as ImageIcon, Pin, Sparkles, Store } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { copyReportSummary, exportReportCsv, exportReportImage, pinReport } from "@/lib/reports/actions";
 import type { CanvasModel } from "@/lib/types";
 import { EmptyCanvas } from "./empty-canvas";
 import { LoadingCanvas } from "./loading-canvas";
 import { MiniBarChart } from "./mini-bar-chart";
 
 const showDebugEvidence =
-  process.env.NEXT_PUBLIC_SHOW_CHAT_DEBUG_EVIDENCE === "true" || process.env.NODE_ENV !== "production";
+  process.env.NEXT_PUBLIC_SHOW_CHAT_DEBUG_EVIDENCE === "true";
 
 export function AnalysisCanvas({
   lastSyncLabel,
@@ -21,6 +22,7 @@ export function AnalysisCanvas({
   isPending?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<"chart" | "table">("chart");
+  const [actionState, setActionState] = useState<"already-pinned" | "copied" | "exported" | "image" | "idle" | "pinned">("idle");
   const [showTrust, setShowTrust] = useState(false);
   const [isVisible, setIsVisible] = useState(!!model);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,6 +53,34 @@ export function AnalysisCanvas({
     return <EmptyCanvas />;
   }
 
+  async function handleCopy() {
+    if (!model) return;
+    await copyReportSummary(model);
+    setActionState("copied");
+    window.setTimeout(() => setActionState("idle"), 1500);
+  }
+
+  function handleExportCsv() {
+    if (!model) return;
+    exportReportCsv(model);
+    setActionState("exported");
+    window.setTimeout(() => setActionState("idle"), 1500);
+  }
+
+  function handleExportImage() {
+    if (!model) return;
+    exportReportImage(model);
+    setActionState("image");
+    window.setTimeout(() => setActionState("idle"), 1500);
+  }
+
+  function handlePinReport() {
+    if (!model) return;
+    const result = pinReport(model);
+    setActionState(result.status);
+    window.setTimeout(() => setActionState("idle"), 1500);
+  }
+
   return (
     <div ref={containerRef} className="h-full overflow-y-auto px-8 py-7">
       <div className={`transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
@@ -66,24 +96,37 @@ export function AnalysisCanvas({
           </div>
 
           <div className="flex flex-wrap items-center gap-5 text-sm text-foreground">
-            <button type="button" className="inline-flex items-center gap-2">
+            <button type="button" onClick={handlePinReport} className="inline-flex items-center gap-2">
               <Pin className="h-4 w-4" />
               Fijar
             </button>
-            <button type="button" className="inline-flex items-center gap-2">
+            <button type="button" onClick={handleExportCsv} className="inline-flex items-center gap-2">
               <Download className="h-4 w-4" />
               CSV
             </button>
-            <button type="button" className="inline-flex items-center gap-2">
+            <button type="button" onClick={handleExportImage} className="inline-flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               Imagen
             </button>
-            <button type="button" className="inline-flex items-center gap-2">
+            <button type="button" onClick={handleCopy} className="inline-flex items-center gap-2">
               <Copy className="h-4 w-4" />
               Copiar
             </button>
           </div>
         </div>
+        {actionState !== "idle" ? (
+          <p className="mt-3 text-right text-sm text-success">
+            {actionState === "copied"
+              ? "Resumen copiado."
+              : actionState === "exported"
+                ? "CSV exportado."
+                : actionState === "image"
+                  ? "Imagen exportada."
+                  : actionState === "already-pinned"
+                    ? "Este reporte ya estaba fijado."
+                    : "Reporte fijado."}
+          </p>
+        ) : null}
 
         <header className="mt-4">
           <h1 className="font-display max-w-3xl text-[4rem] leading-[0.9] text-foreground">{model.title}</h1>
@@ -97,6 +140,11 @@ export function AnalysisCanvas({
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{metric.label}</p>
                   <p className="mt-2 break-words text-[2.35rem] font-semibold leading-tight text-foreground">{metric.value}</p>
                 {metric.helper ? <p className="mt-3 text-[0.95rem] text-success">{metric.helper}</p> : null}
+                {metric.definition ? (
+                  <p className="mt-3 border-t border-border pt-3 text-sm leading-6 text-muted-foreground">
+                    {metric.definition.description}
+                  </p>
+                ) : null}
               </article>
             ))}
           </section>
@@ -257,6 +305,24 @@ export function AnalysisCanvas({
                   Esta respuesta se basa en métricas SQL del backend obtenidas desde datos sincronizados de Tiendanube. La IA explica el resultado, pero los números provienen de consultas determinísticas de la aplicación.
                 </p>
               </div>
+
+              {model.definitions && model.definitions.length > 0 ? (
+                <div className="mt-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Definiciones de métricas</p>
+                  <div className="mt-3 grid gap-3 xl:grid-cols-2">
+                    {model.definitions.map((definition) => (
+                      <article key={`${definition.label}-${definition.source}`} className="rounded-[1.25rem] border border-border bg-muted p-4">
+                        <p className="text-base font-semibold text-foreground">{definition.label}</p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{definition.description}</p>
+                        <p className="mt-2 text-sm text-foreground">
+                          <span className="font-medium">Cálculo:</span> {definition.calculation}.
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">Fuente: {definition.source}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {showDebugEvidence && model.table ? (
                 <div className="mt-6">

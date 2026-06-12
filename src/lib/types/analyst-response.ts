@@ -23,9 +23,20 @@ export interface AnalystResponse {
 }
 
 /**
+ * Metric definition for trust and calculation context
+ */
+export interface MetricDefinition {
+  calculation: string;
+  description: string;
+  label: string;
+  source: string;
+}
+
+/**
  * Metric item for display
  */
 export interface MetricItem {
+  definition?: MetricDefinition;
   helper?: string;
   label: string;
   value: string;
@@ -64,6 +75,7 @@ export interface TableModel {
  */
 export interface CanvasModel {
   chart: ChartModel | null;
+  definitions?: MetricDefinition[];
   filters: string[];
   metrics: MetricItem[];
   source: string;
