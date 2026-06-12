@@ -20,7 +20,7 @@ export function buildIntentTitle(toolName: string, userQuestion: string, options
     case "compare_periods":
       return normalized.includes("ingresos") ? "Comparación de ingresos" : "Comparación entre períodos";
     case "get_sales_summary":
-      return normalized.includes("como venimos") ? "Resumen de ventas" : "Resumen de ventas de los últimos 7 días";
+      return options?.days ? `Resumen de ventas de los últimos ${options.days} días` : "Resumen de ventas";
     case "get_top_products":
       if (normalized.includes("producto") && normalized.includes("vendio mas")) {
         return "Producto más vendido de la semana";

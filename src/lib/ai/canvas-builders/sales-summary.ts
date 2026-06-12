@@ -12,9 +12,12 @@ export function buildSalesSummaryCanvas(result: AnalystResponse, primary: ToolRe
   const orderCount = asNumber(summary?.orderCount) ?? 0;
   const unitsSold = asNumber(summary?.unitsSold) ?? 0;
   const averageOrderValue = asNumber(summary?.averageOrderValue) ?? 0;
+  const days = asNumber(window?.days) ?? undefined;
+  const periodLabel = days ? `Últimos ${days} días` : "Ventana elegida";
 
   return {
     chart: {
+      currentLabel: periodLabel,
       data: [
         { current: revenue, label: "Facturación" },
         { current: orderCount, label: "Pedidos" },
@@ -32,15 +35,15 @@ export function buildSalesSummaryCanvas(result: AnalystResponse, primary: ToolRe
     summary: result.answer,
     summaryPoints: result.recommendedActions,
     table: {
-      columns: ["Métrica", "Valor"],
+      columns: ["Métrica", "Valor", "Período"],
       rows: [
-        ["Facturación", formatCurrency(revenue, currency)],
-        ["Pedidos", formatScalar(orderCount)],
-        ["Unidades vendidas", formatScalar(unitsSold)],
-        ["Ticket promedio", formatCurrency(averageOrderValue, currency)],
+        ["Facturación", formatCurrency(revenue, currency), periodLabel],
+        ["Pedidos", formatScalar(orderCount), periodLabel],
+        ["Unidades vendidas", formatScalar(unitsSold), periodLabel],
+        ["Ticket promedio", formatCurrency(averageOrderValue, currency), periodLabel],
       ],
     },
-    title: buildIntentTitle(primary.toolName, userQuestion),
+    title: buildIntentTitle(primary.toolName, userQuestion, { days }),
     userQuestion,
     windowLabel: formatDateRange(
       typeof window?.startDate === "string" ? window.startDate : null,
