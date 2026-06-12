@@ -38,6 +38,49 @@ export function buildIntentTitle(toolName: string, userQuestion: string, options
   }
 }
 
+export function buildSuggestedQuestions(toolName: string, options?: { days?: number }) {
+  const periodLabel = options?.days ? `los últimos ${options.days} días` : "este período";
+
+  switch (toolName) {
+    case "compare_periods":
+      return [
+        "¿Qué producto explicó mejor esta diferencia?",
+        "¿Cómo vienen las ventas por día en ese período?",
+        "¿Qué acción concreta debería tomar esta semana?",
+      ];
+    case "get_sales_summary":
+      return [
+        `Compará ${periodLabel} contra el período anterior`,
+        `Mostrame los productos más vendidos de ${periodLabel}`,
+        "¿Qué debería hacer para mejorar estas ventas?",
+      ];
+    case "get_top_products":
+      return [
+        `Compará estos productos contra el período anterior`,
+        "¿Qué productos tienen riesgo de quedarse sin stock?",
+        "¿Qué producto debería promocionar primero?",
+      ];
+    case "get_weekly_business_snapshot":
+      return [
+        "¿Qué cambió contra la semana anterior?",
+        "¿Qué producto debería revisar primero?",
+        "¿Qué acción debería priorizar esta semana?",
+      ];
+    case "get_low_stock_opportunities":
+      return [
+        "¿Cuáles de estos productos vendieron más recientemente?",
+        "¿Qué debería reponer primero?",
+        "Mostrame los productos más vendidos de los últimos 30 días",
+      ];
+    default:
+      return [
+        "Dame un resumen de ventas de los últimos 30 días",
+        "Compará los últimos 30 días contra el período anterior",
+        "¿Cuáles fueron mis productos más vendidos?",
+      ];
+  }
+}
+
 export function buildDefaultCanvasModel(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel {
   return {
     chart: null,

@@ -5,11 +5,15 @@ export function ReportPreviewCard({
   model,
   onOpenAnalysis,
   onCopiarSummary,
+  onSuggestedQuestionClick,
 }: {
   model: CanvasModel;
   onCopiarSummary: () => void;
   onOpenAnalysis: () => void;
+  onSuggestedQuestionClick: (question: string) => void;
 }) {
+  const suggestedQuestions = model.suggestedQuestions ?? [];
+
   return (
     <article className="surface-card-strong overflow-hidden rounded-[1.75rem]">
       <div className="p-5 sm:p-6">
@@ -66,16 +70,21 @@ export function ReportPreviewCard({
           </button>
         </div>
 
-        {model.summaryPoints.length > 0 ? (
+        {suggestedQuestions.length > 0 ? (
           <div className="mt-5">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Siguientes preguntas sugeridas
+              Preguntas para seguir
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {model.summaryPoints.slice(0, 3).map((item) => (
-                <span key={item} className="rounded-full border border-border bg-muted px-3 py-1.5 text-sm leading-5 text-foreground">
-                  {item}
-                </span>
+              {suggestedQuestions.slice(0, 3).map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  onClick={() => onSuggestedQuestionClick(question)}
+                  className="cursor-pointer rounded-full border border-border bg-muted px-3 py-1.5 text-left text-sm leading-5 text-foreground transition hover:border-accent hover:bg-accent/10"
+                >
+                  {question}
+                </button>
               ))}
             </div>
           </div>

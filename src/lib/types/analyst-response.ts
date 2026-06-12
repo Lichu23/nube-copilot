@@ -47,6 +47,8 @@ export interface ChartModel {
   currentLabel?: string;
   data: ChartDatum[];
   previousLabel?: string;
+  title?: string;
+  variant?: "comparison" | "metric-bars" | "ranking" | "risk";
 }
 
 /**
@@ -67,6 +69,7 @@ export interface CanvasModel {
   source: string;
   summary: string;
   summaryPoints: string[];
+  suggestedQuestions?: string[];
   table: TableModel | null;
   title: string;
   userQuestion: string;

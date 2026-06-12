@@ -23,6 +23,8 @@ export function buildSalesSummaryCanvas(result: AnalystResponse, primary: ToolRe
         { current: orderCount, label: "Pedidos" },
         { current: unitsSold, label: "Unidades vendidas" },
       ],
+      title: "Métricas principales",
+      variant: "metric-bars",
     },
     filters: ["Solo pedidos pagos"],
     metrics: [

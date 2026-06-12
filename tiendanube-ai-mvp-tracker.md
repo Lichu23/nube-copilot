@@ -921,8 +921,55 @@ Quick actions:
 - [ ] Pin report to dashboard.
 - [ ] Export CSV / image.
 - [ ] Copy formatted summary for WhatsApp/Slack.
-- [ ] Ask suggested follow-up questions.
+- [x] Ask suggested follow-up questions.
 - [ ] Save reusable report/prompt later if beta users ask for it.
+
+### 11.8 AI canvas response improvement plan
+
+Goal:
+
+> The AI explains, the backend proves, and the canvas visualizes.
+
+Current issue:
+
+- [x] The canvas repeats the same narrative in the top `Resumen IA` block and again in the `Resumen` tab.
+- [x] The chart area now uses first-pass tool-specific variants instead of one generic shape.
+- [x] Suggested actions were previously mixed with follow-up prompts and shown in the wrong surface.
+
+Target behavior:
+
+- [x] Keep one primary `Resumen IA` block as the main narrative.
+- [x] Make the primary summary more useful:
+  - [ ] what happened,
+  - [ ] why it matters,
+  - [ ] executive takeaway,
+  - [x] next recommended action.
+- [ ] Change the `Resumen` tab so it does not repeat the same paragraph:
+  - [ ] show action bullets,
+  - [ ] show risks/opportunities when supported by tool output,
+  - [ ] show calculation notes only when useful.
+- [ ] Render different visualizations based on the validated tool output:
+  - [ ] sales summary ? KPI cards + metric bar chart + period-aware table,
+  - [ ] period comparison ? current vs previous comparison chart + percentage deltas,
+  - [ ] top products ? ranking bar chart + product table,
+  - [ ] low stock ? risk/ranking chart + stock-demand table,
+  - [ ] weekly snapshot ? mixed summary card with trend, top product, and next actions.
+- [x] Keep owner suggested actions inside `Resumen IA` instead of the chart/table card.
+- [x] Add separate true follow-up question prompts later, distinct from owner actions.
+
+Implementation approach:
+
+- [ ] Evolve `CanvasModel` from a single `chart` into validated visualization blocks.
+- [ ] Keep all numbers, periods, and table/chart data derived from backend tool output.
+- [ ] Let the AI provide explanation and recommendations only after tools produce evidence.
+- [ ] Do not let free-form AI text become the source of truth for dates, metrics, or chart data.
+
+Suggested Spanish regression prompts:
+
+- [ ] `Dame un resumen de ventas de los ?ltimos 30 d?as`
+- [ ] `Compar? los ?ltimos 30 d?as contra los 30 d?as anteriores`
+- [ ] `?Cu?les fueron mis productos m?s vendidos en los ?ltimos 14 d?as?`
+- [ ] `?Qu? productos est?n en riesgo de quedarse sin stock?`
 
 Suggested shadcn/ui building blocks to prioritize:
 
@@ -1060,6 +1107,11 @@ Done when:
 ### Phase 8 — UI/UX rebuild (mobile-first)
 
 - [ ] Redesign chat answers into compact report cards.
+- [x] Remove duplicated summary text between `Resumen IA` and the `Resumen` tab.
+- [x] Make `Resumen IA` the single primary narrative block with a clearer takeaway and next action.
+- [x] Move owner suggested actions into `Resumen IA` and remove them from the chart/table card.
+- [x] Add prompt/tool-specific chart variants instead of one generic chart shape for every answer.
+- [ ] Evolve the canvas data model to support multiple validated visualization blocks.
 - [ ] Build mobile-first chat feed spacing, hierarchy, and input UX.
 - [ ] Build mobile analysis detail view / bottom sheet.
 - [ ] Build desktop chat + analysis canvas adaptation.

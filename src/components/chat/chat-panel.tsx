@@ -253,6 +253,7 @@ export function ChatPanel({
                         model={canvasModel}
                         onCopiarSummary={handleCopiarSummary}
                         onOpenAnalysis={() => window.scrollTo({ behavior: "smooth", top: 0 })}
+                        onSuggestedQuestionClick={handlePromptClick}
                       />
                     </div>
                   );
