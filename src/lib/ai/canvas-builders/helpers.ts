@@ -1,6 +1,7 @@
 ﻿import { formatCurrency, formatDateRange, formatScalar } from "@/lib/formatting";
 import { asNumber, asRecord } from "@/lib/type-guards";
 import type { AnalystResponse, CanvasModel, ToolResult } from "@/lib/types";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 
 export function getPrimaryToolResult(toolResults: ToolResult[]) {
   return toolResults[toolResults.length - 1] ?? null;
@@ -84,6 +85,7 @@ export function buildSuggestedQuestions(toolName: string, options?: { days?: num
 export function buildDefaultCanvasModel(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel {
   return {
     chart: null,
+    definitions: [metricDefinitions.netRevenue, metricDefinitions.orderCount, metricDefinitions.unitsSold],
     filters: ["Respuesta validada por backend"],
     metrics: result.evidence.slice(0, 4).map((item) => ({
       helper: item.period,

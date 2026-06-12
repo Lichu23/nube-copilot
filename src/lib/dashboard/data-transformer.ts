@@ -1,13 +1,17 @@
-﻿import { comparePeriods, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
+﻿import { comparePeriods, getLowStockOpportunities, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
 import { buildWeeklySnapshotCardContent } from "@/lib/weekly-snapshot";
 import {
   compareWindowConfig,
   DEFAULT_COMPARE_WINDOW,
+  LOW_STOCK_ALERT_LIMIT,
+  LOW_STOCK_RECENT_DAYS,
+  LOW_STOCK_THRESHOLD,
   TOP_PRODUCTS_LIMIT,
   WEEKLY_SNAPSHOT_DAYS,
   WEEKLY_TOP_PRODUCTS_LIMIT,
   type CompareWindowKey,
 } from "./config";
+import { buildLowStockAlert } from "./low-stock-alert";
 
 type DashboardSyncSummary = Awaited<ReturnType<typeof import("@/lib/db/client").getDashboardSyncSummary>>;
 
@@ -107,6 +111,9 @@ export async function getDashboardData(input: {
   if (!storeId) {
     return {
       grossProductSales: 0,
+      lowStockAlert: null,
+      lowStockChatHref: undefined,
+      lowStockRows: [],
       metrics: null,
       periodComparison: null,
       revenueDifference: 0,
@@ -121,8 +128,16 @@ export async function getDashboardData(input: {
     };
   }
 
-  const [metrics, trend, periodComparison, topProducts, weeklySnapshotMetrics, weeklySnapshotComparison, weeklySnapshotTopProducts] =
-    await Promise.all([
+  const [
+    metrics,
+    trend,
+    periodComparison,
+    topProducts,
+    weeklySnapshotMetrics,
+    weeklySnapshotComparison,
+    weeklySnapshotTopProducts,
+    lowStockRows,
+  ] = await Promise.all([
       getSalesSummary({ endDate: input.endDate, startDate: windows.startDate, storeId }),
       getSalesTrend({ endDate: input.endDate, startDate: windows.startDate, storeId }),
       comparePeriods({
@@ -147,9 +162,23 @@ export async function getDashboardData(input: {
         startDate: windows.weeklyStartDate,
         storeId,
       }),
+      getLowStockOpportunities({
+        limit: LOW_STOCK_ALERT_LIMIT,
+        recentDays: LOW_STOCK_RECENT_DAYS,
+        stockThreshold: LOW_STOCK_THRESHOLD,
+        storeId,
+      }),
     ]);
 
   const weeklySnapshotTopProduct = weeklySnapshotTopProducts[0] ?? null;
+  const lowStockAlert = buildLowStockAlert({
+    recentDays: LOW_STOCK_RECENT_DAYS,
+    rows: lowStockRows,
+    stockThreshold: LOW_STOCK_THRESHOLD,
+  });
+  const lowStockChatHref = `/?${new URLSearchParams({
+    prompt: "Que productos estan en riesgo de quedarse sin stock?",
+  }).toString()}`;
   const grossProductSales = topProducts.reduce((total, product) => total + product.revenue, 0);
   const revenueDifference = grossProductSales - metrics.revenue;
   const snapshotCard = buildWeeklySnapshotCardContent({
@@ -166,6 +195,9 @@ export async function getDashboardData(input: {
 
   return {
     grossProductSales,
+    lowStockAlert,
+    lowStockChatHref,
+    lowStockRows,
     metrics,
     periodComparison,
     revenueDifference,

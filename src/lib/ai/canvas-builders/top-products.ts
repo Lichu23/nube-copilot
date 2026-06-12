@@ -1,4 +1,5 @@
 ﻿import type { AnalystResponse, CanvasModel, ChartDatum, ToolResult } from "@/lib/types";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 import { asNumber, asRecord, buildIntentTitle, formatCurrency, formatDateRange, formatScalar } from "./helpers";
 
 export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel | null {
@@ -38,10 +39,11 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
       title: "Ranking por facturación",
       variant: "ranking",
     },
+    definitions: [metricDefinitions.topProductsRevenue, metricDefinitions.unitsSold, metricDefinitions.orderCount],
     filters: ["Ordenado por facturación bruta del producto"],
     metrics: [
       { label: "Productos", value: formatScalar(rows.length) },
-      { label: "Facturación bruta", value: formatCurrency(asNumber(summary?.revenue) ?? 0, currency) },
+      { definition: metricDefinitions.topProductsRevenue, label: "Facturación bruta", value: formatCurrency(asNumber(summary?.revenue) ?? 0, currency) },
       { label: "Producto top", value: rows[0]?.[0] ?? "-" },
     ],
     source: "Tiendanube · Órdenes + ítems de pedido",

@@ -3,13 +3,17 @@ import type { CanvasModel } from "@/lib/types";
 
 export function ReportPreviewCard({
   model,
+  onExportCsv,
   onOpenAnalysis,
   onCopiarSummary,
+  onPinReport,
   onSuggestedQuestionClick,
 }: {
   model: CanvasModel;
   onCopiarSummary: () => void;
+  onExportCsv: () => void;
   onOpenAnalysis: () => void;
+  onPinReport: () => void;
   onSuggestedQuestionClick: (question: string) => void;
 }) {
   const suggestedQuestions = model.suggestedQuestions ?? [];
@@ -43,13 +47,13 @@ export function ReportPreviewCard({
       <div className="border-t border-border bg-card px-5 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <button type="button" className="inline-flex items-center gap-2 transition hover:text-foreground">
+            <button type="button" onClick={onPinReport} className="inline-flex items-center gap-2 transition hover:text-foreground">
               <Pin className="h-4 w-4" />
               Fijar
             </button>
-            <button type="button" className="inline-flex items-center gap-2 transition hover:text-foreground">
+            <button type="button" onClick={onExportCsv} className="inline-flex items-center gap-2 transition hover:text-foreground">
               <Download className="h-4 w-4" />
-              Export
+              CSV
             </button>
             <button
               type="button"

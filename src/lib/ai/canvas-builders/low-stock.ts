@@ -1,4 +1,5 @@
 ﻿import type { AnalystResponse, CanvasModel, ChartDatum, ToolResult } from "@/lib/types";
+import { metricDefinitions } from "@/lib/metrics/definitions";
 import { asNumber, asRecord, buildIntentTitle, formatScalar, normalizeIntentText } from "./helpers";
 
 export function buildLowStockCanvas(result: AnalystResponse, primary: ToolResult, userQuestion: string): CanvasModel | null {
@@ -38,14 +39,16 @@ export function buildLowStockCanvas(result: AnalystResponse, primary: ToolResult
       title: "Demanda reciente con stock bajo",
       variant: "risk",
     },
+    definitions: [metricDefinitions.lowStock, metricDefinitions.unitsSold],
     filters: [`Umbral de stock: ${threshold} unidades`, "Las ventas recientes ordenan la urgencia"],
     metrics: [
-      { label: "Variantes marcadas", value: formatScalar(rows.length) },
+      { definition: metricDefinitions.lowStock, label: "Variantes marcadas", value: formatScalar(rows.length) },
       {
+        definition: metricDefinitions.lowStock,
         label: "Sin stock ahora",
         value: formatScalar(opportunities.filter((item) => (asNumber(asRecord(item)?.stock) ?? 0) <= 0).length),
       },
-      { label: "Umbral", value: `${threshold} unidades` },
+      { definition: metricDefinitions.lowStock, label: "Umbral", value: `${threshold} unidades` },
     ],
     source: "Tiendanube · Productos + demanda de órdenes",
     summary: result.answer,

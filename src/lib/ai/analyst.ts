@@ -301,8 +301,9 @@ function getLowStockStatus(stock: number) {
 
 function buildUnsupportedRecommendations() {
   return [
-    "Pedime un resumen de ventas de los últimos 7 días.",
+    "Pedime un resumen de ventas de los ultimos 7 dias.",
     "Pedime comparar esta semana contra la anterior.",
+    "Pedime que productos estan en riesgo de quedarse sin stock.",
   ];
 }
 
@@ -312,11 +313,10 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
   if (
     normalized.includes("roas") ||
     normalized.includes("meta ads") ||
-    normalized.includes("campañas de meta") ||
     normalized.includes("campanas de meta")
   ) {
     return buildUnsupportedResponse(
-      "No tengo acceso a datos de Meta Ads ni a métricas publicitarias como ROAS. Por ahora solo puedo responder con métricas soportadas de Tiendanube.",
+      "No tengo acceso a datos de Meta Ads ni a metricas publicitarias como ROAS. Por ahora solo puedo responder con metricas soportadas de Tiendanube.",
       buildUnsupportedRecommendations(),
     );
   }
@@ -329,7 +329,7 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
     normalized.includes("engagement")
   ) {
     return buildUnsupportedResponse(
-      "Eso hoy está fuera de alcance. No tengo acceso a métricas de Instagram; solo puedo ayudarte con ventas, productos e inventario de Tiendanube.",
+      "Eso hoy esta fuera de alcance. No tengo acceso a metricas de Instagram; solo puedo ayudarte con ventas, productos e inventario de Tiendanube.",
       buildUnsupportedRecommendations(),
     );
   }
@@ -480,7 +480,7 @@ function buildUnsupportedResponse(answer: string, recommendedActions = buildUnsu
   return {
     answer:
       answer.trim() ||
-      "Te puedo ayudar con resúmenes de ventas, snapshots semanales, comparaciones entre períodos, productos top y oportunidades de stock bajo.",
+      "Todavia no puedo responder esa pregunta con datos confiables. Puedo ayudarte con ventas, comparaciones entre periodos, productos top, resumen semanal y oportunidades de stock bajo.",
     confidence: "low",
     evidence: [],
     recommendedActions,
@@ -635,6 +635,159 @@ function buildLowStockResponse(_answer: string, output: LowStockOutput, toolResu
   };
 }
 
+function actionStep(label: string, why: string, next: string) {
+  return `${label}. Por que: ${why}. Siguiente paso: ${next}.`;
+}
+
+function makeResponseActionable(response: AnalystResponse, primary: AnalystToolResult): AnalystResponse {
+  switch (primary.toolName) {
+    case "compare_periods": {
+      const output = primary.output as ComparePeriodsOutput;
+      const revenueDown = output.comparison.revenue.absoluteChange < 0;
+      const ordersDown = output.comparison.orderCount.absoluteChange < 0;
+
+      return {
+        ...response,
+        answer: `${response.answer} Proximo paso: ${
+          revenueDown
+            ? "identifica si la caida viene por menos pedidos, menor ticket promedio o menos unidades vendidas."
+            : "revisa que productos sostienen el crecimiento y si tienen stock suficiente."
+        }`,
+        recommendedActions: [
+          actionStep(
+            revenueDown ? "Investiga la causa antes de descontar" : "Protege lo que esta funcionando",
+            revenueDown ? "un descuento sin diagnostico puede destruir margen" : "el crecimiento se corta rapido si falta stock",
+            ordersDown ? "revisa productos con menos pedidos y canales de venta" : "consulta productos top del mismo periodo",
+          ),
+          actionStep(
+            "Cruza la comparacion con productos top",
+            "el total no dice que producto explica el cambio",
+            "pregunta que productos vendieron mas en esta misma ventana",
+          ),
+        ],
+      };
+    }
+    case "get_sales_summary": {
+      const output = primary.output as SalesSummaryOutput;
+      const hasOrders = output.summary.orderCount > 0;
+
+      return {
+        ...response,
+        answer: `${response.answer} Proximo paso: ${
+          hasOrders
+            ? "comparalo contra el periodo anterior para saber si es mejora, caida o estabilidad."
+            : "confirma sincronizacion y pedidos antes de tomar decisiones comerciales."
+        }`,
+        recommendedActions: [
+          actionStep(
+            hasOrders ? "Compara esta ventana contra la anterior" : "Valida la sincronizacion",
+            hasOrders ? "un total aislado no muestra tendencia" : "sin pedidos sincronizados no hay lectura confiable",
+            hasOrders ? `pedi comparar los ultimos ${output.window.days} dias contra el periodo anterior` : "corre sync y volve a consultar ventas",
+          ),
+          actionStep(
+            "Separa volumen y ticket promedio",
+            "las acciones cambian si vendiste menos pedidos o si bajo el ticket",
+            "revisa productos top antes de definir una promo",
+          ),
+        ],
+      };
+    }
+    case "get_top_products": {
+      const output = primary.output as TopProductsOutput;
+      const topProduct = output.products[0] ?? null;
+
+      return {
+        ...response,
+        answer: topProduct
+          ? `${response.answer} Proximo paso: revisa stock y margen de ${topProduct.name} antes de empujar mas demanda.`
+          : `${response.answer} Proximo paso: valida la sincronizacion o usa una ventana mas larga.`,
+        recommendedActions: topProduct
+          ? [
+              actionStep(
+                `Revisa stock de ${topProduct.name}`,
+                "promocionar un ganador sin stock convierte demanda en frustracion",
+                "confirma unidades disponibles antes de crear una promo",
+              ),
+              actionStep(
+                "Arma una accion comercial alrededor del top 3",
+                "los productos que ya tienen demanda son la palanca mas rapida",
+                "define promo, bundle o destaque para el producto con mejor stock y margen",
+              ),
+            ]
+          : [
+              actionStep(
+                "Valida la sincronizacion y la ventana",
+                "sin ventas de productos no hay ranking accionable",
+                "corre sync y consulta una ventana mas larga",
+              ),
+            ],
+      };
+    }
+    case "get_weekly_business_snapshot": {
+      const output = primary.output as WeeklySnapshotOutput;
+      const topProduct = output.topProducts.products[0] ?? null;
+      const revenueDown = output.comparison.comparison.revenue.absoluteChange < 0;
+
+      return {
+        ...response,
+        answer: `${response.answer} Proximo paso: ${
+          topProduct
+            ? `revisa stock de ${topProduct.name} y decidi si conviene sostener o empujar esa demanda.`
+            : "revisa si hubo pedidos sincronizados esta semana."
+        }`,
+        recommendedActions: [
+          actionStep(
+            "Elige una prioridad semanal",
+            "el snapshot tiene que terminar en una decision, no en observacion",
+            revenueDown ? "investiga la caida empezando por productos top y pedidos perdidos" : "protege el crecimiento revisando stock del producto top",
+          ),
+          actionStep(
+            topProduct ? `Revisa ${topProduct.name}` : "Revisa el catalogo con ventas recientes",
+            topProduct ? "es el producto que mas explica la semana" : "necesitas encontrar el primer producto accionable",
+            topProduct ? "confirma stock, margen y si merece una promo corta" : "consulta productos top de los ultimos 7 dias",
+          ),
+        ],
+      };
+    }
+    case "get_low_stock_opportunities": {
+      const output = primary.output as LowStockOutput;
+      const outOfStockItems = output.opportunities.filter((item) => getLowStockStatus(item.stock) === "out_of_stock");
+      const topRisk = output.opportunities[0] ?? null;
+
+      return {
+        ...response,
+        answer: topRisk
+          ? `${response.answer} Proximo paso: ${
+              topRisk.stock <= 0 ? "reponelo antes de empujar mas trafico." : "defini si hay que reponerlo antes de que corte ventas."
+            }`
+          : `${response.answer} Proximo paso: proba un umbral de stock mas alto o mas dias de ventas recientes.`,
+        recommendedActions: topRisk
+          ? [
+              actionStep(
+                outOfStockItems.length > 0 ? "Repon primero las variantes sin stock" : `Revisa primero ${topRisk.name}`,
+                outOfStockItems.length > 0 ? "ya estan bloqueando ventas hoy" : "combina stock bajo con demanda reciente",
+                "ordena la reposicion por ventas recientes, no solo por stock disponible",
+              ),
+              actionStep(
+                "Pausa promociones sobre productos en riesgo",
+                "mas demanda sin stock suficiente puede cortar ventas y empeorar la experiencia",
+                "promociona alternativas con stock sano hasta reponer",
+              ),
+            ]
+          : [
+              actionStep(
+                "Amplia el umbral o la ventana de analisis",
+                "puede no haber riesgo con el umbral actual",
+                "proba un umbral de stock mas alto o una ventana de ventas mas larga",
+              ),
+            ],
+      };
+    }
+    default:
+      return response;
+  }
+}
+
 function buildResponseFromToolResults(answer: string, toolResults: AnalystToolResult[]): AnalystResponse {
   const primary = toolResults[toolResults.length - 1] ?? null;
 
@@ -644,15 +797,15 @@ function buildResponseFromToolResults(answer: string, toolResults: AnalystToolRe
 
   switch (primary.toolName) {
     case "compare_periods":
-      return buildCompareResponse(answer, primary.output as ComparePeriodsOutput, toolResults);
+      return makeResponseActionable(buildCompareResponse(answer, primary.output as ComparePeriodsOutput, toolResults), primary);
     case "get_sales_summary":
-      return buildSalesSummaryResponse(answer, primary.output as SalesSummaryOutput, toolResults);
+      return makeResponseActionable(buildSalesSummaryResponse(answer, primary.output as SalesSummaryOutput, toolResults), primary);
     case "get_top_products":
-      return buildTopProductsResponse(answer, primary.output as TopProductsOutput, toolResults);
+      return makeResponseActionable(buildTopProductsResponse(answer, primary.output as TopProductsOutput, toolResults), primary);
     case "get_weekly_business_snapshot":
-      return buildWeeklySnapshotResponse(answer, primary.output as WeeklySnapshotOutput, toolResults);
+      return makeResponseActionable(buildWeeklySnapshotResponse(answer, primary.output as WeeklySnapshotOutput, toolResults), primary);
     case "get_low_stock_opportunities":
-      return buildLowStockResponse(answer, primary.output as LowStockOutput, toolResults);
+      return makeResponseActionable(buildLowStockResponse(answer, primary.output as LowStockOutput, toolResults), primary);
     default:
       return buildUnsupportedResponse(answer);
   }

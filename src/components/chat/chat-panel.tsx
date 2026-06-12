@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowUp, LayoutGrid, Settings2, Sparkles, Store } from "lucide-react";
+import { ArrowUp, HelpCircle, LayoutGrid, Settings2, Sparkles, Store } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildCanvasModel } from "@/lib/ai/canvas-builders";
 import { formatDateTimeLabel } from "@/lib/formatting";
+import { copyReportSummary, exportReportCsv, pinReport } from "@/lib/reports/actions";
 import type { AnalystResponse, ChatMessage } from "@/lib/types";
 import { AnalysisCanvas } from "./analysis-canvas";
 import { ReportPreviewCard } from "./report-preview-card";
@@ -19,16 +20,19 @@ type ChatPanelProps = {
 
 const emptyStatePrompts = [
   {
+    description: "Compara ingresos, pedidos y unidades vendidas.",
     label: "Ventas",
     prompt: "Como se comparan los ingresos contra la semana pasada?",
     tone: "text-sky-700",
   },
   {
+    description: "Detecta variantes con stock bajo y demanda reciente.",
     label: "Inventario",
     prompt: "Que SKUs se quedan sin stock en 14 dias?",
     tone: "text-orange-600",
   },
   {
+    description: "Resume performance, producto top y proxima accion.",
     label: "Resumen semanal",
     prompt: "Dame el resumen de performance de la ultima semana",
     tone: "text-emerald-600",
@@ -36,9 +40,45 @@ const emptyStatePrompts = [
 ];
 
 function getLastSyncLabel(lastSyncAt: string | null): string {
-  if (!lastSyncAt) return "Todavía no sincronizado";
+  if (!lastSyncAt) return "Todavia no sincronizado";
   const formatted = formatDateTimeLabel(lastSyncAt);
   return formatted === lastSyncAt ? "Sincronizado recientemente" : `Sincronizado ${formatted}`;
+}
+
+function UnsupportedFeedbackCard({
+  answer,
+  onSuggestedQuestionClick,
+  suggestions,
+}: {
+  answer: string;
+  onSuggestedQuestionClick: (question: string) => void;
+  suggestions: string[];
+}) {
+  return (
+    <article className="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-amber-950">
+      <div className="flex items-start gap-3">
+        <div className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
+          <HelpCircle className="h-4.5 w-4.5" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Pregunta fuera de alcance</p>
+          <p className="mt-2 text-[1.05rem] leading-7">{answer}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {suggestions.slice(0, 3).map((question) => (
+              <button
+                key={question}
+                type="button"
+                onClick={() => onSuggestedQuestionClick(question)}
+                className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-left text-sm leading-5 text-amber-950 transition hover:bg-amber-100"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
 }
 
 export function ChatPanel({
@@ -53,7 +93,7 @@ export function ChatPanel({
   const [isPending, setIsPending] = useState(false);
   const [latestResult, setLatestResult] = useState<AnalystResponse | null>(null);
   const [latestQuestion, setLatestQuestion] = useState("");
-  const [copyState, setCopyState] = useState<"done" | "idle">("idle");
+  const [actionState, setActionState] = useState<"already-pinned" | "copied" | "exported" | "idle" | "pinned">("idle");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const canvasModel = useMemo(
@@ -91,6 +131,11 @@ export function ChatPanel({
 
   async function submitPrompt(trimmedInput: string) {
     if (!trimmedInput || isPending) {
+      return;
+    }
+
+    if (!hasConnection) {
+      setError("Primero conecta y sincroniza una tienda Tiendanube para poder analizar datos reales.");
       return;
     }
 
@@ -153,9 +198,29 @@ export function ChatPanel({
       return;
     }
 
-    await navigator.clipboard.writeText(`${canvasModel.title}\n\n${canvasModel.summary}`);
-    setCopyState("done");
-    window.setTimeout(() => setCopyState("idle"), 1500);
+    await copyReportSummary(canvasModel);
+    setActionState("copied");
+    window.setTimeout(() => setActionState("idle"), 1500);
+  }
+
+  function handleExportCsv() {
+    if (!canvasModel) {
+      return;
+    }
+
+    exportReportCsv(canvasModel);
+    setActionState("exported");
+    window.setTimeout(() => setActionState("idle"), 1500);
+  }
+
+  function handlePinReport() {
+    if (!canvasModel) {
+      return;
+    }
+
+    const result = pinReport(canvasModel);
+    setActionState(result.status);
+    window.setTimeout(() => setActionState("idle"), 1500);
   }
 
   async function handlePromptClick(prompt: string) {
@@ -198,23 +263,34 @@ export function ChatPanel({
           {messages.length === 0 ? (
             <div className="flex min-h-full flex-col justify-between gap-10">
               <div className="max-w-xl pt-8">
-           
-                                <h1 className="max-w-md text-[3.35rem] font-semibold leading-[0.95] tracking-[-0.05em] text-foreground">
+                <h1 className="max-w-md text-[3.35rem] font-semibold leading-[0.95] tracking-[-0.05em] text-foreground">
                   Hola, preguntame sobre tu tienda.
                 </h1>
                 <p className="mt-4 text-[1rem] text-muted-foreground">
-                  {hasConnection ? `${lastSyncLabel}.` : "Primero conectá tu tienda Tiendanube."}
+                  {hasConnection
+                    ? `${lastSyncLabel}. Elegi una pregunta sugerida o escribi una consulta comercial.`
+                    : "Primero conecta tu tienda Tiendanube. Sin datos sincronizados, el analista no debe inventar numeros."}
                 </p>
+                {!hasConnection ? (
+                  <Link
+                    href="/connect"
+                    className="mt-5 inline-flex rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                  >
+                    Conectar tienda
+                  </Link>
+                ) : null}
               </div>
 
               <div className="max-w-xl space-y-4 pb-2">
                 {emptyStatePrompts.map((item) => (
                   <div key={item.prompt}>
                     <p className={`text-sm font-semibold uppercase tracking-[0.22em] ${item.tone}`}>{item.label}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
                     <button
                       type="button"
                       onClick={() => handlePromptClick(item.prompt)}
-                      className="mt-3 flex w-full cursor-pointer items-center rounded-[1.35rem] border border-border-strong bg-card px-5 py-4 text-left text-[1.05rem] text-foreground shadow-sm transition hover:border-accent hover:bg-muted"
+                      disabled={!hasConnection || isPending}
+                      className="mt-3 flex w-full cursor-pointer items-center rounded-[1.35rem] border border-border-strong bg-card px-5 py-4 text-left text-[1.05rem] text-foreground shadow-sm transition hover:border-accent hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {item.prompt}
                     </button>
@@ -246,16 +322,34 @@ export function ChatPanel({
                           <Sparkles className="h-4 w-4 text-accent" />
                         </div>
                         <p className="max-w-lg text-[1.05rem] leading-8 text-foreground">
-                          Esto es lo que encontré. Tomé pedidos pagos de Tiendanube y los comparé contra la ventana anterior.
+                          Esto es lo que encontre. Tome pedidos pagos de Tiendanube y los compare contra la ventana anterior.
                         </p>
                       </div>
                       <ReportPreviewCard
                         model={canvasModel}
                         onCopiarSummary={handleCopiarSummary}
+                        onExportCsv={handleExportCsv}
                         onOpenAnalysis={() => window.scrollTo({ behavior: "smooth", top: 0 })}
+                        onPinReport={handlePinReport}
                         onSuggestedQuestionClick={handlePromptClick}
                       />
                     </div>
+                  );
+                }
+
+                if (
+                  message.role === "assistant" &&
+                  index === resolvedLastAssistantIndex &&
+                  latestResult &&
+                  latestResult.toolResults.length === 0
+                ) {
+                  return (
+                    <UnsupportedFeedbackCard
+                      key={`${message.role}-${index}`}
+                      answer={latestResult.answer}
+                      onSuggestedQuestionClick={handlePromptClick}
+                      suggestions={latestResult.recommendedActions}
+                    />
                   );
                 }
 
@@ -300,28 +394,40 @@ export function ChatPanel({
             <textarea
               value={input}
               onChange={(event) => setInput(event.currentTarget.value)}
-              placeholder="Preguntá lo que quieras sobre tu tienda..."
+              placeholder={hasConnection ? "Pregunta lo que quieras sobre tu tienda..." : "Conecta tu tienda para empezar..."}
               className="min-h-28 w-full resize-none bg-transparent text-[1.18rem] leading-8 text-foreground outline-none placeholder:text-muted-foreground"
-              disabled={isPending}
+              disabled={isPending || !hasConnection}
             />
             <div className="mt-4 flex items-center justify-between gap-3">
               <div>
                 {error ? (
                   <p className="text-sm text-destructive">{error}</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">↵ to send · ⇧↵ for new line</p>
+                  <p className="text-sm text-muted-foreground">
+                    {hasConnection ? "Enter to send - Shift+Enter for new line" : "Necesitas una conexion activa para consultar datos."}
+                  </p>
                 )}
               </div>
               <button
                 type="submit"
-                disabled={isPending || !input.trim()}
+                disabled={isPending || !hasConnection || !input.trim()}
                 className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ArrowUp className="h-5 w-5" />
               </button>
             </div>
           </form>
-          {copyState === "done" ? <p className="mt-2 text-right text-sm text-emerald-600">Resumen copiado.</p> : null}
+          {actionState !== "idle" ? (
+            <p className="mt-2 text-right text-sm text-emerald-600">
+              {actionState === "copied"
+                ? "Resumen copiado."
+                : actionState === "exported"
+                  ? "CSV exportado."
+                  : actionState === "already-pinned"
+                    ? "Este reporte ya estaba fijado."
+                    : "Reporte fijado."}
+            </p>
+          ) : null}
         </div>
       </section>
 

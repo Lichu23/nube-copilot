@@ -12,8 +12,6 @@ export function TopProductsTable({
   helperLabel = "Esperando la sincronizacion inicial",
   rows,
 }: TopProductsTableProps) {
-  const fallbackRows: TopProductRow[] = [{ name: "Sin datos todavia", orderCount: 0, revenue: 0, unitsSold: 0 }];
-  const visibleRows = rows.length > 0 ? rows : fallbackRows;
   const hasRows = rows.length > 0;
 
   return (
@@ -33,20 +31,29 @@ export function TopProductsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5 bg-white">
-            {visibleRows.map((row) => (
-              <tr key={row.name}>
-                <td className="px-4 py-3">{row.name}</td>
-                <td className="px-4 py-3">{hasRows ? row.unitsSold : "-"}</td>
-                <td className="px-4 py-3">
-                  {hasRows
-                    ? formatCurrency(row.revenue, currency, {
-                        maxFractionDigits: 2,
-                        minFractionDigits: 2,
-                      })
-                    : "-"}
+            {hasRows ? (
+              rows.map((row) => (
+                <tr key={row.name}>
+                  <td className="px-4 py-3">{row.name}</td>
+                  <td className="px-4 py-3">{row.unitsSold}</td>
+                  <td className="px-4 py-3">
+                    {formatCurrency(row.revenue, currency, {
+                      maxFractionDigits: 2,
+                      minFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="px-4 py-10 text-center">
+                  <p className="font-medium text-zinc-800">Todavia no hay productos con ventas en esta ventana.</p>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    Sincroniza pedidos o cambia la ventana de comparacion para llenar este ranking.
+                  </p>
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
