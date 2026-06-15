@@ -1,452 +1,277 @@
-# UI/UX Rebuild Plan — AI Business Analyst
+﻿# UI/UX Rebuild Plan - NubeCopilot
 
-This document defines the UI/UX rebuild for the Tiendanube AI Business Analyst based on the recent product direction:
+This document defines the UI/UX rebuild for the Tiendanube AI Business Analyst based on the current desktop-first product direction.
 
-- **Chat-first**
-- **Mobile-first**
-- **Desktop-adaptive**
-- **Trust-layer-driven**
-- **Dashboard as validation / pinned insights, not the primary workflow**
+## Product direction
 
----
+- Spanish product UI by default.
+- Desktop-first for this branch, then mobile adaptation.
+- Public marketing explains value and trust before authorization.
+- Activation flow connects Tiendanube, shows sync progress, then captures owner intent.
+- Logged-in app uses a left sidebar shell.
+- Chat remains the primary product surface.
+- Analysis canvas stays connected to chat, not separated as a dead dashboard view.
+- Dashboard supports monitoring and validation; it is secondary to the analyst workflow.
 
-## Quick path
+## Reference views from current direction
 
-1. Build the **mobile conversation flow** first.
-2. Turn every AI answer into a **report card preview**.
-3. Open full analysis in a **detail view / sheet on mobile**.
-4. Adapt desktop into **chat + analysis canvas**.
-5. Add the **trust layer** behind progressive disclosure.
-6. Reuse the **Lovable-inspired visual language** for colors and tone.
+### Home
 
----
+Use the reference as a premium editorial landing page, but translate and adapt copy to Spanish.
 
-## Product model
-
-| Area | Role |
-|-------|------|
-| Chat | Ask |
-| Analysis detail / canvas | Inspect |
-| Trust layer | Verify |
-| Dashboard | Save, pin, monitor |
-
-Core principle:
-
-> This product should feel like **conversational analytics with a structured report workspace**, not like ChatGPT alone and not like a classic BI dashboard alone.
-
----
-
-## UX architecture
-
-## 1. Mobile-first base flow
-
-### Main screen
-
-- Full-screen chat feed
-- Sticky composer at the bottom
-- Suggested prompts near the top for empty / first-use states
-- AI responses rendered as **report cards**, not giant expanded analytics blocks
-
-### AI report card anatomy
-
-Each answer card should include:
-
-1. Report label + source
-2. Title
-3. 2–4 line summary
-4. KPI strip
-5. Mini chart or table preview
-6. Quick actions
-7. Suggested follow-up chips
-8. Primary CTA: **Open analysis**
-
-### Mobile detail view
-
-Tapping a report card opens a dedicated analysis surface:
-
-- full-height sheet or pushed detail screen
-- back-to-chat action
-- KPI cards
-- AI summary
-- tabs for:
-  - Chart
-  - Table
-  - Summary
-- trust layer collapsible
-- quick actions:
-  - Pin
-  - CSV
-  - Image
-  - Copy
-
-### Mobile rules
-
-- Do not show dense full tables inline in the chat feed by default
-- Do not overload the top action row
-- Keep the detail view focused on one report at a time
-- Use preview-in-feed, inspect-in-detail
-
----
-
-## 2. Desktop adaptation
-
-### Layout
-
-- Left rail: chat conversation
-- Right panel: persistent analysis canvas
-- Resizable divider
-- Chat remains visible while the current answer is inspected
-
-### Desktop panel ratio
-
-- Left: ~32% to 36%
-- Right: ~64% to 68%
-
-### Desktop canvas structure
+Required sections:
 
 1. Header
-   - source badge
-   - date range
-   - sync status
-   - quick actions
-2. KPI row
-3. AI summary card
-4. Analysis tabs
-   - Chart
-   - Table
-   - Summary
-5. Trust layer
-6. Follow-up prompts
+   - Brand: NubeCopilot / Nimbo-style mark is acceptable as inspiration, not final naming unless decided.
+   - Navigation: Como funciona, Tus datos, Iniciar sesion.
+   - Primary CTA: Conectar tienda.
+2. Hero
+   - Large serif headline.
+   - Teal emphasis for the emotional phrase.
+   - Clear explanation: reads sales, inventory, products, orders, and customer signals.
+   - Trust line: read-only access, disconnect anytime.
+3. Product preview
+   - Desktop browser-like chat preview.
+   - One business question and one report card with metrics.
+4. How it works
+   - Connect Tiendanube.
+   - Tell us your goals.
+   - Ask anything.
+5. What we read
+   - Store profile.
+   - Products and variants.
+   - Orders from the last 90 days.
+   - Order items.
+   - Customer signals from orders.
+   - Read-only and secure.
+6. Final CTA
+   - Strong dark CTA block.
 
-### Desktop rules
+### Auth / connection
 
-- Right panel is a **stable workspace**
-- User should not need to scroll the chat to inspect old answers
-- Trust details should live in the canvas, not only inside the left feed
+The current `/connect` route should become a focused activation page, not a generic dev/OAuth validation page.
 
----
+Required states:
 
-## Trust layer
+1. Connect store
+   - Step 1 of 2.
+   - Explain read-only access.
+   - Explicitly list what we read.
+   - CTA starts Tiendanube OAuth.
+2. Syncing store
+   - Step progress.
+   - Rows: store profile, products, variants/inventory, orders last 90 days, order items, customer signals.
+   - Use real sync status when available; static/progressive fallback is acceptable for first UI pass.
+3. Store connected
+   - Success confirmation.
+   - Move user into onboarding/profile setup.
 
-Trust is NOT optional. It is part of the product.
+### Owner onboarding
 
-### Default trust metadata
+Create a dedicated onboarding flow after connection/sync.
 
-Every answer should expose:
+Important rule: do not ask for data Tiendanube already provides or that we can infer from synced orders.
 
-- Source
-- Date range
-- Filters applied
-- Last sync
-- Metric definition / calculation explanation
-- Raw rows preview
+Steps:
 
-### Disclosure order
+1. About you
+   - Name.
+   - Role.
+2. Your store
+   - Category.
+   - Business stage.
+   - Do not ask average monthly orders unless there is a strong product reason; prefer inferred order volume.
+3. Main goal
+   - Increase revenue.
+   - Avoid stockouts.
+   - Understand top products.
+   - Improve repeat purchases.
+   - Reduce slow-moving inventory.
+4. Main friction
+   - Knowing what to reorder.
+   - Understanding why sales changed.
+   - Finding products that are not moving.
+   - Preparing reports.
+   - Deciding what to promote.
+5. Cadence and tone
+   - Cadence: daily, weekly, monthly.
+   - Tone: direct, detailed, action-focused.
+6. Review
+   - Explain how the analyst will work.
+   - CTA to enter the app.
 
-1. Business explanation
-2. Filters + source + last sync
-3. Calculation explanation
-4. Raw rows preview
-5. Debug / technical evidence only if needed
+### App shell / sidebar
 
-### Out-of-scope behavior
+A sidebar is possible and recommended, but it changes the current routing structure.
 
-If the user asks for data the product does not have:
+Current app state:
 
-- say it clearly
-- avoid guessing
-- suggest one supported question
+- `/` renders the chat directly.
+- `/chat` redirects to `/`.
+- `/dashboard` uses `AppShell` with a top nav.
+- `/connect` also uses `AppShell` with a top nav.
 
-Example:
+Target app state:
 
-> I can’t answer that from Tiendanube data yet. Right now I can help with sales, products, customers, and inventory.
+- Public home should live at `/` when the merchant is not activated.
+- Analyst chat should live at `/chat` or `/app/chat`.
+- Dashboard should live at `/dashboard` or `/app/dashboard`.
+- Saved analyses should get its own route.
+- Settings / Tune your analyst should get its own route.
+- Logged-in/product routes should share a sidebar shell.
 
----
+Recommended route direction for this branch:
 
-## Suggested component map
+- `/` - public home / landing.
+- `/connect` - connect and sync activation.
+- `/onboarding` - owner profile setup.
+- `/chat` - main analyst workspace with sidebar + chat + canvas.
+- `/dashboard` - monitoring dashboard inside the same sidebar shell.
+- `/saved` - saved analyses.
+- `/settings` - tune analyst.
 
-## Chat shell
+### Dashboard
 
-- `ResizablePanelGroup`
-- `ScrollArea`
-- `Textarea`
-- `Button`
-- `Separator`
+Use the mock as direction, but avoid turning the product into a BI dashboard.
 
-## Report cards
+Keep:
 
-- `Card`
-- `Badge`
-- `Button`
-- `DropdownMenu`
-- shadcn `Chart`
+- Sidebar shell.
+- Personalized greeting.
+- 7-day default summary.
+- KPI cards.
+- Revenue trend.
+- Analyst insight card.
+- Top products.
+- Stock risks.
+- Suggested next steps.
+- CTA back to analyst chat.
 
-## Analysis detail / canvas
+Modify for our product:
 
-- `Card`
-- `Tabs`
-- `Table`
-- `Badge`
-- `Tooltip`
-- `Collapsible`
-- `Sheet`
-- `Dialog`
+- Dashboard copy must be Spanish.
+- Metrics must use current real queries, not mock values.
+- Dashboard modules should later reorder based on onboarding profile.
+- Every insight should link back to chat with a contextual prompt.
 
-## Loading / feedback
+### Chat + canvas
 
-- `Skeleton`
-- `Alert`
-- `Sonner`
+The sidebar is good, but chat cannot become a blank ChatGPT clone. The canvas is necessary.
 
----
+Desktop target:
 
-## Visual design system
-
-The UI should stay close to the Lovable example you shared:
-
-- premium but calm
-- editorial headline feel
-- clean SaaS surfaces
-- trust-heavy
-- soft contrast
-- teal accents
-- minimal color noise
-
----
-
-## Colors
-
-These values are **implementation tokens inspired by the Lovable example**, not brand-identity absolutes. They are intentionally close to the visual direction shown in the mock.
-
-### Core palette
-
-| Token | Hex | Usage |
-|------|------|------|
-| `background` | `#F8FAFC` | app background |
-| `surface` | `#FFFFFF` | cards, canvas, sheets |
-| `surface-muted` | `#F3F6F8` | subtle sections, muted blocks |
-| `border` | `#D9E2E8` | default borders |
-| `border-strong` | `#BFD3DB` | selected report card / active surfaces |
-| `text-primary` | `#111827` | main body text |
-| `text-secondary` | `#667085` | supporting text |
-| `text-muted` | `#94A3B8` | captions / helper text |
-| `heading-ink` | `#111111` | display headlines |
-| `brand-teal` | `#0F9FA8` | primary accent |
-| `brand-teal-dark` | `#0B7F87` | hover / stronger emphasis |
-| `brand-teal-soft` | `#E7F8F8` | summary card background |
-| `brand-green` | `#22C55E` | positive metric deltas |
-| `brand-green-soft` | `#EAF8EF` | positive backgrounds |
-| `ink-navy` | `#0F172A` | user message bubbles / strong contrast actions |
-| `warning-amber` | `#F59E0B` | inventory / warning states |
-| `danger-rose` | `#EF4444` | negative / error states |
-
-### Recommended CSS variable mapping
-
-```css
-:root {
-  --background: 248 250 252;
-  --foreground: 17 24 39;
-  --card: 255 255 255;
-  --card-foreground: 17 24 39;
-  --popover: 255 255 255;
-  --popover-foreground: 17 24 39;
-  --primary: 15 159 168;
-  --primary-foreground: 255 255 255;
-  --secondary: 243 246 248;
-  --secondary-foreground: 17 24 39;
-  --muted: 243 246 248;
-  --muted-foreground: 102 112 133;
-  --accent: 231 248 248;
-  --accent-foreground: 11 127 135;
-  --border: 217 226 232;
-  --input: 217 226 232;
-  --ring: 15 159 168;
-  --destructive: 239 68 68;
-}
+```text
+Sidebar | Chat thread | Analysis canvas
 ```
 
----
+Rules:
 
-## Typography
+- Chat is the primary action surface.
+- Canvas is the inspection/report surface.
+- Selecting any report card opens that report in the canvas.
+- Saved analyses reopen in the canvas.
+- Trust layer belongs inside the canvas.
+- Empty chat state should use personalized suggested prompts after onboarding.
 
-The Lovable direction uses a strong editorial contrast:
+Recommended desktop ratio:
 
-- serif display for report titles / big statements
-- clean sans-serif for UI / tables / controls
+- Sidebar: fixed 240px.
+- Chat: 36-42%.
+- Canvas: remaining width.
 
-### Recommended pairing
+Mobile target later:
 
-| Role | Font |
-|------|------|
-| Display / headlines | `Cormorant Garamond` or `Playfair Display` |
-| UI / body / controls | `Inter` |
+- Sidebar collapses.
+- Chat remains primary.
+- Canvas opens as a full-screen detail/sheet.
 
-### Recommended usage
+## Build order for this branch
 
-#### Display serif
+### Phase 1 - Design tokens and Spanish UI foundation
 
-Use for:
+Status: complete.
 
-- report titles
-- onboarding hero line
-- snapshot headline
+- Define color tokens.
+- Define font pairing.
+- Define spacing, radius, borders, shadows.
+- Connect tokens to Tailwind theme.
+- Normalize shared UI copy to Spanish.
+- Keep code identifiers and internal artifacts in English.
 
-Suggested class idea:
+### Phase 2 - Public home and trust story
 
-```css
-.font-display {
-  font-family: "Cormorant Garamond", "Playfair Display", serif;
-}
-```
+Status: complete.
 
-#### Sans
 
-Use for:
+- Replace current root chat view with public landing behavior where appropriate.
+- Add Spanish hero, trust line, product preview, how-it-works, what-we-read, final CTA.
+- Ensure CTA routes to `/connect`.
 
-- all product UI
-- labels
-- badges
-- tabs
-- tables
-- metric values if clarity wins
+### Phase 3 - Connect and sync activation
 
-Suggested class idea:
+Status: complete.
 
-```css
-.font-ui {
-  font-family: "Inter", system-ui, sans-serif;
-}
-```
 
-### Type scale
+- Redesign `/connect` into the connection page.
+- Add sync-progress state/page using current sync API behavior.
+- Add connected success state.
+- Keep copy accurate: read-only, last 90 days of orders, hashed customer contact info.
 
-| Element | Size |
-|------|------|
-| Desktop report title | `48–56px` |
-| Mobile report title | `32–40px` |
-| Section title | `20–24px` |
-| KPI value | `32–40px` |
-| Body | `16px` |
-| Small labels | `12–13px` |
+### Phase 4 - Owner onboarding
 
----
+Status: complete.
 
-## Spacing and shape
 
-### Radius
+- Add `/onboarding` route.
+- Build desktop onboarding steps.
+- Persist owner profile.
+- Skip average monthly orders unless explicitly needed.
 
-- Cards: `20px`
-- Inputs: `20px`
-- KPI cards: `18px`
-- Chips: `9999px`
+### Phase 5 - Sidebar app shell
 
-### Border behavior
+Status: complete.
 
-- default cards: `1px` soft border
-- selected card: teal border + subtle glow
-- trust layer: soft border, lower contrast than primary report card
 
-### Shadows
+- Replace top-nav `AppShell` with product sidebar shell for logged-in routes.
+- Move chat to `/chat` as the real product route.
+- Add dashboard, saved analyses, and settings routes to the sidebar.
 
-Keep shadows subtle:
+### Phase 6 - Chat + analysis canvas workspace
 
-- use border-first design
-- only light ambient elevation
+Status: complete.
 
----
 
-## Interaction rules
+- Convert chat into sidebar + chat + canvas layout.
+- Keep report cards in chat.
+- Keep selected analysis in the canvas.
+- Reopen saved analyses in canvas.
+- Move trust details into the canvas.
 
-## Report card states
+### Phase 7 - Personalized dashboard
 
-- default
-- hover
-- selected
-- loading
-- error
+Status: complete for this branch via database-backed analyst preferences tied to the active Tiendanube store.
 
-## Empty state
 
-Should show:
+- Apply owner profile to dashboard ordering and suggested next steps.
+- Default window based on cadence.
+- Prioritize modules based on goal and friction.
+- Link dashboard insights back into chat.
 
-- welcome line
-- connected store status
-- 2–4 best prompt groups
-- one path to sample report
+### Phase 8 - Actions and polish
 
-Do NOT show a giant wall of suggestions.
+Status: complete for this branch. Analyst preferences and saved reports persist in Postgres by active Tiendanube store.
 
-## Follow-up prompts
 
-Make them:
+- Pin, export, copy actions.
+- Better loading and unsupported-question states.
+- Saved analyses fallback behavior.
+- Mobile adaptation pass.
 
-- short
-- business-focused
-- contextual
+## Implementation notes
 
-Examples:
-
-- Which products drove most of the growth?
-- Compare last week vs the same week last month
-- Show customers who bought on Thursday
-
----
-
-## Build order
-
-## Phase 1 — Design tokens
-
-- define color tokens
-- define font pairing
-- define spacing / radius / borders
-- connect to Tailwind / shadcn theme
-
-## Phase 2 — Mobile shell
-
-- chat page
-- sticky composer
-- report card component
-- empty state
-
-## Phase 3 — Mobile analysis detail
-
-- detail sheet / screen
-- KPI block
-- AI summary
-- chart / table / summary tabs
-- trust layer
-
-## Phase 4 — Desktop adaptation
-
-- resizable split layout
-- selected-answer sync into canvas
-- desktop trust layout
-
-## Phase 5 — Actions and polish
-
-- pin
-- export
-- copy for WhatsApp/Slack
-- better loading states
-- better unsupported-question UI
-
----
-
-## Done criteria
-
-- A merchant can ask a question on mobile and understand the answer immediately.
-- A merchant can open one answer and inspect it without losing the chat.
-- A merchant can verify where the numbers came from.
-- Desktop users can continue the same flow with a persistent analysis canvas.
-- The visual system feels consistent with the Lovable direction: calm, premium, trustworthy, teal-accented, editorial but usable.
-
----
-
-## Notes
-
-- Keep the dashboard secondary.
-- Keep the AI response structured.
-- Keep trust visible but progressive.
-- Keep mobile compact.
-- Keep desktop stable.
-
+- Do not copy the reference UI blindly. Use it as direction.
+- Use current tokens, not a new unrelated palette.
+- Use Spanish UI copy in product surfaces.
+- Keep dashboard secondary.
+- Keep chat and canvas together on desktop.
+- Trust and traceability are product features, not debug details.

@@ -1,11 +1,11 @@
-import type { CanvasModel } from "@/lib/types";
+﻿import type { CanvasModel } from "@/lib/types";
 
-export const pinnedReportsKey = "nube-copilot:pinned-reports";
 export const pinnedReportsChangedEvent = "nube-copilot:pinned-reports-changed";
 
 export type PinnedReport = {
   createdAt: string;
   id: string;
+  model?: CanvasModel;
   question: string;
   summary: string;
   title: string;
@@ -51,7 +51,7 @@ export function buildReportShareText(model: CanvasModel) {
   const metrics = model.metrics.map((metric) => `- ${metric.label}: ${metric.value}`).join("\n");
   const actions = model.summaryPoints.length > 0 ? `\n\nAcciones sugeridas:\n${model.summaryPoints.map((point) => `- ${point}`).join("\n")}` : "";
 
-  return `${model.title}\n${model.windowLabel}\n\nPregunta: ${model.userQuestion}\n\n${model.summary}\n\nMetricas:\n${metrics}${actions}`;
+  return `${model.title}\n${model.windowLabel}\n\nPregunta: ${model.userQuestion}\n\n${model.summary}\n\nMétricas:\n${metrics}${actions}`;
 }
 
 export async function copyReportSummary(model: CanvasModel) {
@@ -62,7 +62,7 @@ export function exportReportCsv(model: CanvasModel) {
   const rows =
     model.table?.rows && model.table.rows.length > 0
       ? [model.table.columns, ...model.table.rows]
-      : [["Metrica", "Valor"], ...model.metrics.map((metric) => [metric.label, metric.value])];
+      : [["Métrica", "Valor"], ...model.metrics.map((metric) => [metric.label, metric.value])];
   const csv = rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
 
   downloadFile(`${safeFilename(model.title) || "reporte"}.csv`, "text/csv;charset=utf-8", csv);
@@ -92,9 +92,24 @@ export function exportReportImage(model: CanvasModel) {
   downloadFile(`${safeFilename(model.title) || "reporte"}.svg`, "image/svg+xml;charset=utf-8", svg);
 }
 
-export function pinReport(model: CanvasModel) {
-  const current = getPinnedReports();
+export async function getPinnedReports() {
+  const response = await fetch("/api/reports/saved", { cache: "no-store" });
+
+  if (!response.ok) {
+    return [] satisfies PinnedReport[];
+  }
+
+  const payload = (await response.json()) as {
+    ok: boolean;
+    reports?: PinnedReport[];
+  };
+
+  return payload.ok ? (payload.reports ?? []) : [];
+}
+
+export async function pinReport(model: CanvasModel) {
   const reportId = buildReportId(model);
+  const current = await getPinnedReports();
   const existing = current.find((report) => report.id === reportId);
 
   if (existing) {
@@ -104,32 +119,36 @@ export function pinReport(model: CanvasModel) {
   const pinnedReport: PinnedReport = {
     createdAt: new Date().toISOString(),
     id: reportId,
+    model,
     question: model.userQuestion,
     summary: model.summary,
     title: model.title,
     windowLabel: model.windowLabel,
   };
 
-  localStorage.setItem(pinnedReportsKey, JSON.stringify([pinnedReport, ...current].slice(0, 20)));
+  const response = await fetch("/api/reports/saved", {
+    body: JSON.stringify(pinnedReport),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(payload?.message ?? "No se pudo fijar el reporte.");
+  }
+
   window.dispatchEvent(new Event(pinnedReportsChangedEvent));
   return { report: pinnedReport, status: "pinned" as const };
 }
 
-export function getPinnedReports() {
-  const reports = JSON.parse(localStorage.getItem(pinnedReportsKey) ?? "[]") as PinnedReport[];
-  const uniqueReports = new Map<string, PinnedReport>();
+export async function removePinnedReport(id: string) {
+  const response = await fetch(`/api/reports/saved?id=${encodeURIComponent(id)}`, { method: "DELETE" });
 
-  for (const report of reports) {
-    const stableId = [report.title, report.question, report.windowLabel, report.summary].join("|");
-    uniqueReports.set(stableId, { ...report, id: stableId });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(payload?.message ?? "No se pudo eliminar el reporte.");
   }
 
-  return Array.from(uniqueReports.values());
-}
-
-export function removePinnedReport(id: string) {
-  const next = getPinnedReports().filter((report) => report.id !== id);
-  localStorage.setItem(pinnedReportsKey, JSON.stringify(next));
   window.dispatchEvent(new Event(pinnedReportsChangedEvent));
-  return next;
+  return getPinnedReports();
 }

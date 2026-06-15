@@ -1,4 +1,4 @@
-﻿import { comparePeriods, getLowStockOpportunities, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
+import { comparePeriods, getLowStockOpportunities, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
 import { buildWeeklySnapshotCardContent } from "@/lib/weekly-snapshot";
 import {
   compareWindowConfig,
@@ -176,7 +176,7 @@ export async function getDashboardData(input: {
     rows: lowStockRows,
     stockThreshold: LOW_STOCK_THRESHOLD,
   });
-  const lowStockChatHref = `/?${new URLSearchParams({
+  const lowStockChatHref = `/chat?${new URLSearchParams({
     prompt: "Que productos estan en riesgo de quedarse sin stock?",
   }).toString()}`;
   const grossProductSales = topProducts.reduce((total, product) => total + product.revenue, 0);
@@ -188,7 +188,7 @@ export async function getDashboardData(input: {
     windowLabel: "ultimos 7 dias",
   });
   const snapshotChatHref = snapshotCard
-    ? `/?${new URLSearchParams({
+    ? `/chat?${new URLSearchParams({
         prompt: snapshotCard.askAiPrompt,
       }).toString()}`
     : undefined;

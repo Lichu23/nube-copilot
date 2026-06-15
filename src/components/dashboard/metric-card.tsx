@@ -1,26 +1,46 @@
+﻿import type { ReactNode } from "react";
 import type { MetricDefinition } from "@/lib/metrics/definitions";
 
 type MetricCardProps = {
   definition?: MetricDefinition;
-  label: string;
-  value: string;
   helper: string;
+  icon?: ReactNode;
+  label: string;
+  tone?: "neutral" | "positive" | "warning";
+  value: string;
 };
 
-export function MetricCard({ definition, label, value, helper }: MetricCardProps) {
+export function MetricCard({ definition, helper, icon, label, tone = "neutral", value }: MetricCardProps) {
+  const toneClass =
+    tone === "positive"
+      ? "bg-emerald-50 text-emerald-700"
+      : tone === "warning"
+        ? "bg-rose-50 text-rose-700"
+        : "bg-surface-muted text-foreground";
+
   return (
-    <article className="rounded-2xl border border-black/10 bg-white p-5">
-      <p className="text-sm text-zinc-500">{label}</p>
-      <p className="mt-3 text-3xl font-semibold">{value}</p>
-      <p className="mt-2 text-sm text-zinc-600">{helper}</p>
+    <article className="surface-card rounded-[1.35rem] p-5">
+      <div className="flex items-center justify-between gap-4">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-muted text-foreground">
+          {icon}
+        </span>
+        {helper ? (
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}>
+            {helper.split("·")[0].trim()}
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-5 font-serif text-4xl leading-none tracking-[-0.05em]">{value}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{label}</p>
+      <p className="mt-3 text-xs text-muted-foreground">{helper}</p>
       {definition ? (
-        <details className="mt-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-700">
-          <summary className="cursor-pointer font-medium text-zinc-950">Cómo se calcula</summary>
+        <details className="mt-4 rounded-xl bg-surface-muted p-3 text-sm text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground">Cómo se calcula</summary>
           <p className="mt-2">{definition.description}</p>
           <p className="mt-2">
             <span className="font-medium">Cálculo:</span> {definition.calculation}.
           </p>
-          <p className="mt-1 text-xs text-zinc-500">Fuente: {definition.source}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Fuente: {definition.source}</p>
         </details>
       ) : null}
     </article>

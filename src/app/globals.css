@@ -1,37 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: oklch(0.985 0.003 250);
-  --surface: oklch(1 0 0);
-  --foreground: oklch(0.18 0.02 255);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 255);
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-muted: #f3f6f8;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
 
-  --primary: oklch(0.22 0.03 260);
-  --primary-foreground: oklch(0.985 0.003 250);
+  --primary: #0f9fa8;
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.965 0.005 250);
-  --secondary-foreground: oklch(0.22 0.03 260);
+  --secondary: #f3f6f8;
+  --secondary-foreground: #111827;
 
-  --accent: oklch(0.62 0.13 195);
-  --accent-foreground: oklch(0.99 0.003 195);
+  --accent: #e7f8f8;
+  --accent-foreground: #0b7f87;
 
-  --success: oklch(0.68 0.14 155);
-  --success-foreground: oklch(0.99 0.003 155);
-  --warning: oklch(0.78 0.14 75);
-  --warning-foreground: oklch(0.2 0.04 75);
-  --destructive: oklch(0.6 0.2 25);
-  --destructive-foreground: oklch(0.99 0.003 25);
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #111827;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(0.92 0.006 250);
-  --border-strong: oklch(0.86 0.008 250);
-  --input: oklch(0.92 0.006 250);
-  --ring: oklch(0.62 0.13 195);
+  --border: #d9e2e8;
+  --border-strong: #bfd3db;
+  --input: #d9e2e8;
+  --ring: #0f9fa8;
 
-  --muted: oklch(0.965 0.005 250);
-  --muted-foreground: oklch(0.52 0.015 255);
+  --muted: #f3f6f8;
+  --muted-foreground: #667085;
+  --text-muted: #94a3b8;
+  --heading-ink: #111111;
+  --ink-navy: #0f172a;
+  --brand-teal-dark: #0b7f87;
+  --brand-green-soft: #eaf8ef;
 
   --chart-1: oklch(0.55 0.14 200);
   --chart-2: oklch(0.68 0.14 155);
@@ -39,16 +45,16 @@
   --chart-4: oklch(0.55 0.18 295);
   --chart-5: oklch(0.7 0.12 25);
 
-  --shadow-soft: 0 1px 2px 0 oklch(0.2 0.02 250 / 0.04), 0 1px 3px 0 oklch(0.2 0.02 250 / 0.04);
-  --shadow-card: 0 1px 0 0 oklch(0.2 0.02 250 / 0.03), 0 4px 16px -4px oklch(0.2 0.02 250 / 0.06);
-  --shadow-pop: 0 8px 32px -8px oklch(0.2 0.02 250 / 0.12);
+  --shadow-soft: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-card: 0 1px 0 0 rgb(15 23 42 / 0.03), 0 4px 16px -4px rgb(15 23 42 / 0.06);
+  --shadow-pop: 0 8px 32px -8px rgb(15 23 42 / 0.12);
 
-  --radius: 0.75rem;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius: 1.25rem;
+  --radius-sm: 0.875rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
 }
 
 .dark {
@@ -82,6 +88,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -104,13 +111,24 @@
   --color-ring: var(--ring);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-text-muted: var(--text-muted);
+  --color-heading-ink: var(--heading-ink);
+  --color-ink-navy: var(--ink-navy);
+  --color-brand-teal-dark: var(--brand-teal-dark);
+  --color-brand-green-soft: var(--brand-green-soft);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --font-sans: var(--font-ui);
+  --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
 }
 
 * {
@@ -177,6 +195,15 @@ textarea {
 }
 
 .teal-soft {
-  background: color-mix(in oklch, var(--accent) 18%, white);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.btn-ink {
+  background: var(--ink-navy);
+  color: #ffffff !important;
+}
+
+.btn-ink:hover {
+  background: var(--brand-teal-dark);
 }

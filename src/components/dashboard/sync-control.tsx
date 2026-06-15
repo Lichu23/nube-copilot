@@ -132,7 +132,7 @@ export function SyncControl({
           type="button"
           onClick={() => triggerSync()}
           disabled={!hasConnection || isPending}
-          className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
+          className="inline-flex items-center justify-center rounded-xl btn-ink px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
           {isPending ? "Sincronizando..." : "Sincronizar ahora"}
         </button>

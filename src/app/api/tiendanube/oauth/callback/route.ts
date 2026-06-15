@@ -13,7 +13,7 @@ function buildRedirectUrl(request: NextRequest, search: string) {
 }
 
 function buildSuccessRedirectUrl(request: NextRequest) {
-  return new URL("/dashboard?sync=initial&autoSync=1", request.url);
+  return new URL("/connect?status=success&autoSync=1", request.url);
 }
 
 function redirectWithStatus(request: NextRequest, status: "success" | "error", reason?: string) {
