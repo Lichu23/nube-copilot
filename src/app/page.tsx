@@ -5,30 +5,30 @@ const howItWorks = [
   {
     icon: Store,
     step: "01",
-    title: "Conect? Tiendanube",
+    title: "Conectá Tiendanube",
     body: "Un clic para autorizar la lectura de tu tienda, productos, variantes y pedidos recientes.",
   },
   {
     icon: Sparkles,
     step: "02",
     title: "Contanos tus objetivos",
-    body: "El analista aprende qu? quer?s mejorar y qu? decisiones te cuestan m?s tiempo.",
+    body: "El analista aprende qué querés mejorar y qué decisiones te cuestan más tiempo.",
   },
   {
     icon: MessageSquare,
     step: "03",
-    title: "Pregunt? y analiz?",
-    body: "Convers?s con el analista y abr?s un canvas visual con m?tricas, riesgos y pr?ximos pasos.",
+    title: "Preguntá y analizá",
+    body: "Conversás con el analista y abrís un canvas visual con métricas, riesgos y próximos pasos.",
   },
 ];
 
 const dataAccess = [
   { icon: Store, title: "Perfil de tienda", body: "Nombre, pa?s, moneda e idioma." },
-  { icon: PackageSearch, title: "Productos y variantes", body: "SKU, precios, stock y estado de publicaci?n." },
+  { icon: PackageSearch, title: "Productos y variantes", body: "SKU, precios, stock y estado de publicación." },
   { icon: BarChart3, title: "Pedidos recientes", body: "Totales, estados, items y fechas de los últimos 90 días." },
   { icon: ShoppingBag, title: "Items de pedidos", body: "Cantidades, precios unitarios y totales calculados." },
-  { icon: Users, title: "Se?ales de clientes", body: "Contactos anonimizados antes de guardarse." },
-  { icon: ShieldCheck, title: "Solo lectura", body: "Sin permisos de escritura. Pod?s revocar el acceso cuando quieras." },
+  { icon: Users, title: "Señales de clientes", body: "Contactos anonimizados antes de guardarse." },
+  { icon: ShieldCheck, title: "Solo lectura", body: "Sin permisos de escritura. Podés revocar el acceso cuando quieras." },
 ];
 
 function BrandMark() {
@@ -60,7 +60,7 @@ function ProductPreview() {
         <div className="border-b border-border bg-surface-muted/40 p-5 text-left lg:border-b-0 lg:border-r">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-card px-3 py-2 text-xs font-medium text-muted-foreground shadow-soft">
             <MessageSquare className="h-3.5 w-3.5 text-primary" />
-            Conversaci?n guiada
+            Conversación guiada
           </div>
 
           <div className="space-y-4">
@@ -70,7 +70,7 @@ function ProductPreview() {
 
             <div className="max-w-sm rounded-[1.25rem] rounded-tl-sm border border-border bg-card p-4 shadow-soft">
               <p className="text-sm leading-6 text-foreground">
-                La facturaci?n subi? <strong>18%</strong>. El crecimiento viene de tres SKUs, pero dos variantes quedan bajo el umbral de reposici?n.
+                La facturación subió <strong>18%</strong>. El crecimiento viene de tres SKUs, pero dos variantes quedan bajo el umbral de reposición.
               </p>
               <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground">
                 Abrir canvas
@@ -79,9 +79,9 @@ function ProductPreview() {
             </div>
 
             <div className="max-w-[18rem] rounded-[1.25rem] rounded-tl-sm border border-border bg-card p-4 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Pr?xima acci?n</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Próxima acción</p>
               <p className="mt-2 text-sm leading-6 text-foreground">
-                Reponer 24 unidades del SKU Aurora-M y revisar el margen del combo m?s vendido.
+                Reponer 24 unidades del SKU Aurora-M y revisar el margen del combo más vendido.
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ function ProductPreview() {
               </div>
               <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Lun</span>
-                <span>Mi?</span>
+                <span>Mié</span>
                 <span>Vie</span>
                 <span>Dom</span>
               </div>
@@ -137,7 +137,7 @@ function ProductPreview() {
               </div>
               <div className="rounded-[1rem] border border-border bg-warning/10 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Alerta</p>
-                <p className="mt-2 font-semibold text-foreground">Reposici?n en 48 h</p>
+                <p className="mt-2 font-semibold text-foreground">Reposición en 48 h</p>
                 <p className="text-sm text-muted-foreground">2 variantes pueden quedarse sin stock.</p>
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function HomePage() {
           <span className="text-sm text-muted-foreground">para Tiendanube</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-          <a href="#como-funciona" className="transition hover:text-foreground">C?mo funciona</a>
+          <a href="#como-funciona" className="transition hover:text-foreground">Cómo funciona</a>
           <a href="#tus-datos" className="transition hover:text-foreground">Tus datos</a>
           <Link href="/chat" className="transition hover:text-foreground">Iniciar sesi?n</Link>
         </nav>
@@ -169,14 +169,14 @@ export default function HomePage() {
       <section className="relative z-10 mx-auto max-w-6xl px-6 pb-16 pt-14 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-soft">
           <Store className="h-4 w-4 text-primary" />
-          Creado para due?os de tiendas Tiendanube
+          Creado para dueños de tiendas Tiendanube
         </div>
 
         <h1 className="font-display mx-auto mt-8 max-w-4xl text-[4.25rem] leading-[0.92] tracking-[-0.055em] text-heading-ink md:text-[5.7rem]">
-          El analista IA detr?s de <span className="italic text-primary">cada decisi?n</span> de tu tienda.
+          El analista IA detrás de <span className="italic text-primary">cada decisión</span> de tu tienda.
         </h1>
         <p className="mx-auto mt-8 max-w-2xl text-xl leading-8 text-muted-foreground">
-          NubeCopilot lee ventas, inventario, productos y clientes para decirte qu? funciona, qu? est? en riesgo y qu? hacer despu?s. Sin planillas.
+          NubeCopilot lee ventas, inventario, productos y clientes para decirte qué funciona, qué está en riesgo y qué hacer después. Sin planillas.
         </p>
 
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -185,20 +185,20 @@ export default function HomePage() {
             <ArrowRight className="h-4 w-4" />
           </Link>
           <a href="#como-funciona" className="inline-flex rounded-[1rem] px-5 py-4 text-sm font-medium text-muted-foreground transition hover:text-foreground">
-            Ver c?mo funciona
+            Ver cómo funciona
           </a>
         </div>
 
         <p className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
           <LockKeyhole className="h-4 w-4" />
-          Acceso solo lectura ? Desconect? cuando quieras
+          Acceso solo lectura ? Desconectá cuando quieras
         </p>
 
         <ProductPreview />
       </section>
 
       <section id="como-funciona" className="relative z-10 mx-auto max-w-6xl px-6 py-20">
-        <p className="text-center text-sm font-semibold uppercase tracking-[0.24em] text-primary">C?mo funciona</p>
+        <p className="text-center text-sm font-semibold uppercase tracking-[0.24em] text-primary">Cómo funciona</p>
         <h2 className="font-display mx-auto mt-4 max-w-3xl text-center text-[3.6rem] leading-none tracking-[-0.05em] text-heading-ink">
           De conexión a claridad en minutos.
         </h2>
@@ -241,8 +241,8 @@ export default function HomePage() {
       <section className="relative z-10 mx-auto max-w-6xl px-6 py-20">
         <div className="flex flex-col gap-8 rounded-[1.75rem] bg-ink-navy px-8 py-10 !text-white shadow-pop md:flex-row md:items-center md:justify-between md:px-14">
           <div>
-            <h2 className="font-display text-[2.8rem] leading-none tracking-[-0.05em]">?Listo para poner tu tienda bajo control?</h2>
-            <p className="mt-4 text-base text-white/75">Conect? Tiendanube y recib? los primeros insights con datos reales.</p>
+            <h2 className="font-display text-[2.8rem] leading-none tracking-[-0.05em]">¿Listo para poner tu tienda bajo control?</h2>
+            <p className="mt-4 text-base text-white/75">Conectá Tiendanube y recibí los primeros insights con datos reales.</p>
           </div>
           <Link href="/connect" className="inline-flex w-fit items-center gap-2 rounded-[1rem] bg-white px-7 py-4 text-sm font-semibold !text-ink-navy transition hover:bg-accent">
             Empezar
@@ -253,8 +253,8 @@ export default function HomePage() {
 
       <footer className="relative z-10 border-t border-border bg-card/80 px-6 py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> NubeCopilot ? Creado para Tiendanube</span>
-          <span>? 2026 NubeCopilot. Todos los derechos reservados.</span>
+          <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> NubeCopilot · Creado para Tiendanube</span>
+          <span>© 2026 NubeCopilot. Todos los derechos reservados.</span>
         </div>
       </footer>
     </main>
