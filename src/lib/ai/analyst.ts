@@ -189,7 +189,8 @@ function describePeriodChange(metricLabel: string, currentLabel: string, previou
     return `No hubo ${metricLabel.toLowerCase()} en ${previousLabel.toLowerCase()}, así que la variación porcentual contra ${currentLabel.toLowerCase()} no está disponible.`;
   }
 
-  return `${metricLabel} cambió ${formatPercent(percentageChange)} frente a ${previousLabel.toLowerCase()}.`;
+  const direction = percentageChange > 0 ? "subió" : percentageChange < 0 ? "bajó" : "se mantuvo";
+  return `${metricLabel} ${direction} ${formatPercent(Math.abs(percentageChange))} frente a ${previousLabel.toLowerCase()}.`;
 }
 
 function normalizeDescriptor(value: string | null | undefined) {

@@ -32,9 +32,10 @@ export function formatSignedNumber(value: number): string {
 
 /**
  * Format number as percentage
+ * Input is already expressed as percentage points, not a 0-1 ratio.
  */
 export function formatPercent(value: number, label?: string): string {
-  const formatted = `${(value * 100).toFixed(1)}%`;
+  const formatted = `${value.toFixed(1)}%`;
   return label ? `${formatted} ${label}` : formatted;
 }
 

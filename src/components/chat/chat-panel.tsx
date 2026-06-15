@@ -5,6 +5,8 @@ import {
   ArrowUpRight,
   BarChart3,
   Bookmark,
+  ChevronLeft,
+  ChevronRight,
   HelpCircle,
   LayoutDashboard,
   MessageSquare,
@@ -36,17 +38,17 @@ type ChatPanelProps = {
 
 const emptyStatePrompts = [
   {
-    description: "Encontr? productos quietos y capital inmovilizado.",
+    description: "Encontrá productos quietos y capital inmovilizado.",
     icon: BarChart3,
     prompt: "¿Qué productos no se vendieron en los últimos 30 días?",
   },
   {
-    description: "Defin? qu? conviene liquidar primero.",
+    description: "Definí qué conviene liquidar primero.",
     icon: Store,
     prompt: "¿Qué debería poner en promoción para liberar stock?",
   },
   {
-    description: "Calcul? el impacto financiero del inventario lento.",
+    description: "Calculá el impacto financiero del inventario lento.",
     icon: LayoutDashboard,
     prompt: "¿Cuánto capital tengo atado en slow movers?",
   },
@@ -61,14 +63,14 @@ function buildPromptCards(preferences: AnalystPreferences) {
         ? `Prioridad: ${preferences.goal.toLowerCase()}.`
         : index === 1
           ? `Foco operativo: ${preferences.friction.toLowerCase()}.`
-          : `Tono ${preferences.tone.toLowerCase()} para decidir m?s r?pido.`,
+          : `Tono ${preferences.tone.toLowerCase()} para decidir más rápido.`,
     icon: icons[index] ?? BarChart3,
     prompt,
   }));
 }
 
 function getLastSyncLabel(lastSyncAt: string | null): string {
-  if (!lastSyncAt) return "Todav?a no sincronizado";
+  if (!lastSyncAt) return "Todavía no sincronizado";
   const formatted = formatDateTimeLabel(lastSyncAt);
   return formatted === lastSyncAt ? "Sincronizado recientemente" : `Sincronizado ${formatted}`;
 }
@@ -164,7 +166,9 @@ export function ChatPanel({
   const [latestQuestion, setLatestQuestion] = useState("");
   const [preferences] = useState(initialPreferences);
   const [actionState, setActionState] = useState<"already-pinned" | "copied" | "error" | "exported" | "idle" | "pinned">("idle");
+  const [isChatVisible, setIsChatVisible] = useState(true);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const canvasModel = useMemo(
     () => buildCanvasModel(latestResult, latestQuestion),
@@ -176,7 +180,6 @@ export function ChatPanel({
   const lastSyncLabel = getLastSyncLabel(lastSyncAt);
   const personalizedPrompts = useMemo(() => buildPromptCards(preferences), [preferences]);
   const greetingName = preferences.name.trim() || storeName;
-
   useEffect(() => {
     if (messagesContainerRef.current) {
       setTimeout(() => {
@@ -187,6 +190,14 @@ export function ChatPanel({
       }, 0);
     }
   }, [messages, isPending]);
+
+  useEffect(() => {
+    if (isChatVisible) {
+      window.setTimeout(() => {
+        composerRef.current?.focus();
+      }, 0);
+    }
+  }, [isChatVisible]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -237,7 +248,7 @@ export function ChatPanel({
           };
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.ok ? "Fall? la solicitud del chat." : (payload.message ?? "Fall? la solicitud del chat."));
+        throw new Error(payload.ok ? "Falló la solicitud del chat." : (payload.message ?? "Falló la solicitud del chat."));
       }
 
       setMessages((current) => [
@@ -248,8 +259,11 @@ export function ChatPanel({
         },
       ]);
       setLatestResult(payload.result);
+      if (payload.result.toolResults.length > 0) {
+        setIsChatVisible(false);
+      }
     } catch (submissionError) {
-      const message = submissionError instanceof Error ? submissionError.message : "Fall? la solicitud del chat.";
+      const message = submissionError instanceof Error ? submissionError.message : "Falló la solicitud del chat.";
       setError(message);
       setMessages((current) =>
         current.filter(
@@ -295,10 +309,22 @@ export function ChatPanel({
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground lg:grid lg:h-screen lg:grid-cols-[244px_minmax(420px,42%)_minmax(0,1fr)] lg:overflow-hidden">
+    <div
+      className="min-h-screen bg-background text-foreground lg:grid lg:h-screen lg:overflow-hidden lg:transition-[grid-template-columns] lg:duration-300 lg:ease-out"
+      style={{
+        gridTemplateColumns: isChatVisible
+          ? "244px minmax(420px,42%) minmax(0,1fr)"
+          : "244px 0 minmax(0,1fr)",
+      }}
+    >
       <WorkspaceSidebar />
 
-      <section className="flex min-h-screen flex-col border-r border-border bg-background lg:h-screen lg:overflow-hidden">
+      <section
+        id="chat-workspace"
+        className={`flex min-h-screen flex-col border-r border-border bg-background lg:h-screen lg:overflow-hidden lg:transition-all lg:duration-300 lg:ease-out ${
+          isChatVisible ? "lg:opacity-100 lg:translate-x-0" : "lg:pointer-events-none lg:opacity-0 lg:-translate-x-3"
+        }`}
+      >
         <header className="shrink-0 border-b border-border bg-background/80 px-4 py-4 backdrop-blur sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -341,7 +367,7 @@ export function ChatPanel({
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
                 {hasConnection
-                  ? `Arm? tu espacio alrededor de ${preferences.goal.toLowerCase()} y ${preferences.friction.toLowerCase()}. ${lastSyncLabel}.`
+                  ? `Armé tu espacio alrededor de ${preferences.goal.toLowerCase()} y ${preferences.friction.toLowerCase()}. ${lastSyncLabel}.`
                   : "Primero conectá tu tienda Tiendanube. Sin datos sincronizados, el analista no debe inventar números."}
               </p>
 
@@ -402,7 +428,7 @@ export function ChatPanel({
                           <Sparkles className="h-4 w-4 text-accent" />
                         </div>
                         <p className="max-w-lg text-[1.05rem] leading-8 text-foreground">
-                          Esto es lo que encontr?. Tom? pedidos pagos de Tiendanube y los compar? contra la ventana anterior.
+                          Esto es lo que encontré. Tomé pedidos pagos de Tiendanube y los comparé contra la ventana anterior.
                         </p>
                       </div>
                       <ReportPreviewCard
@@ -472,9 +498,10 @@ export function ChatPanel({
         <div className="shrink-0 border-t border-border bg-background px-4 py-4 sm:px-6">
           <form onSubmit={handleSubmit} className="surface-card mx-auto max-w-3xl rounded-[1.65rem] p-3 shadow-lg shadow-ink-navy/5">
             <textarea
+              ref={composerRef}
               value={input}
               onChange={(event) => setInput(event.currentTarget.value)}
-              placeholder={hasConnection ? "Pregunt? sobre ventas, stock, productos o clientes..." : "Conect? tu tienda para empezar..."}
+              placeholder={hasConnection ? "Preguntá sobre ventas, stock, productos o clientes..." : "Conectá tu tienda para empezar..."}
               className="min-h-20 w-full resize-none bg-transparent px-1 text-base leading-7 text-foreground outline-none placeholder:text-muted-foreground"
               disabled={isPending || !hasConnection}
             />
@@ -514,9 +541,22 @@ export function ChatPanel({
         </div>
       </section>
 
-      <aside className={`hidden h-screen overflow-y-auto bg-background transition-opacity duration-300 lg:block ${canvasModel || isPending ? "opacity-100" : "opacity-70"}`}>
+      <aside className={`relative hidden h-screen overflow-y-auto bg-background transition-opacity duration-300 lg:block ${canvasModel || isPending ? "opacity-100" : "opacity-70"}`}>
+        <button
+          type="button"
+          onClick={() => setIsChatVisible((visible) => !visible)}
+          aria-expanded={isChatVisible}
+          aria-controls="chat-workspace"
+          className="absolute left-3 top-16 z-40 inline-flex max-w-max items-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-xl shadow-black/10 transition hover:border-border-strong hover:bg-white"
+        >
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink-navy !text-white">
+            <MessageSquare className="h-4 w-4" />
+          </span>
+          {isChatVisible ? <ChevronLeft className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+        </button>
+
         <div className="flex h-14 items-center justify-between border-b border-border px-6 text-sm text-muted-foreground">
-          <span>Canvas de an?lisis</span>
+          <span>Canvas de análisis</span>
           <Link href="/dashboard" className="inline-flex items-center gap-1.5 transition hover:text-foreground">
             Ver dashboard
             <ArrowUpRight className="h-3.5 w-3.5" />
