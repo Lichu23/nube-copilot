@@ -1,26 +1,17 @@
-"use client";
+﻿"use client";
 
-import { useSyncExternalStore } from "react";
+import { useState } from "react";
 
-import { getPinnedReports, pinnedReportsChangedEvent, removePinnedReport } from "@/lib/reports/actions";
+import { pinnedReportsChangedEvent, removePinnedReport, type PinnedReport } from "@/lib/reports/actions";
 
-function subscribeToPinnedReports(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(pinnedReportsChangedEvent, onChange);
+export function PinnedReportsPanel({ initialReports }: { initialReports: PinnedReport[] }) {
+  const [reports, setReports] = useState(initialReports);
 
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(pinnedReportsChangedEvent, onChange);
-  };
-}
-
-function getPinnedReportsSnapshot() {
-  return JSON.stringify(getPinnedReports());
-}
-
-export function PinnedReportsPanel() {
-  const reportsSnapshot = useSyncExternalStore(subscribeToPinnedReports, getPinnedReportsSnapshot, () => "[]");
-  const reports = JSON.parse(reportsSnapshot) as ReturnType<typeof getPinnedReports>;
+  async function handleRemove(reportId: string) {
+    const nextReports = await removePinnedReport(reportId).catch(() => reports);
+    setReports(nextReports);
+    window.dispatchEvent(new Event(pinnedReportsChangedEvent));
+  }
 
   if (reports.length === 0) {
     return null;
@@ -30,7 +21,7 @@ export function PinnedReportsPanel() {
     <section className="rounded-2xl border border-black/10 bg-white p-5">
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Reportes fijados</p>
-        <h2 className="text-lg font-semibold">Guardados en este navegador</h2>
+        <h2 className="text-lg font-semibold">Guardados en la tienda</h2>
         <p className="text-sm text-zinc-600">Usalos para volver a revisar reportes importantes sin perder el contexto.</p>
       </div>
 
@@ -45,7 +36,7 @@ export function PinnedReportsPanel() {
               </div>
               <button
                 type="button"
-                onClick={() => removePinnedReport(report.id)}
+                onClick={() => void handleRemove(report.id)}
                 className="shrink-0 rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-zinc-700 transition hover:text-zinc-950"
               >
                 Quitar

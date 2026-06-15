@@ -204,8 +204,8 @@ export function ToolResultChart({ items }: { items: ToolResult[] }) {
 
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
-      <h2 className="text-lg font-semibold">Structured chart output</h2>
-      <p className="mt-2 text-sm text-zinc-600">Chart-ready views built from the backend evidence used in the answer.</p>
+      <h2 className="text-lg font-semibold">Visualización estructurada</h2>
+      <p className="mt-2 text-sm text-zinc-600">Gráficos listos para revisar la evidencia que usó el analista.</p>
 
       <div className="mt-4 space-y-4">
         {charts.map(({ chart, toolCallId }) => {

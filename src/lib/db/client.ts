@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
   aiToolCalls,
+  analystPreferences,
   chatMessages,
   customers,
   orderItems,
@@ -12,14 +13,27 @@ import {
   products,
   storeConnections,
   stores,
+  savedReports,
   syncJobs,
 } from "@/lib/db/schema";
+import { defaultAnalystPreferences, type AnalystPreferences } from "@/lib/analyst/preferences";
+import type { CanvasModel } from "@/lib/types";
 import type { TiendanubeStoreMetadata } from "@/lib/tiendanube/types";
 
 type PersistedToolCallInput = {
   arguments: unknown;
   resultSummary: unknown;
   toolName: string;
+};
+
+export type SavedReportRecord = {
+  createdAt: string;
+  id: string;
+  model?: CanvasModel;
+  question: string;
+  summary: string;
+  title: string;
+  windowLabel: string;
 };
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
@@ -558,6 +572,167 @@ export async function persistChatExchange(input: {
       userMessageId: savedUserMessage.id,
     };
   });
+}
+
+function toAnalystPreferences(row: typeof analystPreferences.$inferSelect): AnalystPreferences {
+  return {
+    cadence: row.cadence,
+    category: row.category,
+    completedAt: row.completedAt?.toISOString(),
+    friction: row.friction,
+    goal: row.goal,
+    name: row.name,
+    role: row.role,
+    stage: row.stage,
+    tone: row.tone,
+    volume: row.volume,
+  };
+}
+
+export async function getAnalystPreferencesForActiveStore() {
+  const connection = await getActiveTiendanubeConnection().catch(() => null);
+
+  if (!connection) {
+    return defaultAnalystPreferences;
+  }
+
+  const db = getDb();
+  const [preferences] = await db
+    .select()
+    .from(analystPreferences)
+    .where(eq(analystPreferences.storeId, connection.storeId))
+    .limit(1);
+
+  return preferences ? toAnalystPreferences(preferences) : defaultAnalystPreferences;
+}
+
+export async function upsertAnalystPreferencesForActiveStore(input: AnalystPreferences) {
+  const connection = await getActiveTiendanubeConnection();
+
+  if (!connection) {
+    throw new Error("No active Tiendanube store was found.");
+  }
+
+  const db = getDb();
+  const now = new Date();
+
+  const [preferences] = await db
+    .insert(analystPreferences)
+    .values({
+      cadence: input.cadence,
+      category: input.category,
+      completedAt: input.completedAt ? new Date(input.completedAt) : now,
+      friction: input.friction,
+      goal: input.goal,
+      name: input.name,
+      role: input.role,
+      stage: input.stage,
+      storeId: connection.storeId,
+      tone: input.tone,
+      updatedAt: now,
+      volume: input.volume,
+    })
+    .onConflictDoUpdate({
+      target: analystPreferences.storeId,
+      set: {
+        cadence: input.cadence,
+        category: input.category,
+        completedAt: input.completedAt ? new Date(input.completedAt) : now,
+        friction: input.friction,
+        goal: input.goal,
+        name: input.name,
+        role: input.role,
+        stage: input.stage,
+        tone: input.tone,
+        updatedAt: now,
+        volume: input.volume,
+      },
+    })
+    .returning();
+
+  return toAnalystPreferences(preferences);
+}
+
+function toSavedReportRecord(row: typeof savedReports.$inferSelect): SavedReportRecord {
+  return {
+    createdAt: row.createdAt.toISOString(),
+    id: row.reportKey,
+    model: row.canvasModel ? (row.canvasModel as CanvasModel) : undefined,
+    question: row.question,
+    summary: row.summary,
+    title: row.title,
+    windowLabel: row.windowLabel,
+  };
+}
+
+export async function getSavedReportsForActiveStore() {
+  const connection = await getActiveTiendanubeConnection().catch(() => null);
+
+  if (!connection) {
+    return [] satisfies SavedReportRecord[];
+  }
+
+  const db = getDb();
+  const reports = await db
+    .select()
+    .from(savedReports)
+    .where(eq(savedReports.storeId, connection.storeId))
+    .orderBy(desc(savedReports.updatedAt))
+    .limit(50);
+
+  return reports.map(toSavedReportRecord);
+}
+
+export async function upsertSavedReportForActiveStore(input: SavedReportRecord) {
+  const connection = await getActiveTiendanubeConnection();
+
+  if (!connection) {
+    throw new Error("No active Tiendanube store was found.");
+  }
+
+  const db = getDb();
+  const now = new Date();
+
+  const [report] = await db
+    .insert(savedReports)
+    .values({
+      canvasModel: input.model ?? null,
+      question: input.question,
+      reportKey: input.id,
+      storeId: connection.storeId,
+      summary: input.summary,
+      title: input.title,
+      updatedAt: now,
+      windowLabel: input.windowLabel,
+    })
+    .onConflictDoUpdate({
+      target: [savedReports.storeId, savedReports.reportKey],
+      set: {
+        canvasModel: input.model ?? null,
+        question: input.question,
+        summary: input.summary,
+        title: input.title,
+        updatedAt: now,
+        windowLabel: input.windowLabel,
+      },
+    })
+    .returning();
+
+  return toSavedReportRecord(report);
+}
+
+export async function deleteSavedReportForActiveStore(reportKey: string) {
+  const connection = await getActiveTiendanubeConnection();
+
+  if (!connection) {
+    throw new Error("No active Tiendanube store was found.");
+  }
+
+  const db = getDb();
+
+  await db
+    .delete(savedReports)
+    .where(and(eq(savedReports.storeId, connection.storeId), eq(savedReports.reportKey, reportKey)));
 }
 
 export async function getDashboardSyncSummary() {

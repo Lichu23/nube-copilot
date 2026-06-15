@@ -9,7 +9,7 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
   const maxRevenue = data.reduce((highest, point) => Math.max(highest, point.revenue), 0);
 
   return (
-    <section className="rounded-2xl border border-black/10 bg-white p-5">
+    <section className="surface-card rounded-2xl p-5">
       <h2 className="text-lg font-semibold">Tendencia de ventas</h2>
       {data.length === 0 ? (
         <div className="mt-4 flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-zinc-50 px-6 text-center">
@@ -19,25 +19,29 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
           </p>
         </div>
       ) : (
-        <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 p-4">
-          <div className="flex h-48 items-end gap-3">
+        <div className="mt-4 rounded-xl border border-border bg-surface-muted p-4">
+          <div className="relative flex h-48 items-end gap-3 border-b border-border/80">
             {data.map((point) => {
               const height = maxRevenue > 0 ? Math.max((point.revenue / maxRevenue) * 100, 8) : 8;
 
               return (
                 <div key={point.day} className="flex flex-1 flex-col items-center gap-2">
                   <div
-                    className="w-full rounded-t-lg bg-black/80"
+                    className="min-h-5 w-full rounded-t-lg bg-primary shadow-sm"
                     style={{ height: `${height}%` }}
                     title={`${point.revenue.toFixed(2)} de facturacion en ${point.orderCount} pedidos`}
                   />
-                  <div className="text-center text-xs text-zinc-500">
-                    <div>{formatShortDateLabel(point.day)}</div>
-                    <div>{point.orderCount} pedidos</div>
-                  </div>
                 </div>
               );
             })}
+          </div>
+          <div className="mt-3 grid gap-3" style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}>
+            {data.map((point) => (
+              <div key={`${point.day}-label`} className="text-center text-xs text-muted-foreground">
+                <div>{formatShortDateLabel(point.day)}</div>
+                <div>{point.orderCount} pedidos</div>
+              </div>
+            ))}
           </div>
         </div>
       )}

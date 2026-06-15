@@ -19,8 +19,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "AI Business Analyst",
-  description: "Conversational analytics for Tiendanube merchants",
+  title: "NubeCopilot | Analista IA para Tiendanube",
+  description: "Analítica conversacional para tiendas Tiendanube.",
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${inter.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

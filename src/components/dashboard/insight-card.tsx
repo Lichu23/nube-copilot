@@ -51,7 +51,7 @@ export function InsightCard({ title, body, chatHref, evidence = [], shareText }:
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
+              className="inline-flex items-center justify-center rounded-xl btn-ink px-4 py-2 text-sm font-medium transition"
             >
               {copyState === "done" ? "Resumen copiado" : copyState === "error" ? "Fallo al copiar" : "Copiar resumen"}
             </button>

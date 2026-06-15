@@ -221,3 +221,46 @@ export const aiToolCalls = pgTable("ai_tool_calls", {
   createdAtIdx: index("ai_tool_calls_created_at_idx").on(table.createdAt),
   ...serviceRolePolicies("ai_tool_calls"),
 })).enableRLS();
+
+export const analystPreferences = pgTable("analyst_preferences", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  cadence: text("cadence").notNull(),
+  category: text("category").notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  friction: text("friction").notNull(),
+  goal: text("goal").notNull(),
+  name: text("name").notNull().default(""),
+  role: text("role").notNull(),
+  stage: text("stage").notNull(),
+  tone: text("tone").notNull(),
+  volume: text("volume").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  storeIdIdx: index("analyst_preferences_store_id_idx").on(table.storeId),
+  storeUnique: uniqueIndex("analyst_preferences_store_id_uidx").on(table.storeId),
+  ...serviceRolePolicies("analyst_preferences"),
+})).enableRLS();
+
+export const savedReports = pgTable("saved_reports", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  reportKey: text("report_key").notNull(),
+  question: text("question").notNull(),
+  summary: text("summary").notNull(),
+  title: text("title").notNull(),
+  windowLabel: text("window_label").notNull(),
+  canvasModel: jsonb("canvas_model"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  storeIdIdx: index("saved_reports_store_id_idx").on(table.storeId),
+  storeReportUnique: uniqueIndex("saved_reports_store_id_report_key_uidx").on(table.storeId, table.reportKey),
+  updatedAtIdx: index("saved_reports_updated_at_idx").on(table.updatedAt),
+  ...serviceRolePolicies("saved_reports"),
+})).enableRLS();
