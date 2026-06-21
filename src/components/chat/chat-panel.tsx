@@ -428,7 +428,7 @@ export function ChatPanel({
                           <Sparkles className="h-4 w-4 text-accent" />
                         </div>
                         <p className="max-w-lg text-[1.05rem] leading-8 text-foreground">
-                          Esto es lo que encontré. Tomé pedidos pagos de Tiendanube y los comparé contra la ventana anterior.
+                          Respuesta lista. Tomé pedidos pagos de Tiendanube y los comparé contra la ventana elegida.
                         </p>
                       </div>
                       <ReportPreviewCard

@@ -1,4 +1,4 @@
-import { groq } from "@ai-sdk/groq";
+﻿import { groq } from "@ai-sdk/groq";
 import { generateText, stepCountIs } from "ai";
 import { analystSystemPrompt } from "@/lib/ai/prompts";
 import type { ChatMessage } from "@/lib/ai/schemas";
@@ -49,6 +49,57 @@ type SalesSummaryOutput = {
   };
   window: {
     days: number;
+    endDate: string;
+    startDate: string;
+  };
+};
+
+type AverageOrderValueOutput = SalesSummaryOutput;
+
+type DailySalesTrendOutput = {
+  peakDay?: {
+    day: string;
+    orderCount: number;
+    revenue: number;
+  };
+  summary: SalesSummaryOutput["summary"];
+  trend: Array<{
+    day: string;
+    orderCount: number;
+    revenue: number;
+  }>;
+  window: {
+    days: number;
+    endDate: string;
+    startDate: string;
+  };
+};
+
+type MonthlyTrendOutput = {
+  comparison: {
+    averageOrderValue: { current: number; previous: number };
+    currency: string | null;
+    orderCount: { current: number; previous: number };
+    revenue: { current: number; previous: number };
+    unitsSold: { current: number; previous: number };
+  };
+  peakDay?: {
+    day: string;
+    orderCount: number;
+    revenue: number;
+  };
+  summary: SalesSummaryOutput["summary"];
+  trend: Array<{
+    day: string;
+    orderCount: number;
+    revenue: number;
+  }>;
+  window: {
+    days: number;
+    endDate: string;
+    startDate: string;
+  };
+  previousWindow: {
     endDate: string;
     startDate: string;
   };
@@ -106,6 +157,26 @@ type LowStockOutput = {
   };
 };
 
+type NextWeekPrioritiesOutput = {
+  lowStockOpportunities: Array<{
+    name: string;
+    recentUnitsSold: number;
+    sku: string | null;
+    stock: number;
+  }>;
+  priorities: Array<{
+    label: string;
+    nextStep: string;
+    reason: string;
+  }>;
+  summary: SalesSummaryOutput["summary"];
+  topProducts: TopProductsOutput["products"];
+  window: {
+    days: number;
+    label: string;
+  };
+};
+
 export type AnalystToolResultItem = AnalystToolResult;
 
 export type AnalystResponse = {
@@ -120,7 +191,7 @@ export type AnalystResponse = {
   toolResults: AnalystToolResult[];
 };
 
-import { formatCurrency, formatPercent } from "@/lib/formatting";
+import { formatCurrency, formatDateLabel, formatPercent, formatScalar } from "@/lib/formatting";
 
 function summarizeForLog(value: unknown) {
   if (value == null) {
@@ -312,6 +383,25 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
   const normalized = latestUserMessage.toLowerCase();
 
   if (
+    normalized.includes("margen") ||
+    normalized.includes("ganancia") ||
+    normalized.includes("rentabilidad") ||
+    normalized.includes("profit") ||
+    normalized.includes("beneficio") ||
+    normalized.includes("coste") ||
+    normalized.includes("costo")
+  ) {
+    return buildUnsupportedResponse(
+      "No puedo calcular ganancia real todavía porque el esquema actual no trae costo de producto ni margen. Si querés, puedo ayudarte con un proxy basado en facturación, unidades vendidas y stock.",
+      [
+        "Mostrame los productos top por facturación.",
+        "¿Qué día tuvo más ventas este mes?",
+        "¿Qué productos están en riesgo de quedarse sin stock?",
+      ],
+    );
+  }
+
+  if (
     normalized.includes("roas") ||
     normalized.includes("meta ads") ||
     normalized.includes("campanas de meta")
@@ -345,6 +435,21 @@ function getIntentToolSelection(latestUserMessage: string) {
     .replace(/[\u0300-\u036f]/g, "");
 
   if (
+    normalized.includes("ticket promedio") ||
+    normalized.includes("promedio de ticket") ||
+    normalized.includes("promedio de compra") ||
+    normalized.includes("valor promedio") ||
+    normalized.includes("aov") ||
+    normalized.includes("average order value") ||
+    normalized.includes("ticket")
+  ) {
+    return {
+      activeTools: ["get_average_order_value"] as const,
+      toolChoice: "required" as const,
+    };
+  }
+
+  if (
     normalized.includes("low stock") ||
     normalized.includes("low-stock") ||
     normalized.includes("out of stock") ||
@@ -359,6 +464,59 @@ function getIntentToolSelection(latestUserMessage: string) {
   ) {
     return {
       activeTools: ["get_low_stock_opportunities"] as const,
+      toolChoice: "required" as const,
+    };
+  }
+
+  if (
+    normalized.includes("que dia") ||
+    normalized.includes("qué dia") ||
+    normalized.includes("dia tuve") ||
+    normalized.includes("día tuve") ||
+    normalized.includes("sales by day") ||
+    normalized.includes("peak day") ||
+    normalized.includes("mejor dia") ||
+    normalized.includes("pico de ventas") ||
+    normalized.includes("mayor ventas") ||
+    normalized.includes("ventas por dia") ||
+    normalized.includes("ventas por día")
+  ) {
+    return {
+      activeTools: ["get_sales_trend"] as const,
+      toolChoice: "required" as const,
+    };
+  }
+
+  if (
+    normalized.includes("este mes") ||
+    normalized.includes("tendencia mensual") ||
+    normalized.includes("mes actual") ||
+    normalized.includes("mensual") ||
+    normalized.includes("this month") ||
+    normalized.includes("monthly trend") ||
+    normalized.includes("monthly")
+  ) {
+    return {
+      activeTools: ["get_monthly_trend"] as const,
+      toolChoice: "required" as const,
+    };
+  }
+
+  if (
+    normalized.includes("prioriz") ||
+    normalized.includes("vender mas") ||
+    normalized.includes("vender más") ||
+    normalized.includes("proxima semana") ||
+    normalized.includes("próxima semana") ||
+    normalized.includes("que me recomendas") ||
+    normalized.includes("que me recomendás") ||
+    normalized.includes("que debo priorizar") ||
+    normalized.includes("que priorizar") ||
+    normalized.includes("recomendar") ||
+    normalized.includes("accion prioritaria")
+  ) {
+    return {
+      activeTools: ["get_next_week_priorities"] as const,
       toolChoice: "required" as const,
     };
   }
@@ -495,11 +653,10 @@ function buildCompareResponse(_answer: string, output: ComparePeriodsOutput, too
 
   return {
     answer: [
-      `Comparación de rendimiento entre ${currentWindow.label.toLowerCase()} y ${previousWindow.label.toLowerCase()}:`,
-      `La facturación fue ${formatCurrency(comparison.revenue.current, currency)} vs ${formatCurrency(comparison.revenue.previous, currency)}.`,
+      `Facturación: ${formatCurrency(comparison.revenue.current, currency)} vs ${formatCurrency(comparison.revenue.previous, currency)}.`,
       describePeriodChange("La facturación", currentWindow.label, previousWindow.label, comparison.revenue.percentageChange),
-      `Los pedidos fueron ${comparison.orderCount.current} vs ${comparison.orderCount.previous}, y las unidades vendidas fueron ${comparison.unitsSold.current} vs ${comparison.unitsSold.previous}.`,
-      `El ticket promedio fue ${formatCurrency(comparison.averageOrderValue.current, currency)} vs ${formatCurrency(comparison.averageOrderValue.previous, currency)}.`,
+      `Pedidos: ${comparison.orderCount.current} vs ${comparison.orderCount.previous}. Unidades vendidas: ${comparison.unitsSold.current} vs ${comparison.unitsSold.previous}.`,
+      `Ticket promedio: ${formatCurrency(comparison.averageOrderValue.current, currency)} vs ${formatCurrency(comparison.averageOrderValue.previous, currency)}.`,
     ].join(" "),
     confidence: "high",
     evidence: [
@@ -524,9 +681,8 @@ function buildSalesSummaryResponse(_answer: string, output: SalesSummaryOutput, 
   const { summary, window } = output;
   return {
     answer: [
-      `Resumen de ventas de los últimos ${window.days} días:`,
-      `La facturación fue ${formatCurrency(summary.revenue, summary.currency)}, con ${summary.orderCount} pedidos y ${summary.unitsSold} unidades vendidas.`,
-      `El ticket promedio fue ${formatCurrency(summary.averageOrderValue, summary.currency)}.`,
+      `Facturación de los últimos ${window.days} días: ${formatCurrency(summary.revenue, summary.currency)}, con ${summary.orderCount} pedidos y ${summary.unitsSold} unidades vendidas.`,
+      `Ticket promedio: ${formatCurrency(summary.averageOrderValue, summary.currency)}.`,
     ].join(" "),
     confidence: "high",
     evidence: [
@@ -543,6 +699,142 @@ function buildSalesSummaryResponse(_answer: string, output: SalesSummaryOutput, 
   };
 }
 
+function buildAverageOrderValueResponse(
+  _answer: string,
+  output: AverageOrderValueOutput,
+  toolResults: AnalystToolResult[],
+): AnalystResponse {
+  const { summary, window } = output;
+  return {
+    answer: [
+      `Ticket promedio de los últimos ${window.days} días: ${formatCurrency(summary.averageOrderValue, summary.currency)}.`,
+      `Facturación: ${formatCurrency(summary.revenue, summary.currency)} con ${summary.orderCount} pedidos y ${summary.unitsSold} unidades vendidas.`,
+    ].join(" "),
+    confidence: "high",
+    evidence: [
+      { metric: "Ticket promedio", period: `últimos ${window.days} días`, value: formatCurrency(summary.averageOrderValue, summary.currency) },
+      { metric: "Facturación", period: `últimos ${window.days} días`, value: formatCurrency(summary.revenue, summary.currency) },
+      { metric: "Pedidos", period: `últimos ${window.days} días`, value: summary.orderCount },
+    ],
+    recommendedActions: [
+      "Compará el ticket promedio contra el período anterior para saber si está subiendo o bajando.",
+      "Revisá si bundles, upsells o productos top están empujando el ticket.",
+    ],
+    toolResults,
+  };
+}
+
+function buildDailySalesTrendResponse(
+  _answer: string,
+  output: DailySalesTrendOutput,
+  toolResults: AnalystToolResult[],
+): AnalystResponse {
+  const peakDay = output.peakDay ?? null;
+
+  return {
+    answer: peakDay
+      ? [
+          `El día con más ventas fue ${formatDateLabel(peakDay.day)}.`,
+          `Ese día hubo ${peakDay.orderCount} pedidos y ${formatCurrency(peakDay.revenue, output.summary.currency)} de facturación.`,
+          "No puedo afirmar la causa exacta con estos datos; lo más probable es que haya sido por más demanda o un ticket más alto ese día.",
+        ].join(" ")
+      : "No encontré ventas diarias suficientes para identificar un día pico.",
+    confidence: output.trend.length > 0 ? "high" : "medium",
+    evidence: [
+      peakDay
+        ? {
+            metric: `Día pico: ${formatDateLabel(peakDay.day)}`,
+            period: `últimos ${output.window.days} días`,
+            value: `${peakDay.orderCount} pedidos · ${formatCurrency(peakDay.revenue, output.summary.currency)}`,
+          }
+        : null,
+      {
+        metric: "Facturación total",
+        period: `últimos ${output.window.days} días`,
+        value: formatCurrency(output.summary.revenue, output.summary.currency),
+      },
+    ].filter((item): item is { metric: string; period?: string; value: string } => item !== null),
+    recommendedActions: [
+      actionStep(
+        "Revisá los productos top de ese día",
+        "el pico diario suele explicarse por un producto o una combinación de productos",
+        "preguntá qué productos vendieron más en esa misma ventana",
+      ),
+      actionStep(
+        "Compará el día pico con el promedio diario",
+        "así distinguís si fue un evento puntual o una mejora real",
+        "si querés, te muestro la tendencia día por día",
+      ),
+    ],
+    toolResults,
+  };
+}
+
+function buildMonthlyTrendResponse(
+  _answer: string,
+  output: MonthlyTrendOutput,
+  toolResults: AnalystToolResult[],
+): AnalystResponse {
+  const peakDay = output.peakDay ?? null;
+  const revenueChange = output.comparison.revenue.current - output.comparison.revenue.previous;
+  const revenueDirection =
+    revenueChange > 0 ? "subió" : revenueChange < 0 ? "bajó" : "se mantuvo";
+  const revenuePct =
+    output.comparison.revenue.previous > 0
+      ? `${Math.abs((revenueChange / output.comparison.revenue.previous) * 100).toFixed(1)}%`
+      : null;
+
+  return {
+    answer: peakDay
+      ? [
+          `Tendencia del mes hasta hoy: la facturación llegó a ${formatCurrency(output.summary.revenue, output.summary.currency)}.`,
+          output.comparison.revenue.previous > 0
+            ? `La facturación ${revenueDirection} ${revenuePct} frente al período anterior equivalente.`
+            : "No tengo período previo comparable para calcular variación porcentual.",
+          `El día pico fue ${formatDateLabel(peakDay.day)} con ${formatCurrency(peakDay.revenue, output.summary.currency)} y ${peakDay.orderCount} pedidos.`,
+        ].join(" ")
+      : "No encontré suficiente actividad mensual para resumir la tendencia.",
+    confidence: output.trend.length > 0 ? "high" : "medium",
+    evidence: [
+      {
+        metric: "Facturación mes a la fecha",
+        period: `últimos ${output.window.days} días`,
+        value: formatCurrency(output.summary.revenue, output.summary.currency),
+      },
+      {
+        metric: "Facturación período anterior",
+        period: "período comparable anterior",
+        value: formatCurrency(output.comparison.revenue.previous, output.comparison.currency),
+      },
+      {
+        metric: "Pedidos mes a la fecha",
+        period: `últimos ${output.window.days} días`,
+        value: formatScalar(output.summary.orderCount),
+      },
+      peakDay
+        ? {
+            metric: `Día pico: ${formatDateLabel(peakDay.day)}`,
+            period: `últimos ${output.window.days} días`,
+            value: `${peakDay.orderCount} pedidos · ${formatCurrency(peakDay.revenue, output.summary.currency)}`,
+          }
+        : null,
+    ].filter((item): item is { metric: string; period?: string; value: string } => item !== null),
+    recommendedActions: [
+      actionStep(
+        "Revisá qué pasó en el día pico",
+        "un salto mensual suele explicarse por uno o dos días muy fuertes",
+        "preguntá qué productos vendieron más en esa ventana",
+      ),
+      actionStep(
+        "Compará el mes contra el período previo",
+        "así ves si la mejora es real o solo un pico aislado",
+        "si querés, te doy el desglose día por día del mes",
+      ),
+    ],
+    toolResults,
+  };
+}
+
 function buildTopProductsResponse(_answer: string, output: TopProductsOutput, toolResults: AnalystToolResult[]): AnalystResponse {
   const { products, summary, window } = output;
   const topProduct = products[0] ?? null;
@@ -550,8 +842,8 @@ function buildTopProductsResponse(_answer: string, output: TopProductsOutput, to
   return {
     answer: topProduct
       ? [
-        `Productos top de los últimos ${window.days} días:`,
-        `${topProduct.name} lidera con ${formatCurrency(topProduct.revenue, summary.currency)} a partir de ${topProduct.unitsSold} unidades en ${topProduct.orderCount} pedidos.`,
+        `Producto top por facturación: ${topProduct.name} lidera con ${formatCurrency(topProduct.revenue, summary.currency)}.`,
+        `Sumó ${topProduct.unitsSold} unidades en ${topProduct.orderCount} pedidos durante los últimos ${window.days} días.`,
         products.length === 1
           ? "Dejé en la evidencia el producto principal para esta respuesta."
           : `Dejé en la evidencia los ${products.length} productos principales para esta respuesta.`,
@@ -566,7 +858,7 @@ function buildTopProductsResponse(_answer: string, output: TopProductsOutput, to
     recommendedActions:
       products.length > 0
         ? [
-          "Revisá si tus productos más vendidos tienen stock suficiente para sostener la demanda.",
+          "Revisá si tus productos top por facturación tienen stock suficiente para sostener la demanda.",
           "Usá la lista de productos top para definir promos o bundles.",
         ]
         : ["Corré una revisión de sync y confirmá que hubo pedidos completados en la ventana elegida."],
@@ -580,11 +872,10 @@ function buildWeeklySnapshotResponse(_answer: string, output: WeeklySnapshotOutp
 
   return {
     answer: [
-      `Resumen semanal de los últimos ${output.window.days} días:`,
-      `La facturación llegó a ${formatCurrency(output.summary.summary.revenue, currency)} con ${output.summary.summary.orderCount} pedidos y ${output.summary.summary.unitsSold} unidades vendidas.`,
+      `Facturación semanal: ${formatCurrency(output.summary.summary.revenue, currency)} con ${output.summary.summary.orderCount} pedidos y ${output.summary.summary.unitsSold} unidades vendidas.`,
       describePeriodChange("La facturación", "últimos 7 días", "7 días anteriores", output.comparison.comparison.revenue.percentageChange),
       topProduct
-        ? `${topProduct.name} fue el producto top con ${formatCurrency(topProduct.revenue, currency)}.`
+        ? `${topProduct.name} fue el producto top con ${formatCurrency(topProduct.revenue, currency)} en los últimos ${output.window.days} días.`
         : "No se identificó un producto top para la semana.",
     ].join(" "),
     confidence: "high",
@@ -614,7 +905,7 @@ function buildLowStockResponse(_answer: string, output: LowStockOutput, toolResu
   return {
     answer: topRisk
       ? [
-        `Oportunidades de stock bajo: ${outOfStockItems.length} variante${outOfStockItems.length === 1 ? " ya está" : "s ya están"} sin stock${atRiskItems.length > 0 ? ` y ${atRiskItems.length} variante${atRiskItems.length === 1 ? " está" : "s están"} en riesgo por debajo de ${stockThreshold} unidades` : ""}.`,
+        `Stock bajo: ${outOfStockItems.length} variante${outOfStockItems.length === 1 ? " ya está" : "s ya están"} sin stock${atRiskItems.length > 0 ? ` y ${atRiskItems.length} variante${atRiskItems.length === 1 ? " está" : "s están"} en riesgo por debajo de ${stockThreshold} unidades` : ""}.`,
         `${topRisk.name} - ${getVariantDescriptor(topRisk.raw)} ${topRisk.stock <= 0 ? "ya está en 0 unidades" : `tiene ${topRisk.stock} unidades disponibles`} y vendió ${topRisk.recentUnitsSold} unidades en los últimos ${recentDays} días.`,
         `Dejé en la evidencia los ${output.opportunities.length} productos con mayor riesgo de stock.`,
       ].join(" ")
@@ -636,12 +927,100 @@ function buildLowStockResponse(_answer: string, output: LowStockOutput, toolResu
   };
 }
 
+function buildNextWeekPrioritiesResponse(
+  _answer: string,
+  output: NextWeekPrioritiesOutput,
+  toolResults: AnalystToolResult[],
+): AnalystResponse {
+  const topProduct = output.topProducts[0] ?? null;
+  const lowStockLead = output.lowStockOpportunities[0] ?? null;
+  const priorityLead = output.priorities[0] ?? null;
+
+  return {
+    answer: priorityLead
+      ? [
+          `Para vender más la próxima semana, ${priorityLead.label}.`,
+          `Después: ${output.priorities[1]?.label ?? "revisá el resto del catálogo con demanda"}.`,
+          topProduct
+            ? `Tu producto más fuerte hoy es ${topProduct.name} con ${formatCurrency(topProduct.revenue, output.summary.currency)}.`
+            : null,
+          lowStockLead
+            ? `Stock a mirar: ${lowStockLead.name} con ${lowStockLead.stock} unidades y ${lowStockLead.recentUnitsSold} ventas recientes.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : "No pude armar una prioridad confiable para la próxima semana.",
+    confidence: output.priorities.length > 0 ? "high" : "medium",
+    evidence: [
+      topProduct
+        ? {
+            metric: `Producto foco: ${topProduct.name}`,
+            period: output.window.label,
+            value: formatCurrency(topProduct.revenue, output.summary.currency),
+          }
+        : null,
+      lowStockLead
+        ? {
+            metric: `Stock a revisar: ${lowStockLead.name}`,
+            period: "Stock actual",
+            value: `${lowStockLead.stock} unidades`,
+          }
+        : null,
+      {
+        metric: "Facturación semanal",
+        period: output.window.label,
+        value: formatCurrency(output.summary.revenue, output.summary.currency),
+      },
+    ].filter((item): item is { metric: string; period?: string; value: string } => item !== null),
+    recommendedActions: output.priorities.map((priority) =>
+      actionStep(priority.label, priority.reason, priority.nextStep),
+    ),
+    toolResults,
+  };
+}
 function actionStep(label: string, why: string, next: string) {
   return `${label}. Por que: ${why}. Siguiente paso: ${next}.`;
 }
 
 function makeResponseActionable(response: AnalystResponse, primary: AnalystToolResult): AnalystResponse {
   switch (primary.toolName) {
+    case "get_sales_trend": {
+      return {
+        ...response,
+        answer: `${response.answer} Próximo paso: mirá qué productos o pedidos explicaron ese pico diario.`,
+        recommendedActions: [
+          actionStep(
+            "Revisa el día pico con productos top",
+            "la explicación real suele estar en un producto o combinación de productos",
+            "pregunta qué productos vendieron más en esa misma ventana",
+          ),
+          actionStep(
+            "Compara ese día contra el promedio",
+            "así distinguís evento puntual de tendencia",
+            "si querés, pedime la tendencia diaria completa",
+          ),
+        ],
+      };
+    }
+    case "get_monthly_trend": {
+      return {
+        ...response,
+        answer: `${response.answer} Próximo paso: revisá qué días del mes empujaron la tendencia.`,
+        recommendedActions: [
+          actionStep(
+            "Revisá el día pico",
+            "suele explicar buena parte del movimiento mensual",
+            "pregunta qué productos vendieron más en esa ventana",
+          ),
+          actionStep(
+            "Compará el mes con el período anterior equivalente",
+            "así distinguís tendencia real de variación puntual",
+            "si querés, te doy un corte por día",
+          ),
+        ],
+      };
+    }
     case "compare_periods": {
       const output = primary.output as ComparePeriodsOutput;
       const revenueDown = output.comparison.revenue.absoluteChange < 0;
@@ -689,6 +1068,24 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
             "Separa volumen y ticket promedio",
             "las acciones cambian si vendiste menos pedidos o si bajo el ticket",
             "revisa productos top antes de definir una promo",
+          ),
+        ],
+      };
+    }
+    case "get_average_order_value": {
+      return {
+        ...response,
+        answer: `${response.answer} Próximo paso: comparalo contra el período anterior o revisá qué productos empujaron ese ticket.`,
+        recommendedActions: [
+          actionStep(
+            "Compará el ticket promedio contra el período anterior",
+            "sin contexto no sabés si el AOV sube por estrategia o por casualidad",
+            "preguntá cómo se compara con la semana pasada o el mes anterior",
+          ),
+          actionStep(
+            "Buscá qué productos o bundles lo empujan",
+            "el AOV mejora cuando entendés qué mix de compra lo sostiene",
+            "revisá productos top y combos del mismo período",
           ),
         ],
       };
@@ -797,16 +1194,24 @@ function buildResponseFromToolResults(answer: string, toolResults: AnalystToolRe
   }
 
   switch (primary.toolName) {
+    case "get_sales_trend":
+      return makeResponseActionable(buildDailySalesTrendResponse(answer, primary.output as DailySalesTrendOutput, toolResults), primary);
+    case "get_monthly_trend":
+      return makeResponseActionable(buildMonthlyTrendResponse(answer, primary.output as MonthlyTrendOutput, toolResults), primary);
     case "compare_periods":
       return makeResponseActionable(buildCompareResponse(answer, primary.output as ComparePeriodsOutput, toolResults), primary);
     case "get_sales_summary":
       return makeResponseActionable(buildSalesSummaryResponse(answer, primary.output as SalesSummaryOutput, toolResults), primary);
+    case "get_average_order_value":
+      return makeResponseActionable(buildAverageOrderValueResponse(answer, primary.output as AverageOrderValueOutput, toolResults), primary);
     case "get_top_products":
       return makeResponseActionable(buildTopProductsResponse(answer, primary.output as TopProductsOutput, toolResults), primary);
     case "get_weekly_business_snapshot":
       return makeResponseActionable(buildWeeklySnapshotResponse(answer, primary.output as WeeklySnapshotOutput, toolResults), primary);
     case "get_low_stock_opportunities":
       return makeResponseActionable(buildLowStockResponse(answer, primary.output as LowStockOutput, toolResults), primary);
+    case "get_next_week_priorities":
+      return makeResponseActionable(buildNextWeekPrioritiesResponse(answer, primary.output as NextWeekPrioritiesOutput, toolResults), primary);
     default:
       return buildUnsupportedResponse(answer);
   }
@@ -1000,3 +1405,7 @@ export async function generateAnalystResponse(
     throw error;
   }
 }
+
+
+
+

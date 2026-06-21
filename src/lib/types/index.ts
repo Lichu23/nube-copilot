@@ -3,6 +3,8 @@ export type {
   CanvasModel,
   ChartDatum,
   ChartModel,
+  CanvasVisualizationMode,
+  DailySalesTrendOutput,
   MetricDefinition,
   MetricItem,
   TableModel,
@@ -13,6 +15,8 @@ export type {
 export type {
   ComparePeriodsOutput,
   LowStockOutput,
+  MonthlyTrendOutput,
+  NextWeekPrioritiesOutput,
   SalesSummaryOutput,
   ToolOutput,
   TopProductsOutput,

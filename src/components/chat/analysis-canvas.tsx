@@ -184,76 +184,87 @@ export function AnalysisCanvas({
             </div>
           </section>
 
-          <section className="surface-card mt-6 overflow-hidden rounded-[1.6rem]">
-            <div className="flex items-center gap-8 border-b border-border px-5">
-              {[
-                ["chart", "Gráfico"],
-                ["table", "Tabla"],
-              ].map(([key, label]) => {
-                const isActive = activeTab === key;
+          {model.visualizationMode === "compact" ? (
+            <section className="surface-card mt-6 rounded-[1.6rem] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Vista compacta
+              </p>
+              <p className="mt-2 text-base leading-7 text-foreground/80">
+                Esta respuesta se entiende mejor en texto. No hacía falta agregar tabla ni gráfico.
+              </p>
+            </section>
+          ) : (
+            <section className="surface-card mt-6 overflow-hidden rounded-[1.6rem]">
+              <div className="flex items-center gap-8 border-b border-border px-5">
+                {[
+                  ["chart", "Gráfico"],
+                  ["table", "Tabla"],
+                ].map(([key, label]) => {
+                  const isActive = activeTab === key;
 
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setActiveTab(key as "chart" | "table")}
-                    className={`border-b-2 px-1 py-4 text-lg transition ${
-                      isActive
-                        ? "border-accent text-foreground"
-                        : "border-transparent text-muted-foreground"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setActiveTab(key as "chart" | "table")}
+                      className={`border-b-2 px-1 py-4 text-lg transition ${
+                        isActive
+                          ? "border-accent text-foreground"
+                          : "border-transparent text-muted-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
 
-            <div className="p-5">
-              {activeTab === "chart" ? (
-                model.chart ? (
-                  <MiniBarChart chart={model.chart} />
-                ) : (
-                  <div className="rounded-[1.25rem] bg-muted p-8 text-center text-muted-foreground">
-                    No hay gráfico disponible para esta respuesta.
-                  </div>
-                )
-              ) : null}
+              <div className="p-5">
+                {activeTab === "chart" ? (
+                  model.chart ? (
+                    <MiniBarChart chart={model.chart} />
+                  ) : (
+                    <div className="rounded-[1.25rem] bg-muted p-8 text-center text-muted-foreground">
+                      No hay gráfico disponible para esta respuesta.
+                    </div>
+                  )
+                ) : null}
 
-              {activeTab === "table" ? (
-                model.table ? (
-                  <div className="overflow-x-auto rounded-[1.25rem] border border-border">
-                    <table className="min-w-full text-left">
-                      <thead className="bg-muted">
-                        <tr>
-                          {model.table.columns.map((column) => (
-                            <th key={column} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                              {column}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {model.table.rows.map((row, rowIndex) => (
-                          <tr key={`${rowIndex}-${row[0]}`} className="border-t border-border">
-                            {row.map((cell, cellIndex) => (
-                              <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-4 text-base text-foreground">
-                                {cell}
-                              </td>
+                {activeTab === "table" ? (
+                  model.table ? (
+                    <div className="max-h-[26rem] overflow-auto rounded-[1.25rem] border border-border">
+                      <table className="min-w-full text-left">
+                        <thead className="sticky top-0 z-10 bg-muted">
+                          <tr>
+                            {model.table.columns.map((column) => (
+                              <th key={column} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                {column}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="rounded-[1.25rem] bg-muted p-8 text-center text-muted-foreground">
-                    No hay tabla disponible para esta respuesta.
-                  </div>
-                )
-              ) : null}
-            </div>
-          </section>
+                        </thead>
+                        <tbody>
+                          {model.table.rows.map((row, rowIndex) => (
+                            <tr key={`${rowIndex}-${row[0]}`} className="border-t border-border">
+                              {row.map((cell, cellIndex) => (
+                                <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-4 text-base text-foreground">
+                                  {cell}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="rounded-[1.25rem] bg-muted p-8 text-center text-muted-foreground">
+                      No hay tabla disponible para esta respuesta.
+                    </div>
+                  )
+                ) : null}
+              </div>
+            </section>
+          )}
 
           <section className="surface-card mt-6 overflow-hidden rounded-[1.6rem]">
             <button
@@ -333,9 +344,9 @@ export function AnalysisCanvas({
                 {showDebugEvidence && model.table ? (
                   <div className="mt-6">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Vista previa de filas</p>
-                    <div className="mt-3 overflow-x-auto rounded-[1.25rem] border border-border">
+                    <div className="mt-3 max-h-[18rem] overflow-auto rounded-[1.25rem] border border-border">
                       <table className="min-w-full text-left">
-                        <thead className="bg-muted">
+                        <thead className="sticky top-0 z-10 bg-muted">
                           <tr>
                             {model.table.columns.map((column) => (
                               <th key={column} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">

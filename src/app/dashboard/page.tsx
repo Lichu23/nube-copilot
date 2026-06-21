@@ -279,7 +279,7 @@ export default async function DashboardPage({
           currency={metrics?.currency ?? null}
           helperLabel={
             summary.connection
-              ? `Venta bruta por línea en los últimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
+              ? `Facturación y unidades por producto en los últimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
               : "Esperando la sincronización inicial"
           }
           rows={topProducts}

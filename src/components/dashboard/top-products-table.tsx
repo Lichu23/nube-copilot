@@ -17,7 +17,7 @@ export function TopProductsTable({
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Productos top por venta bruta</h2>
+        <h2 className="text-lg font-semibold">Productos top por facturación</h2>
         <span className="text-xs text-zinc-500">{helperLabel}</span>
       </div>
 
