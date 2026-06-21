@@ -62,6 +62,8 @@ export interface ChartModel {
   variant?: "comparison" | "metric-bars" | "ranking" | "risk";
 }
 
+export type CanvasVisualizationMode = "analysis" | "compact";
+
 /**
  * Table model
  */
@@ -78,6 +80,7 @@ export interface CanvasModel {
   definitions?: MetricDefinition[];
   filters: string[];
   metrics: MetricItem[];
+  visualizationMode?: CanvasVisualizationMode;
   source: string;
   summary: string;
   summaryPoints: string[];

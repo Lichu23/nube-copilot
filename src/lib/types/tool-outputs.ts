@@ -99,11 +99,110 @@ export interface LowStockOutput {
 }
 
 /**
+ * Daily sales trend tool output
+ */
+export interface DailySalesTrendOutput {
+  peakDay?: {
+    day: string;
+    orderCount: number;
+    revenue: number;
+  };
+  trend: Array<{
+    day: string;
+    orderCount: number;
+    revenue: number;
+  }>;
+  summary: {
+    averageOrderValue: number;
+    currency?: string;
+    orderCount: number;
+    revenue: number;
+    unitsSold: number;
+  };
+  window?: {
+    days?: number;
+    endDate?: string;
+    startDate?: string;
+  };
+}
+
+/**
+ * Monthly sales trend tool output
+ */
+export interface MonthlyTrendOutput {
+  comparison: {
+    averageOrderValue: { current: number; previous: number };
+    currency?: string;
+    orderCount: { current: number; previous: number };
+    revenue: { current: number; previous: number };
+    unitsSold: { current: number; previous: number };
+  };
+  peakDay?: {
+    day: string;
+    orderCount: number;
+    revenue: number;
+  };
+  summary: {
+    averageOrderValue: number;
+    currency?: string;
+    orderCount: number;
+    revenue: number;
+    unitsSold: number;
+  };
+  trend: Array<{
+    day: string;
+    orderCount: number;
+    revenue: number;
+  }>;
+  window?: {
+    days?: number;
+    endDate?: string;
+    startDate?: string;
+  };
+  previousWindow?: {
+    endDate?: string;
+    startDate?: string;
+  };
+}
+
+/**
+ * Next week priorities tool output
+ */
+export interface NextWeekPrioritiesOutput {
+  lowStockOpportunities: Array<{
+    name: string;
+    recentUnitsSold: number;
+    sku?: string;
+    stock: number;
+  }>;
+  summary: {
+    averageOrderValue: number;
+    currency?: string;
+    orderCount: number;
+    revenue: number;
+    unitsSold: number;
+  };
+  topProducts: Array<{
+    name: string;
+    orderCount: number;
+    revenue: number;
+    unitsSold: number;
+  }>;
+  window?: {
+    days?: number;
+    label: string;
+  };
+}
+
+/**
  * Union of all possible tool outputs
  */
 export type ToolOutput =
   | ComparePeriodsOutput
   | SalesSummaryOutput
+  | DailySalesTrendOutput
+  | MonthlyTrendOutput
   | TopProductsOutput
   | WeeklySnapshotOutput
+  | NextWeekPrioritiesOutput
   | LowStockOutput;

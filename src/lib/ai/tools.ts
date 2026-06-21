@@ -1,14 +1,18 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { getActiveTiendanubeConnection } from "@/lib/db/client";
-import { comparePeriods, getLowStockOpportunities, getSalesSummary, getTopProducts } from "@/lib/db/queries/metrics";
+import { comparePeriods, getLowStockOpportunities, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
 
 export const aiToolNames = [
   "get_sales_summary",
+  "get_average_order_value",
+  "get_sales_trend",
+  "get_monthly_trend",
   "compare_periods",
   "get_top_products",
   "get_weekly_business_snapshot",
   "get_low_stock_opportunities",
+  "get_next_week_priorities",
 ] as const;
 
 const numericIntegerSchema = (min: number, max: number) =>
@@ -42,6 +46,52 @@ function resolveDateWindow(input: z.infer<typeof dateWindowSchema>) {
     endDate,
     startDate,
   };
+}
+
+function getMonthToDateWindow() {
+  const now = new Date();
+  const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+  const endDate = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999),
+  );
+
+  const days = Math.max(
+    1,
+    Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1,
+  );
+
+  return { days, endDate, startDate };
+}
+
+function toIsoDateKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function fillMissingTrendDays(
+  trend: Array<{ day: string; orderCount: number; revenue: number }>,
+  startDate: Date,
+  endDate: Date,
+) {
+  const trendByDay = new Map(trend.map((item) => [item.day, item]));
+  const days: Array<{ day: string; orderCount: number; revenue: number }> = [];
+  const current = new Date(startDate.getTime());
+
+  while (current.getTime() <= endDate.getTime()) {
+    const dayKey = toIsoDateKey(current);
+    const existing = trendByDay.get(dayKey);
+
+    days.push(
+      existing ?? {
+        day: dayKey,
+        orderCount: 0,
+        revenue: 0,
+      },
+    );
+
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  return days;
 }
 
 async function requireActiveStoreId() {
@@ -178,6 +228,172 @@ export async function executeLowStockOpportunitiesTool(input: {
   };
 }
 
+export async function executeAverageOrderValueTool(input: z.infer<typeof dateWindowSchema>) {
+  return executeSalesSummaryTool(input);
+}
+
+export async function executeSalesTrendTool(input: z.infer<typeof dateWindowSchema>) {
+  const storeId = await requireActiveStoreId();
+  const { days, endDate, startDate } = resolveDateWindow(input);
+  const rawTrend = await getSalesTrend({
+    endDate,
+    startDate,
+    storeId,
+  });
+  const trend = fillMissingTrendDays(rawTrend, startDate, endDate);
+  const summary = await getSalesSummary({
+    endDate,
+    startDate,
+    storeId,
+  });
+
+  const peakDay = trend.reduce<{ day: string; orderCount: number; revenue: number } | undefined>((best, item) => {
+    if (!best) return item;
+    if (item.revenue > best.revenue) return item;
+    if (item.revenue === best.revenue && item.orderCount > best.orderCount) return item;
+    return best;
+  }, undefined);
+  const normalizedPeakDay = peakDay && (peakDay.revenue > 0 || peakDay.orderCount > 0) ? peakDay : undefined;
+
+  return {
+    peakDay: normalizedPeakDay,
+    summary,
+    trend,
+    window: {
+      days,
+      endDate: endDate.toISOString().slice(0, 10),
+      startDate: startDate.toISOString().slice(0, 10),
+    },
+  };
+}
+
+export async function executeMonthlyTrendTool() {
+  const storeId = await requireActiveStoreId();
+  const { days, endDate, startDate } = getMonthToDateWindow();
+  const previousEndDate = new Date(startDate.getTime() - 1);
+  const previousStartDate = new Date(previousEndDate.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+
+  const [rawTrend, current, previous] = await Promise.all([
+    getSalesTrend({
+      endDate,
+      startDate,
+      storeId,
+    }),
+    getSalesSummary({
+      endDate,
+      startDate,
+      storeId,
+    }),
+    getSalesSummary({
+      endDate: previousEndDate,
+      startDate: previousStartDate,
+      storeId,
+    }),
+  ]);
+  const trend = fillMissingTrendDays(rawTrend, startDate, endDate);
+
+  const peakDay = trend.reduce<{ day: string; orderCount: number; revenue: number } | undefined>((best, item) => {
+    if (!best) return item;
+    if (item.revenue > best.revenue) return item;
+    if (item.revenue === best.revenue && item.orderCount > best.orderCount) return item;
+    return best;
+  }, undefined);
+  const normalizedPeakDay = peakDay && (peakDay.revenue > 0 || peakDay.orderCount > 0) ? peakDay : undefined;
+
+  return {
+    comparison: {
+      averageOrderValue: {
+        current: current.averageOrderValue,
+        previous: previous.averageOrderValue,
+      },
+      currency: current.currency ?? previous.currency ?? null,
+      orderCount: {
+        current: current.orderCount,
+        previous: previous.orderCount,
+      },
+      revenue: {
+        current: current.revenue,
+        previous: previous.revenue,
+      },
+      unitsSold: {
+        current: current.unitsSold,
+        previous: previous.unitsSold,
+      },
+    },
+    peakDay: normalizedPeakDay,
+    summary: current,
+    trend,
+    window: {
+      days,
+      endDate: endDate.toISOString().slice(0, 10),
+      startDate: startDate.toISOString().slice(0, 10),
+    },
+    previousWindow: {
+      endDate: previousEndDate.toISOString().slice(0, 10),
+      startDate: previousStartDate.toISOString().slice(0, 10),
+    },
+  };
+}
+
+export async function executeNextWeekPrioritiesTool() {
+  const [weeklySnapshot, lowStock] = await Promise.all([
+    executeWeeklyBusinessSnapshotTool(),
+    executeLowStockOpportunitiesTool({ limit: 3, recentDays: 30, stockThreshold: 5 }),
+  ]);
+
+  const currency = weeklySnapshot.summary.summary.currency;
+  const topProduct = weeklySnapshot.topProducts.products[0] ?? null;
+  const stockRisk = lowStock.opportunities[0] ?? null;
+  const revenueDown = weeklySnapshot.comparison.comparison.revenue.absoluteChange < 0;
+
+  const priorities = [
+    topProduct
+      ? {
+          label: `Priorizá ${topProduct.name}`,
+          nextStep: revenueDown
+            ? "mantené visibilidad y stock para aprovechar el rebote"
+            : "destacalo con promo, bundle o ubicación principal",
+          reason: "es el producto que más explica la venta reciente",
+        }
+      : {
+          label: "Priorizá el catálogo con demanda real",
+          nextStep: "buscá los productos con ventas recientes antes de invertir en promo",
+          reason: "necesitamos un ganador visible para empujar la semana",
+        },
+    stockRisk
+      ? {
+          label: stockRisk.stock <= 0 ? `Reponé ${stockRisk.name}` : `Protegé ${stockRisk.name}`,
+          nextStep: stockRisk.stock <= 0
+            ? "reponelo antes de aumentar tráfico"
+            : "confirmá inventario antes de empujar más demanda",
+          reason: `${stockRisk.recentUnitsSold} unidades recientes muestran que hay demanda`,
+        }
+      : {
+          label: "Revisá el inventario de los productos top",
+          nextStep: "confirmá que los ganadores tengan stock suficiente",
+          reason: "no detecté riesgo de stock en la muestra más urgente",
+        },
+    {
+      label: "Evitá promocionar productos sin demanda ni stock",
+      nextStep: "destiná el esfuerzo comercial a los productos con tracción",
+      reason: "la prioridad es vender más con menos fricción operativa",
+    },
+  ];
+
+  return {
+    lowStockOpportunities: lowStock.opportunities,
+    summary: weeklySnapshot.summary.summary,
+    topProducts: weeklySnapshot.topProducts.products,
+    window: {
+      days: weeklySnapshot.window.days,
+      label: weeklySnapshot.window.label,
+    },
+    priorities,
+    revenueChange: weeklySnapshot.comparison.comparison.revenue,
+    currency,
+  };
+}
+
 export function buildAiTools() {
   return {
     compare_periods: tool({
@@ -191,6 +407,24 @@ export function buildAiTools() {
         "Get a sales summary for a trailing date window including revenue, order count, units sold, and average order value.",
       inputSchema: dateWindowSchema,
       execute: executeSalesSummaryTool,
+    }),
+    get_average_order_value: tool({
+      description:
+        "Get the average order value for a trailing date window, along with supporting sales context.",
+      inputSchema: dateWindowSchema,
+      execute: executeAverageOrderValueTool,
+    }),
+    get_sales_trend: tool({
+      description:
+        "Get daily sales trend for a trailing date window and identify the peak day by revenue.",
+      inputSchema: dateWindowSchema,
+      execute: executeSalesTrendTool,
+    }),
+    get_monthly_trend: tool({
+      description:
+        "Get a month-to-date sales trend, peak day, and comparison against the previous equivalent period.",
+      inputSchema: z.object({}),
+      execute: executeMonthlyTrendTool,
     }),
     get_top_products: tool({
       description: "Get top products by revenue for a trailing date window.",
@@ -212,6 +446,12 @@ export function buildAiTools() {
         stockThreshold: numericIntegerSchema(0, 20).default(5).optional(),
       }),
       execute: executeLowStockOpportunitiesTool,
+    }),
+    get_next_week_priorities: tool({
+      description:
+        "Get a ranked action plan for next week based on recent sales performance, top products, and stock risk.",
+      inputSchema: z.object({}),
+      execute: executeNextWeekPrioritiesTool,
     }),
   };
 }

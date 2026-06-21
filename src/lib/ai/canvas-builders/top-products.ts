@@ -10,6 +10,10 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
   const summary = asRecord(output.summary);
   const window = asRecord(output.window);
   const currency = typeof summary?.currency === "string" ? summary.currency : null;
+  const totalUnitsSold = products.reduce((total, item) => {
+    const record = asRecord(item);
+    return total + (asNumber(record?.unitsSold) ?? 0);
+  }, 0);
 
   const rows = products
     .map((item) => {
@@ -40,11 +44,12 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
       variant: "ranking",
     },
     definitions: [metricDefinitions.topProductsRevenue, metricDefinitions.unitsSold, metricDefinitions.orderCount],
-    filters: ["Ordenado por facturación bruta del producto"],
+    filters: ["Ordenado por facturación bruta del producto", "Unidades y facturación visibles lado a lado"],
     metrics: [
       { label: "Productos", value: formatScalar(rows.length) },
       { definition: metricDefinitions.topProductsRevenue, label: "Facturación bruta", value: formatCurrency(asNumber(summary?.revenue) ?? 0, currency) },
-      { label: "Producto top", value: rows[0]?.[0] ?? "-" },
+      { definition: metricDefinitions.unitsSold, label: "Unidades vendidas", value: formatScalar(totalUnitsSold) },
+      { label: "Producto top por facturación", value: rows[0]?.[0] ?? "-" },
     ],
     source: "Tiendanube · Órdenes + ítems de pedido",
     summary: result.answer,

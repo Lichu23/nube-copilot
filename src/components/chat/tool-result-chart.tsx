@@ -162,6 +162,31 @@ function buildChartModel(item: ToolResult): ChartModel | null {
     };
   }
 
+  if (item.toolName === "get_average_order_value") {
+    const summary = asRecord(output.summary);
+    const window = asRecord(output.window);
+
+    if (!summary) {
+      return null;
+    }
+
+    const averageOrderValue = asNumber(summary.averageOrderValue);
+    const currency = typeof summary.currency === "string" ? summary.currency : null;
+    const days = typeof window?.days === "number" ? window.days : null;
+
+    if (averageOrderValue == null) {
+      return null;
+    }
+
+    return {
+      bars: [
+        { label: "Ticket promedio", value: averageOrderValue, valueLabel: formatCurrency(averageOrderValue, currency) },
+      ],
+      subtitle: days ? `Ticket promedio de los ultimos ${days} dias.` : "Ticket promedio de la ventana elegida.",
+      title: "Ticket promedio",
+    };
+  }
+
   if (item.toolName === "get_weekly_business_snapshot") {
     const summary = asRecord(output.summary);
     const summaryPayload = summary ? asRecord(summary.summary) : null;

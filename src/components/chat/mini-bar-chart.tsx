@@ -23,14 +23,14 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
         dotClassName: "bg-slate-400",
         label: chart.previousLabel ?? "Período anterior",
         value: item.previous ?? 0,
-        width: previousWidth,
+        width: item.previous && item.previous > 0 ? previousWidth : 0,
       },
       {
         barClassName: "bg-primary",
         dotClassName: "bg-primary",
         label: chart.currentLabel ?? "Período actual",
         value: item.current,
-        width: currentWidth,
+        width: item.current > 0 ? currentWidth : 0,
       },
     ];
     const formatValue = (value: number) =>
@@ -50,8 +50,11 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
                   <span className={`h-2.5 w-2.5 rounded-full ${row.dotClassName}`} />
                   <span>{row.label}</span>
                 </div>
-                <div className="h-3 rounded-full bg-surface-muted">
-                  <div className={`h-3 rounded-full transition-all duration-300 ${row.barClassName}`} style={{ width: `${row.width}%` }} />
+                  <div className="h-3 rounded-full bg-surface-muted">
+                  <div
+                    className={`h-3 rounded-full transition-all duration-300 ${row.barClassName}`}
+                    style={{ width: `${row.width}%` }}
+                  />
                 </div>
                 <p className="text-right text-sm font-semibold text-foreground">{formatValue(row.value)}</p>
               </div>
@@ -112,8 +115,20 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
       {chart.title ? <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{chart.title}</p> : null}
       <div className="flex h-48 items-stretch gap-3">
         {chart.data.map((item) => {
-          const currentHeight = maxValue > 0 ? Math.max((item.current / maxValue) * 100, 8) : 8;
-          const previousHeight = item.previous != null ? Math.max(((item.previous ?? 0) / maxValue) * 100, 8) : 0;
+          const currentHeight =
+            item.current <= 0
+              ? 0
+              : maxValue > 0
+                ? Math.max((item.current / maxValue) * 100, 8)
+                : 8;
+          const previousHeight =
+            item.previous == null
+              ? 0
+              : item.previous <= 0
+                ? 0
+                : maxValue > 0
+                  ? Math.max(((item.previous ?? 0) / maxValue) * 100, 8)
+                  : 8;
 
           return (
             <div key={item.label} className="flex min-w-0 h-full flex-1 flex-col items-center justify-end gap-3">
