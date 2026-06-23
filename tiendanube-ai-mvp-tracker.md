@@ -57,27 +57,169 @@ Important corrections:
 - [x] `DATABASE_URL` uses the real database password.
 - [x] `GROQ_MODEL` is filled explicitly.
 
+## 1.6 Production + multi-tenant readiness
+
+This is the real launch gate.
+
+### What is already good
+
+- [x] Tiendanube OAuth start/callback flow works.
+- [x] Access tokens are encrypted at rest.
+- [x] Core analytics tables are already scoped by `store_id`.
+- [x] Initial sync exists for a connected store.
+
+### What still needs to change before real production
+
+| Area | Must change |
+|------|-------------|
+| Hosting | Deploy on Vercel with production domain, HTTPS, and stable runtime env vars. |
+| OAuth | Register the production callback URL in the Tiendanube app and verify redirect URI handling. |
+| Tenant ownership | Add a real user/account layer so one merchant cannot see another merchant’s store data. |
+| Store access | Replace the current "single active connection" assumption with explicit store selection or user-to-store membership. |
+| Auth | Add app authentication for merchants/admins; do not rely on raw Tiendanube OAuth alone for SaaS access. |
+| Route protection | Lock down `/api/chat`, `/api/sync/run`, saved-report actions, and any store-scoped read/write routes. |
+| Sync reliability | Move initial sync and incremental sync work into a retryable job model with status, error, and cursor tracking. |
+| Webhooks | Replace the 501 webhook scaffold with real Tiendanube webhook handling for product/order/customer changes. |
+| Observability | Add error tracking, request logging, and sync job visibility for production support. |
+| UX hardening | Remove or gate debug/evidence panels and any developer-only controls from the default production UI. |
+| Data safety | Keep store-scoped isolation enforced in the database and backend, not only in the UI. |
+
+### Database changes needed for multi-tenant SaaS
+
+| Area | Suggested DB change |
+|------|---------------------|
+| Users | Add `users` or `accounts` to represent the human app user. |
+| Memberships | Add `store_memberships` or `user_stores` to map users to one or more stores. |
+| Roles | Add membership roles if multiple people can access the same store. |
+| Auth linkage | Store the auth provider subject / merchant identity in a durable table. |
+| Webhook inbox | Add a table for webhook events so retries and deduplication are safe. |
+| Sync state | Add cursor / watermark tables for incremental sync and resumable jobs. |
+| Audit log | Add optional audit rows for login, sync, webhook, and export actions. |
+
+### Production checklist
+
+- [ ] Deploy the app to Vercel or equivalent production hosting.
+- [ ] Set production environment variables in the host and Tiendanube app.
+- [ ] Add merchant authentication and session management.
+- [ ] Add user-to-store membership and authorization checks.
+- [ ] Make all store-scoped routes require explicit tenant context.
+- [ ] Replace manual-only sync with job-based initial + incremental sync.
+- [ ] Implement Tiendanube webhook ingestion.
+- [ ] Add retry, dead-letter, and observability for sync/webhook failures.
+- [ ] Remove debug evidence panels from the default production experience.
+- [ ] Add database migrations for the new multi-tenant tables.
+ - [x] Create Supabase `profiles`, `store_memberships`, `webhook_events`, and `sync_state` tables.
+ - [x] Verify auth user → profile trigger works.
+ - [x] Verify store membership row can be inserted and read.
+
+### What to do first in Supabase
+
+Start with the ownership layer. Do **not** remodel the existing `stores` / analytics tables yet.
+
+1. Keep the current store-scoped tables:
+   - `stores`
+   - `store_connections`
+   - `products`
+   - `orders`
+   - `customers`
+   - `sync_jobs`
+   - `chat_messages`
+   - `ai_tool_calls`
+   - `analyst_preferences`
+   - `saved_reports`
+
+2. Add a Supabase-auth-linked profile table:
+   - `profiles.id` should match `auth.users.id`
+   - store basic merchant metadata there
+
+3. Add a user-to-store membership table:
+   - one user can belong to one or many stores
+   - one store can have one or many users
+   - store a role like `owner`, `admin`, or `analyst`
+
+4. Add operational tables for production jobs:
+   - webhook event inbox
+   - sync state / cursor table
+   - optional audit log
+
+5. Enable RLS on the new tables:
+   - users can read their own profile
+   - users can read memberships for stores they belong to
+   - backend/service role can continue to manage sync and OAuth persistence
+
+### Suggested Supabase SQL
+
+Use this as the starting point in the Supabase SQL editor:
+
+```sql
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text unique,
+  display_name text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.store_memberships (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  store_id uuid not null references public.stores(id) on delete cascade,
+  role text not null default 'owner',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, store_id)
+);
+
+create table public.webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  topic text not null,
+  external_event_id text,
+  payload jsonb not null,
+  processed_at timestamptz,
+  failed_at timestamptz,
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
+create table public.sync_state (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  resource text not null,
+  cursor text,
+  last_synced_at timestamptz,
+  updated_at timestamptz not null default now(),
+  unique (store_id, resource)
+);
+```
+
+### Policies to add next
+
+- `profiles`: users can select/update only their own row.
+- `store_memberships`: users can select rows for stores they belong to.
+- `webhook_events` and `sync_state`: keep backend/service-role only for now.
+- Existing Tiendanube analytics tables can stay service-role only until the merchant auth flow is wired up.
+
 ## Immediate next implementation step
 
-**Next up:** Phase 8 product hardening before beta.
+**Next up:** production hardening + multi-tenant foundation.
 
 Why this is next:
 
-- SQL metrics, sync, and Groq-orchestrated AI chat are already working on top of real synced-store data.
-- The current product logic is ahead of the product experience; the most important fixes now are trust, clarity, and actionability.
-- If we push private beta before fixing the trust layer and production polish, feedback will mix product value with avoidable UX friction.
-- The UI rebuild still matters, but the first win is making the current product feel reliable, readable, and decision-ready.
+- The app already works for a connected store, but SaaS launch needs tenant isolation and route protection.
+- The current single-store assumptions are the biggest product risk, not the AI itself.
+- If we ship before fixing ownership and production ops, we will create a security and support problem, not just a UX problem.
+- The UI rebuild still matters, but production readiness comes first.
 
 What to add:
 
-- [x] Fix all Spanish encoding / mojibake regressions in the UI.
-- [x] Make metric definitions visible per report and in the trust layer.
-- [x] Turn Pin / Export / Copy into real persistence and share actions.
-- [x] Gate raw debug evidence out of the default production UI.
-- [x] Add stronger next-best actions to AI answers and report cards.
-- [x] Surface weekly snapshot and low-stock alerts outside chat.
-- [x] Improve empty states, loading states, and unsupported-question feedback.
-- [ ] After hardening, continue into the mobile-first UX rebuild.
+- [ ] Add merchant auth and durable user/store ownership.
+- [ ] Split single-active-store logic into explicit tenant selection.
+- [ ] Protect chat, sync, and saved-report routes by tenant.
+- [ ] Replace the webhook scaffold with real Tiendanube webhook processing.
+- [ ] Add retryable sync jobs and incremental sync state.
+- [ ] Remove debug evidence from the default production UI.
+- [ ] After that, continue into the mobile-first UX rebuild.
 
 ## Product goal
 
