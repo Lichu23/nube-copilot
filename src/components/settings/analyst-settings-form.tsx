@@ -51,7 +51,13 @@ function SelectField({
   );
 }
 
-export function AnalystSettingsForm({ initialPreferences }: { initialPreferences: AnalystPreferences }) {
+export function AnalystSettingsForm({
+  initialPreferences,
+  storeId,
+}: {
+  initialPreferences: AnalystPreferences;
+  storeId?: string;
+}) {
   const [preferences, setPreferences] = useState(initialPreferences);
   const [status, setStatus] = useState<"error" | "idle" | "saved" | "saving">("idle");
 
@@ -68,7 +74,7 @@ export function AnalystSettingsForm({ initialPreferences }: { initialPreferences
       const savedPreferences = await saveAnalystPreferences({
         ...preferences,
         completedAt: preferences.completedAt ?? new Date().toISOString(),
-      });
+      }, storeId);
       setPreferences(savedPreferences);
       setStatus("saved");
       window.setTimeout(() => setStatus("idle"), 1800);

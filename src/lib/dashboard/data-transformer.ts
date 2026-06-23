@@ -36,14 +36,32 @@ export function formatAsOfInputValue(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-export function buildDashboardHref(compareWindow: CompareWindowKey, asOf: string | null) {
+export function buildDashboardHref(
+  compareWindow: CompareWindowKey,
+  asOf: string | null,
+  storeId?: string | null,
+) {
   const searchParams = new URLSearchParams({ compareWindow });
 
   if (asOf) {
     searchParams.set("asOf", asOf);
   }
 
+  if (storeId) {
+    searchParams.set("storeId", storeId);
+  }
+
   return `/dashboard?${searchParams.toString()}`;
+}
+
+export function buildChatHref(prompt: string, storeId?: string | null) {
+  const searchParams = new URLSearchParams({ prompt });
+
+  if (storeId) {
+    searchParams.set("storeId", storeId);
+  }
+
+  return `/chat?${searchParams.toString()}`;
 }
 
 export function buildDashboardDateWindows(input: { compareWindow: CompareWindowKey; endDate: Date }) {
@@ -81,12 +99,26 @@ export function getLatestImportedCounts(summary: DashboardSyncSummary) {
   };
 }
 
+export function getLatestSyncOutcome(summary: DashboardSyncSummary) {
+  const metadata =
+    summary.latestSyncJob?.metadata && typeof summary.latestSyncJob.metadata === "object"
+      ? (summary.latestSyncJob.metadata as Record<string, unknown>)
+      : null;
+
+  return typeof metadata?.syncOutcome === "string" ? metadata.syncOutcome : null;
+}
+
 export function getLatestSyncMessage(summary: DashboardSyncSummary) {
   const latestSyncStatus = summary.latestSyncJob?.status ?? null;
+  const latestSyncOutcome = getLatestSyncOutcome(summary);
   const counts = getLatestImportedCounts(summary);
 
   if (!summary.connection) {
     return "Todavia no hay una conexion Tiendanube.";
+  }
+
+  if (latestSyncOutcome === "partial") {
+    return `La ultima sincronizacion quedo parcial: guardamos ${counts.productCount} productos, ${counts.variantCount} variantes y ${counts.orderCount} pedidos, pero fallo al leer pedidos completos.`;
   }
 
   if (latestSyncStatus === "succeeded") {
@@ -176,9 +208,7 @@ export async function getDashboardData(input: {
     rows: lowStockRows,
     stockThreshold: LOW_STOCK_THRESHOLD,
   });
-  const lowStockChatHref = `/chat?${new URLSearchParams({
-    prompt: "Que productos estan en riesgo de quedarse sin stock?",
-  }).toString()}`;
+  const lowStockChatHref = buildChatHref("Que productos estan en riesgo de quedarse sin stock?", storeId);
   const grossProductSales = topProducts.reduce((total, product) => total + product.revenue, 0);
   const revenueDifference = grossProductSales - metrics.revenue;
   const snapshotCard = buildWeeklySnapshotCardContent({
@@ -187,11 +217,7 @@ export async function getDashboardData(input: {
     topProduct: weeklySnapshotTopProduct,
     windowLabel: "ultimos 7 dias",
   });
-  const snapshotChatHref = snapshotCard
-    ? `/chat?${new URLSearchParams({
-        prompt: snapshotCard.askAiPrompt,
-      }).toString()}`
-    : undefined;
+  const snapshotChatHref = snapshotCard ? buildChatHref(snapshotCard.askAiPrompt, storeId) : undefined;
 
   return {
     grossProductSales,

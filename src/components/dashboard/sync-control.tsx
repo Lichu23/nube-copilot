@@ -9,6 +9,7 @@ type SyncControlProps = {
   hasConnection: boolean;
   lastSyncFinishedAt: string | null;
   lastSyncMessage: string;
+  lastSyncOutcome: string | null;
   lastSyncStatus: string | null;
   orderCount: number;
   productCount: number;
@@ -26,6 +27,7 @@ export function SyncControl({
   hasConnection,
   lastSyncFinishedAt,
   lastSyncMessage,
+  lastSyncOutcome,
   lastSyncStatus,
   orderCount,
   productCount,
@@ -44,6 +46,10 @@ export function SyncControl({
       return "text-amber-600";
     }
 
+    if (lastSyncOutcome === "partial") {
+      return "text-amber-600";
+    }
+
     if (lastSyncStatus === "succeeded") {
       return "text-emerald-600";
     }
@@ -53,7 +59,7 @@ export function SyncControl({
     }
 
     return "text-zinc-500";
-  }, [isPending, lastSyncStatus]);
+  }, [isPending, lastSyncOutcome, lastSyncStatus]);
 
   const triggerSync = useCallback((options?: { auto?: boolean }) => {
     if (!hasConnection) {
@@ -140,7 +146,10 @@ export function SyncControl({
 
       <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 px-4 py-3 text-sm">
         <p className={statusTone}>
-          Estado: <span className="font-medium">{isPending ? "corriendo" : (lastSyncStatus ?? "idle")}</span>
+          Estado:{" "}
+          <span className="font-medium">
+            {isPending ? "corriendo" : lastSyncOutcome === "partial" ? "parcial" : (lastSyncStatus ?? "idle")}
+          </span>
         </p>
         <p className="mt-1 text-zinc-600">{feedback}</p>
       </div>

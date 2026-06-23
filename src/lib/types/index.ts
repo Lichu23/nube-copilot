@@ -4,7 +4,6 @@ export type {
   ChartDatum,
   ChartModel,
   CanvasVisualizationMode,
-  DailySalesTrendOutput,
   MetricDefinition,
   MetricItem,
   TableModel,

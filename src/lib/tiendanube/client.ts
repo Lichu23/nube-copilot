@@ -8,7 +8,6 @@ import type {
 const DEFAULT_PRODUCTS_PER_PAGE = 100;
 const DEFAULT_ORDERS_PER_PAGE = 100;
 const DEFAULT_RETRY_ATTEMPTS = 3;
-const FALLBACK_PRODUCT_API_VERSION = "2025-03";
 
 type FetchedProductsPage = {
   batchSize: number;
@@ -100,7 +99,7 @@ function getApiOrigin() {
 
 export function getTiendanubeApiBaseUrl(storeId: string, version: TiendanubeProductSource = "v1") {
   const apiOrigin = getApiOrigin();
-  const versionSegment = version === "v1" ? "v1" : FALLBACK_PRODUCT_API_VERSION;
+  const versionSegment = version;
 
   return `${apiOrigin}/${versionSegment}/${storeId}`;
 }
@@ -227,21 +226,7 @@ async function fetchProductsForVersion(
 }
 
 export async function fetchAllTiendanubeProducts(storeId: string, accessToken: string) {
-  const primaryResult = await fetchProductsForVersion(storeId, accessToken, "v1");
-
-  if (primaryResult.totalCountHeader === 0 && primaryResult.products.length === 0) {
-    console.info("[tiendanube-sync] falling back to newer product api", {
-      fallbackVersion: FALLBACK_PRODUCT_API_VERSION,
-      storeId,
-      v1TotalCountHeader: primaryResult.totalCountHeader,
-    });
-
-    const fallbackResult = await fetchProductsForVersion(storeId, accessToken, "2025-03");
-
-    return fallbackResult;
-  }
-
-  return primaryResult;
+  return fetchProductsForVersion(storeId, accessToken, "v1");
 }
 
 type FetchAllTiendanubeOrdersInput = {

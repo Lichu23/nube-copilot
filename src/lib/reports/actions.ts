@@ -92,8 +92,10 @@ export function exportReportImage(model: CanvasModel) {
   downloadFile(`${safeFilename(model.title) || "reporte"}.svg`, "image/svg+xml;charset=utf-8", svg);
 }
 
-export async function getPinnedReports() {
-  const response = await fetch("/api/reports/saved", { cache: "no-store" });
+export async function getPinnedReports(storeId?: string) {
+  const response = await fetch(storeId ? `/api/reports/saved?storeId=${encodeURIComponent(storeId)}` : "/api/reports/saved", {
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     return [] satisfies PinnedReport[];
@@ -107,9 +109,9 @@ export async function getPinnedReports() {
   return payload.ok ? (payload.reports ?? []) : [];
 }
 
-export async function pinReport(model: CanvasModel) {
+export async function pinReport(model: CanvasModel, storeId?: string) {
   const reportId = buildReportId(model);
-  const current = await getPinnedReports();
+  const current = await getPinnedReports(storeId);
   const existing = current.find((report) => report.id === reportId);
 
   if (existing) {
@@ -126,7 +128,7 @@ export async function pinReport(model: CanvasModel) {
     windowLabel: model.windowLabel,
   };
 
-  const response = await fetch("/api/reports/saved", {
+  const response = await fetch(storeId ? `/api/reports/saved?storeId=${encodeURIComponent(storeId)}` : "/api/reports/saved", {
     body: JSON.stringify(pinnedReport),
     headers: { "Content-Type": "application/json" },
     method: "POST",
@@ -141,8 +143,11 @@ export async function pinReport(model: CanvasModel) {
   return { report: pinnedReport, status: "pinned" as const };
 }
 
-export async function removePinnedReport(id: string) {
-  const response = await fetch(`/api/reports/saved?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+export async function removePinnedReport(id: string, storeId?: string) {
+  const response = await fetch(
+    storeId ? `/api/reports/saved?id=${encodeURIComponent(id)}&storeId=${encodeURIComponent(storeId)}` : `/api/reports/saved?id=${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { message?: string } | null;
@@ -150,5 +155,5 @@ export async function removePinnedReport(id: string) {
   }
 
   window.dispatchEvent(new Event(pinnedReportsChangedEvent));
-  return getPinnedReports();
+  return getPinnedReports(storeId);
 }

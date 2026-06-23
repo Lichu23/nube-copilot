@@ -33,6 +33,7 @@ type ChatPanelProps = {
   initialInput?: string;
   initialPreferences: AnalystPreferences;
   lastSyncAt: string | null;
+  storeId?: string;
   storeName: string;
 };
 
@@ -111,10 +112,14 @@ function UnsupportedFeedbackCard({
   );
 }
 
-function WorkspaceSidebar() {
+function buildTenantHref(path: string, storeId?: string) {
+  return storeId ? `${path}?storeId=${storeId}` : path;
+}
+
+function WorkspaceSidebar({ storeId }: { storeId?: string }) {
   return (
     <aside className="hidden border-r border-border bg-card px-4 py-6 lg:flex lg:flex-col">
-      <Link href="/chat" className="flex items-center gap-3 px-2">
+      <Link href={buildTenantHref("/chat", storeId)} className="flex items-center gap-3 px-2">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-navy !text-white shadow-sm">
           <Sparkles className="h-5 w-5" />
         </span>
@@ -122,26 +127,26 @@ function WorkspaceSidebar() {
       </Link>
 
       <nav className="mt-10 space-y-1">
-        <Link href="/chat" aria-current="page" className="flex items-center gap-3 rounded-2xl bg-surface-muted px-3 py-2.5 text-sm font-medium text-foreground">
+        <Link href={buildTenantHref("/chat", storeId)} aria-current="page" className="flex items-center gap-3 rounded-2xl bg-surface-muted px-3 py-2.5 text-sm font-medium text-foreground">
           <MessageSquare className="h-4.5 w-4.5" />
           Chat del analista
         </Link>
-        <Link href="/dashboard" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
+        <Link href={buildTenantHref("/dashboard", storeId)} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
           <LayoutDashboard className="h-4.5 w-4.5" />
           Panel
         </Link>
-        <Link href="/saved" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
+        <Link href={buildTenantHref("/saved", storeId)} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
           <Bookmark className="h-4.5 w-4.5" />
           Guardados
         </Link>
-        <Link href="/settings" className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
+        <Link href={buildTenantHref("/settings", storeId)} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
           <Settings2 className="h-4.5 w-4.5" />
           Ajustes
         </Link>
       </nav>
 
       <Link
-        href="/settings"
+        href={buildTenantHref("/settings", storeId)}
         className="mt-auto rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground transition hover:border-border-strong hover:text-foreground"
       >
         <span className="font-semibold text-foreground">Ajustar analista</span>
@@ -156,6 +161,7 @@ export function ChatPanel({
   initialInput = "",
   initialPreferences,
   lastSyncAt,
+  storeId,
   storeName,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -230,7 +236,7 @@ export function ChatPanel({
 
     try {
       const response = await fetch("/api/chat", {
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, storeId }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -295,7 +301,7 @@ export function ChatPanel({
     if (!canvasModel) return;
 
     try {
-      const result = await pinReport(canvasModel);
+      const result = await pinReport(canvasModel, storeId);
       setActionState(result.status);
     } catch {
       setActionState("error");
@@ -317,7 +323,7 @@ export function ChatPanel({
           : "244px 0 minmax(0,1fr)",
       }}
     >
-      <WorkspaceSidebar />
+      <WorkspaceSidebar storeId={storeId} />
 
       <section
         id="chat-workspace"
@@ -336,7 +342,7 @@ export function ChatPanel({
             </div>
             <div className="flex items-center gap-2 text-foreground">
               <Link
-                href="/dashboard"
+                href={buildTenantHref("/dashboard", storeId)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted"
                 aria-label="Abrir dashboard"
                 title="Abrir dashboard"
@@ -344,7 +350,7 @@ export function ChatPanel({
                 <LayoutDashboard className="h-4.5 w-4.5" />
               </Link>
               <Link
-                href="/settings"
+                href={buildTenantHref("/settings", storeId)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted"
                 aria-label="Ajustar analista"
                 title="Ajustar analista"
@@ -371,9 +377,9 @@ export function ChatPanel({
                   : "Primero conectá tu tienda Tiendanube. Sin datos sincronizados, el analista no debe inventar números."}
               </p>
 
-              {!hasConnection ? (
+                {!hasConnection ? (
                 <Link
-                  href="/connect"
+                  href={buildTenantHref("/connect", storeId)}
                   className="mt-6 inline-flex w-fit rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                 >
                   Conectar tienda
@@ -557,12 +563,12 @@ export function ChatPanel({
 
         <div className="flex h-14 items-center justify-between border-b border-border px-6 text-sm text-muted-foreground">
           <span>Canvas de análisis</span>
-          <Link href="/dashboard" className="inline-flex items-center gap-1.5 transition hover:text-foreground">
+          <Link href={buildTenantHref("/dashboard", storeId)} className="inline-flex items-center gap-1.5 transition hover:text-foreground">
             Ver dashboard
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={canvasModel} isPending={isPending} />
+        <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={canvasModel} isPending={isPending} storeId={storeId} />
       </aside>
     </div>
   );

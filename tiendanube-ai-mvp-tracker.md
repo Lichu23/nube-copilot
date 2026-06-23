@@ -76,6 +76,7 @@ This is the real launch gate.
 | OAuth | Register the production callback URL in the Tiendanube app and verify redirect URI handling. |
 | Tenant ownership | Add a real user/account layer so one merchant cannot see another merchant’s store data. |
 | Store access | Replace the current "single active connection" assumption with explicit store selection or user-to-store membership. |
+| Connect flow | Keep the connect screen explicit even when a store is already linked; do not auto-skip authorization just because a previous connection exists. |
 | Auth | Add app authentication for merchants/admins; do not rely on raw Tiendanube OAuth alone for SaaS access. |
 | Route protection | Lock down `/api/chat`, `/api/sync/run`, saved-report actions, and any store-scoped read/write routes. |
 | Sync reliability | Move initial sync and incremental sync work into a retryable job model with status, error, and cursor tracking. |
@@ -220,6 +221,29 @@ What to add:
 - [ ] Add retryable sync jobs and incremental sync state.
 - [ ] Remove debug evidence from the default production UI.
 - [ ] After that, continue into the mobile-first UX rebuild.
+
+### Refactor progress in this branch
+
+What is now wired:
+
+- Tenant context can flow through `storeId` in dashboard, chat, saved reports, settings, onboarding, and AppShell links.
+- Chat/tool execution now accepts an explicit store context when the URL or request body provides one.
+- Saved report and analyst-preference actions now preserve the selected tenant when possible.
+- Supabase Auth scaffolding is in place: middleware, magic-link login, auth callback, and server-side membership resolution.
+- Tiendanube OAuth callback now upserts a `store_memberships` row for the logged-in Supabase user, so store ownership is durable instead of global-only.
+- The connect screen no longer auto-prints the globally active store when no explicit `storeId` is chosen.
+- The app is currently being constrained to one Tiendanube store per user; extra stores are blocked for now.
+- The onboarding flow is now connect-first: Tiendanube authorization happens before merchant registration, and onboarding uses a magic-link account gate with resend cooldown.
+- Supabase is currently rate-limiting magic-link sends with `over_email_send_rate_limit` (429) on `POST /auth/v1/otp`; delivery needs to be retried after the cooldown or fixed with SMTP/auth settings.
+- Multi-membership users now have a protected `/stores` chooser instead of a dead-end redirect.
+
+What still needs to happen:
+
+- Finish the merchant-facing account/settings experience around the new login flow.
+- Verify the onboarding magic-link flow again after the Supabase email cooldown resets.
+- If the 429 persists after waiting, configure or inspect Supabase Auth SMTP/email delivery.
+- Apply the same membership guard to any remaining background or admin-only surfaces.
+- Decide later whether to re-enable multi-store selection or keep the one-store rule permanently.
 
 ## Product goal
 

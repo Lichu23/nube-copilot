@@ -9,13 +9,14 @@ export default async function ChatPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireActiveStore();
-
   const params = await searchParams;
+  const storeId = typeof params.storeId === "string" ? params.storeId : undefined;
+  const activeConnection = await requireActiveStore(storeId);
+  const resolvedStoreId = storeId ?? activeConnection.storeId;
   const prompt = typeof params.prompt === "string" ? params.prompt : "";
   const [summary, preferences] = await Promise.all([
-    getDashboardSyncSummary(),
-    getAnalystPreferencesForActiveStore(),
+    getDashboardSyncSummary(resolvedStoreId),
+    getAnalystPreferencesForActiveStore(resolvedStoreId),
   ]);
 
   return (
@@ -24,6 +25,7 @@ export default async function ChatPage({
       initialInput={prompt}
       initialPreferences={preferences}
       lastSyncAt={summary.latestSyncJob?.finishedAt?.toISOString() ?? null}
+      storeId={summary.connection?.storeId ?? resolvedStoreId}
       storeName={summary.connection?.storeName ?? "Conecta tu tienda"}
     />
   );

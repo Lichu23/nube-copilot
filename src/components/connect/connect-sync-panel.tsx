@@ -149,7 +149,7 @@ export function ConnectSyncPanel({
 
       <div className="mt-8 flex justify-center">
         {hasSynced ? (
-          <ButtonLink href="/onboarding" size="lg" className="shadow-card">
+          <ButtonLink href={storeId ? `/onboarding?storeId=${storeId}` : "/onboarding"} size="lg" className="shadow-card">
             Configurar analista
             <ArrowRight className="h-4 w-4" />
           </ButtonLink>

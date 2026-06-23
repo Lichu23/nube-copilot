@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { generateAnalystResponse } from "@/lib/ai/analyst";
 import { chatRequestSchema } from "@/lib/ai/schemas";
-import { getActiveTiendanubeConnection, persistChatExchange } from "@/lib/db/client";
+import { getActiveTiendanubeConnection, persistChatExchange, resolveActiveStoreId } from "@/lib/db/client";
 
 function getLatestUserMessage(messages: Array<{ content: string; role: "assistant" | "user" }>) {
   const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
@@ -34,9 +34,13 @@ export async function POST(request: Request) {
       requestId,
     });
 
-    const result = await generateAnalystResponse(body.messages, { requestId });
+    const resolvedStore = await resolveActiveStoreId(body.storeId);
+    const result = await generateAnalystResponse(body.messages, {
+      requestId,
+      storeId: resolvedStore.storeId,
+    });
     const latestUserMessage = getLatestUserMessage(body.messages);
-    const activeConnection = await getActiveTiendanubeConnection();
+    const activeConnection = await getActiveTiendanubeConnection(resolvedStore.storeId);
 
     if (activeConnection) {
       await persistChatExchange({

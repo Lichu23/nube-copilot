@@ -18,6 +18,7 @@ import { saveAnalystPreferences } from "@/lib/analyst/preferences";
 
 type OnboardingFlowProps = {
   detectedOrderCount: number;
+  storeId?: string;
   storeName?: string;
 };
 
@@ -84,7 +85,7 @@ function inferVolume(orderCount: number) {
   return "A detectar";
 }
 
-function BrandHeader() {
+function BrandHeader({ storeId }: { storeId?: string }) {
   return (
     <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-8">
       <Link href="/" className="inline-flex items-center gap-3">
@@ -94,7 +95,7 @@ function BrandHeader() {
         <span className="font-semibold text-foreground">NubeCopilot</span>
         <span className="text-sm text-muted-foreground">para Tiendanube</span>
       </Link>
-      <Link href="/chat" className="text-sm font-medium text-muted-foreground transition hover:text-foreground">
+      <Link href={storeId ? `/chat?storeId=${storeId}` : "/chat"} className="text-sm font-medium text-muted-foreground transition hover:text-foreground">
         Omitir por ahora
       </Link>
     </header>
@@ -136,7 +137,7 @@ function OptionButton({
   );
 }
 
-export function OnboardingFlow({ detectedOrderCount, storeName }: OnboardingFlowProps) {
+export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: OnboardingFlowProps) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [role, setRole] = useState("Dueño/a");
@@ -172,7 +173,7 @@ export function OnboardingFlow({ detectedOrderCount, storeName }: OnboardingFlow
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 mx-auto h-[34rem] max-w-3xl rounded-full bg-accent/70 blur-3xl" />
-      <BrandHeader />
+      <BrandHeader storeId={storeId} />
 
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-24 pt-6">
         {step < 5 ? (
@@ -368,7 +369,7 @@ export function OnboardingFlow({ detectedOrderCount, storeName }: OnboardingFlow
           </button>
 
           {step === 5 ? (
-            <Link href="/chat" className="inline-flex items-center gap-2 rounded-[1rem] btn-ink px-7 py-4 text-sm font-semibold shadow-card transition">
+            <Link href={storeId ? `/chat?storeId=${storeId}` : "/chat"} className="inline-flex items-center gap-2 rounded-[1rem] btn-ink px-7 py-4 text-sm font-semibold shadow-card transition">
               Ir al analista
               <ArrowRight className="h-4 w-4" />
             </Link>

@@ -11,6 +11,7 @@ import {
   orders,
   productVariants,
   products,
+  storeMemberships,
   storeConnections,
   stores,
   savedReports,
@@ -19,6 +20,7 @@ import {
 import { defaultAnalystPreferences, type AnalystPreferences } from "@/lib/analyst/preferences";
 import type { CanvasModel } from "@/lib/types";
 import type { TiendanubeStoreMetadata } from "@/lib/tiendanube/types";
+import { getSupabaseUser } from "@/lib/supabase/server";
 
 type PersistedToolCallInput = {
   arguments: unknown;
@@ -121,6 +123,39 @@ export async function persistTiendanubeConnection(input: PersistTiendanubeConnec
   });
 }
 
+export async function upsertStoreMembershipForUser(input: {
+  role?: string;
+  storeId: string;
+  userId: string;
+}) {
+  const db = getDb();
+  const now = new Date();
+
+  const [membership] = await db
+    .insert(storeMemberships)
+    .values({
+      role: input.role ?? "owner",
+      storeId: input.storeId,
+      updatedAt: now,
+      userId: input.userId,
+    })
+    .onConflictDoUpdate({
+      target: [storeMemberships.userId, storeMemberships.storeId],
+      set: {
+        role: input.role ?? "owner",
+        updatedAt: now,
+      },
+    })
+    .returning({
+      id: storeMemberships.id,
+      role: storeMemberships.role,
+      storeId: storeMemberships.storeId,
+      userId: storeMemberships.userId,
+    });
+
+  return membership;
+}
+
 export async function getActiveTiendanubeConnection(storeId?: string) {
   const db = getDb();
   const filters = [eq(storeConnections.status, "active")];
@@ -152,6 +187,100 @@ export async function getActiveTiendanubeConnection(storeId?: string) {
   }
 
   return connections[0];
+}
+
+export async function resolveActiveStoreId(storeId?: string) {
+  const db = getDb();
+  const user = await getSupabaseUser().catch(() => null);
+
+  if (!user) {
+    throw new Error("You must be signed in to access a store.");
+  }
+
+  if (storeId) {
+    const [membership] = await db
+      .select({ storeId: storeMemberships.storeId })
+      .from(storeMemberships)
+      .where(and(eq(storeMemberships.userId, user.id), eq(storeMemberships.storeId, storeId)))
+      .limit(1);
+
+    if (!membership) {
+      throw new Error("You do not have access to this store.");
+    }
+
+    return { storeId, userId: user.id };
+  }
+
+  const memberships = await db
+    .select({ storeId: storeMemberships.storeId })
+    .from(storeMemberships)
+    .where(eq(storeMemberships.userId, user.id))
+    .orderBy(desc(storeMemberships.createdAt))
+    .limit(2);
+
+  if (memberships.length === 0) {
+    throw new Error("No store membership found for this account.");
+  }
+
+  if (memberships.length > 1) {
+    throw new Error("Multiple store memberships found. Pass storeId explicitly.");
+  }
+
+  return { storeId: memberships[0].storeId, userId: user.id };
+}
+
+export type StoreMembershipRecord = {
+  country: string | null;
+  currency: string | null;
+  role: string;
+  storeId: string;
+  storeName: string | null;
+  tiendanubeStoreId: string;
+};
+
+export async function getStoreMembershipsForCurrentUser() {
+  const db = getDb();
+  const user = await getSupabaseUser().catch(() => null);
+
+  if (!user) {
+    return [] satisfies StoreMembershipRecord[];
+  }
+
+  const memberships = await db
+    .select({
+      country: stores.country,
+      currency: stores.currency,
+      role: storeMemberships.role,
+      storeId: stores.id,
+      storeName: stores.name,
+      tiendanubeStoreId: stores.tiendanubeStoreId,
+    })
+    .from(storeMemberships)
+    .innerJoin(stores, eq(storeMemberships.storeId, stores.id))
+    .where(eq(storeMemberships.userId, user.id))
+    .orderBy(desc(storeMemberships.createdAt));
+
+  return memberships as StoreMembershipRecord[];
+}
+
+export async function getStoreMembershipsForUserId(userId: string) {
+  const db = getDb();
+
+  const memberships = await db
+    .select({
+      country: stores.country,
+      currency: stores.currency,
+      role: storeMemberships.role,
+      storeId: stores.id,
+      storeName: stores.name,
+      tiendanubeStoreId: stores.tiendanubeStoreId,
+    })
+    .from(storeMemberships)
+    .innerJoin(stores, eq(storeMemberships.storeId, stores.id))
+    .where(eq(storeMemberships.userId, userId))
+    .orderBy(desc(storeMemberships.createdAt));
+
+  return memberships as StoreMembershipRecord[];
 }
 
 type UpsertProductsInput = {
@@ -589,8 +718,8 @@ function toAnalystPreferences(row: typeof analystPreferences.$inferSelect): Anal
   };
 }
 
-export async function getAnalystPreferencesForActiveStore() {
-  const connection = await getActiveTiendanubeConnection().catch(() => null);
+export async function getAnalystPreferencesForActiveStore(storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId).catch(() => null);
 
   if (!connection) {
     return defaultAnalystPreferences;
@@ -606,8 +735,8 @@ export async function getAnalystPreferencesForActiveStore() {
   return preferences ? toAnalystPreferences(preferences) : defaultAnalystPreferences;
 }
 
-export async function upsertAnalystPreferencesForActiveStore(input: AnalystPreferences) {
-  const connection = await getActiveTiendanubeConnection();
+export async function upsertAnalystPreferencesForActiveStore(input: AnalystPreferences, storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId);
 
   if (!connection) {
     throw new Error("No active Tiendanube store was found.");
@@ -665,8 +794,8 @@ function toSavedReportRecord(row: typeof savedReports.$inferSelect): SavedReport
   };
 }
 
-export async function getSavedReportsForActiveStore() {
-  const connection = await getActiveTiendanubeConnection().catch(() => null);
+export async function getSavedReportsForActiveStore(storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId).catch(() => null);
 
   if (!connection) {
     return [] satisfies SavedReportRecord[];
@@ -683,8 +812,8 @@ export async function getSavedReportsForActiveStore() {
   return reports.map(toSavedReportRecord);
 }
 
-export async function upsertSavedReportForActiveStore(input: SavedReportRecord) {
-  const connection = await getActiveTiendanubeConnection();
+export async function upsertSavedReportForActiveStore(input: SavedReportRecord, storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId);
 
   if (!connection) {
     throw new Error("No active Tiendanube store was found.");
@@ -721,8 +850,8 @@ export async function upsertSavedReportForActiveStore(input: SavedReportRecord) 
   return toSavedReportRecord(report);
 }
 
-export async function deleteSavedReportForActiveStore(reportKey: string) {
-  const connection = await getActiveTiendanubeConnection();
+export async function deleteSavedReportForActiveStore(reportKey: string, storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId);
 
   if (!connection) {
     throw new Error("No active Tiendanube store was found.");
@@ -735,8 +864,8 @@ export async function deleteSavedReportForActiveStore(reportKey: string) {
     .where(and(eq(savedReports.storeId, connection.storeId), eq(savedReports.reportKey, reportKey)));
 }
 
-export async function getDashboardSyncSummary() {
-  const connection = await getActiveTiendanubeConnection().catch(() => null);
+export async function getDashboardSyncSummary(storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId).catch(() => null);
 
   if (!connection) {
     return {

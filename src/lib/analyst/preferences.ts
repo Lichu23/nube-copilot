@@ -47,8 +47,10 @@ export const preferenceOptions = {
   tones: ["Directo", "Detallado", "Accionable"],
 };
 
-export async function loadAnalystPreferences(): Promise<AnalystPreferences> {
-  const response = await fetch("/api/analyst/preferences", { cache: "no-store" });
+export async function loadAnalystPreferences(storeId?: string): Promise<AnalystPreferences> {
+  const response = await fetch(storeId ? `/api/analyst/preferences?storeId=${encodeURIComponent(storeId)}` : "/api/analyst/preferences", {
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     return defaultAnalystPreferences;
@@ -62,8 +64,8 @@ export async function loadAnalystPreferences(): Promise<AnalystPreferences> {
   return payload.ok && payload.preferences ? payload.preferences : defaultAnalystPreferences;
 }
 
-export async function saveAnalystPreferences(preferences: AnalystPreferences) {
-  const response = await fetch("/api/analyst/preferences", {
+export async function saveAnalystPreferences(preferences: AnalystPreferences, storeId?: string) {
+  const response = await fetch(storeId ? `/api/analyst/preferences?storeId=${encodeURIComponent(storeId)}` : "/api/analyst/preferences", {
     body: JSON.stringify(preferences),
     headers: { "Content-Type": "application/json" },
     method: "PUT",
