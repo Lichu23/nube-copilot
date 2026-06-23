@@ -8,6 +8,7 @@ type AppShellProps = {
   title: string;
   description: string;
   meta?: ReactNode;
+  storeId?: string;
   children: ReactNode;
 };
 
@@ -18,11 +19,15 @@ const navigation = [
   { href: "/settings", label: "Ajustes", key: "settings", icon: Settings },
 ] as const;
 
-export function AppShell({ active = "dashboard", eyebrow, title, description, meta, children }: AppShellProps) {
+function buildTenantHref(path: string, storeId?: string) {
+  return storeId ? `${path}?storeId=${storeId}` : path;
+}
+
+export function AppShell({ active = "dashboard", eyebrow, title, description, meta, storeId, children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[244px_minmax(0,1fr)]">
       <aside className="hidden border-r border-border bg-card px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
-        <Link href="/chat" className="flex items-center gap-3 px-2">
+        <Link href={buildTenantHref("/chat", storeId)} className="flex items-center gap-3 px-2">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-navy !text-white shadow-sm">
             <Sparkles className="h-5 w-5" />
           </span>
@@ -37,7 +42,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={buildTenantHref(item.href, storeId)}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
                   isActive
@@ -53,7 +58,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
         </nav>
 
         <Link
-          href="/settings"
+          href={buildTenantHref("/settings", storeId)}
           className="mt-auto rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground transition hover:border-border-strong hover:text-foreground"
         >
           <span className="font-semibold text-foreground">Ajustar analista</span>
@@ -69,7 +74,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Bell className="h-4.5 w-4.5" />
-              <Link href="/settings" aria-label="Ajustar analista" title="Ajustar analista">
+              <Link href={buildTenantHref("/settings", storeId)} aria-label="Ajustar analista" title="Ajustar analista">
                 <Settings className="h-4.5 w-4.5" />
               </Link>
             </div>
@@ -81,7 +86,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={buildTenantHref(item.href, storeId)}
                   aria-current={isActive ? "page" : undefined}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                     isActive ? "bg-ink-navy !text-white" : "bg-surface-muted text-muted-foreground"

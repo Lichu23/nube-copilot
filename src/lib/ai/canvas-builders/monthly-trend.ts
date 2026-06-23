@@ -17,8 +17,9 @@ export function buildMonthlyTrendCanvas(
   const previousWindow = asRecord(output.previousWindow);
   const currency = typeof summary?.currency === "string" ? summary.currency : null;
   const peakDay = asRecord(output.peakDay);
-  const currentRevenue = asNumber(comparison?.revenue?.current) ?? 0;
-  const previousRevenue = asNumber(comparison?.revenue?.previous) ?? 0;
+  const comparisonRevenue = asRecord(comparison?.revenue);
+  const currentRevenue = asNumber(comparisonRevenue?.current) ?? 0;
+  const previousRevenue = asNumber(comparisonRevenue?.previous) ?? 0;
   const revenueChangeLabel =
     previousRevenue > 0 ? `${Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100)}%` : "—";
 

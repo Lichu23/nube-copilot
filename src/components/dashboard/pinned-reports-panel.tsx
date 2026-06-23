@@ -4,11 +4,17 @@ import { useState } from "react";
 
 import { pinnedReportsChangedEvent, removePinnedReport, type PinnedReport } from "@/lib/reports/actions";
 
-export function PinnedReportsPanel({ initialReports }: { initialReports: PinnedReport[] }) {
+export function PinnedReportsPanel({
+  initialReports,
+  storeId,
+}: {
+  initialReports: PinnedReport[];
+  storeId?: string;
+}) {
   const [reports, setReports] = useState(initialReports);
 
   async function handleRemove(reportId: string) {
-    const nextReports = await removePinnedReport(reportId).catch(() => reports);
+    const nextReports = await removePinnedReport(reportId, storeId).catch(() => reports);
     setReports(nextReports);
     window.dispatchEvent(new Event(pinnedReportsChangedEvent));
   }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import {
   ArrowUpRight,
   PackageCheck,
@@ -26,6 +26,7 @@ import {
   getCompareWindow,
   getDashboardData,
   getLatestSyncMessage,
+  getLatestSyncOutcome,
   parseAsOfDate,
 } from "@/lib/dashboard/data-transformer";
 import {
@@ -45,9 +46,8 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireActiveStore();
-
   const params = await searchParams;
+  const storeId = typeof params.storeId === "string" ? params.storeId : undefined;
   const autoSync =
     typeof params.autoSync === "string" && params.autoSync === "1";
   const compareWindow = getCompareWindow(params.compareWindow);
@@ -55,12 +55,15 @@ export default async function DashboardPage({
   const asOfOverride = isDevOverrideEnabled ? parseAsOfDate(params.asOf) : null;
   const endDate = asOfOverride ?? new Date();
   const asOfInputValue = formatAsOfInputValue(endDate);
+  const activeConnection = await requireActiveStore(storeId);
+  const resolvedStoreId = storeId ?? activeConnection.storeId;
   const [summary, preferences, savedReports] = await Promise.all([
-    getDashboardSyncSummary(),
-    getAnalystPreferencesForActiveStore(),
-    getSavedReportsForActiveStore(),
+    getDashboardSyncSummary(resolvedStoreId),
+    getAnalystPreferencesForActiveStore(resolvedStoreId),
+    getSavedReportsForActiveStore(resolvedStoreId),
   ]);
   const latestSyncStatus = summary.latestSyncJob?.status ?? null;
+  const latestSyncOutcome = getLatestSyncOutcome(summary);
   const latestSyncMessage = getLatestSyncMessage(summary);
   const {
     grossProductSales,
@@ -83,20 +86,21 @@ export default async function DashboardPage({
     <AppShell
       active="dashboard"
       eyebrow={windowConfig.label}
-      title={`Buen día, ${storeName}.`}
-      description="Esto es lo que se está moviendo en tu tienda esta semana."
+      title={`Buen dÃ­a, ${storeName}.`}
+      description="Esto es lo que se estÃ¡ moviendo en tu tienda esta semana."
+      storeId={resolvedStoreId}
       meta={
         <>
           {storeName}{" "}
           <span className="text-muted-foreground">
-            · Tiendanube · conectada
+            Â· Tiendanube Â· conectada
           </span>
         </>
       }
     >
       <div className="flex items-center justify-end">
         <Link
-          href="/chat"
+          href={`/chat?storeId=${resolvedStoreId}`}
           className="inline-flex items-center gap-2 rounded-full btn-ink px-4 py-2.5 text-sm font-semibold shadow-sm transition"
         >
           Preguntar al analista
@@ -104,7 +108,7 @@ export default async function DashboardPage({
         </Link>
       </div>
 
-      <AnalystProfileCard preferences={preferences} />
+      <AnalystProfileCard preferences={preferences} storeId={storeId} />
 
       {isDevOverrideEnabled ? (
         <section className="rounded-2xl border border-border bg-card/70 p-4 shadow-soft">
@@ -115,7 +119,7 @@ export default async function DashboardPage({
                   Modo desarrollo
                 </p>
                 <h2 className="mt-1 text-base font-semibold text-foreground">
-                  Comparación de período
+                  ComparaciÃ³n de perÃ­odo
                 </h2>
               </div>
               <form
@@ -123,11 +127,13 @@ export default async function DashboardPage({
                 method="get"
                 className="flex flex-wrap items-end gap-2"
               >
+                {storeId ? <input type="hidden" name="storeId" value={storeId} /> : null}
                 <input
                   type="hidden"
                   name="compareWindow"
                   value={compareWindow}
                 />
+                <input type="hidden" name="storeId" value={resolvedStoreId} />
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                   Fecha de corte
                   <input
@@ -155,11 +161,12 @@ export default async function DashboardPage({
                   ]
                 >
               ).map(([key, config]) => (
-                <Link
+                  <Link
                   key={key}
                   href={buildDashboardHref(
                     key,
                     asOfOverride ? asOfInputValue : null,
+                    resolvedStoreId,
                   )}
                   aria-current={compareWindow === key ? "page" : undefined}
                   className={`inline-flex h-10 min-w-28 items-center justify-center rounded-full px-4 text-sm font-semibold whitespace-nowrap transition ${
@@ -203,8 +210,8 @@ export default async function DashboardPage({
           definition={metricDefinitions.orderCount}
           helper={
             summary.connection
-              ? `${formatSignedPercent(periodComparison?.orderCount.percentageChange ?? null, windowConfig.label)} · Δ ${formatSignedNumber(periodComparison?.orderCount.absoluteChange ?? 0)} pedidos`
-              : "Esperando la conexión de la tienda."
+              ? `${formatSignedPercent(periodComparison?.orderCount.percentageChange ?? null, windowConfig.label)} Â· Î” ${formatSignedNumber(periodComparison?.orderCount.absoluteChange ?? 0)} pedidos`
+              : "Esperando la conexiÃ³n de la tienda."
           }
           icon={<ShoppingCart className="h-4.5 w-4.5" />}
           label={`Pedidos (${windowConfig.label})`}
@@ -215,8 +222,8 @@ export default async function DashboardPage({
           definition={metricDefinitions.averageOrderValue}
           helper={
             summary.connection
-              ? `${formatSignedPercent(periodComparison?.averageOrderValue.percentageChange ?? null, windowConfig.label)} · ${metrics?.unitsSold ?? 0} unidades`
-              : "Esperando la conexión de la tienda."
+              ? `${formatSignedPercent(periodComparison?.averageOrderValue.percentageChange ?? null, windowConfig.label)} Â· ${metrics?.unitsSold ?? 0} unidades`
+              : "Esperando la conexiÃ³n de la tienda."
           }
           icon={<PackageCheck className="h-4.5 w-4.5" />}
           label={`Ticket promedio (${windowConfig.label})`}
@@ -231,12 +238,12 @@ export default async function DashboardPage({
           helper={
             summary.connection
               ? "Pendiente de cohortes reales."
-              : "Esperando la conexión de la tienda."
+              : "Esperando la conexiÃ³n de la tienda."
           }
           icon={<UsersRound className="h-4.5 w-4.5" />}
           label="Clientes recurrentes"
           tone="warning"
-          value={summary.connection ? "—" : "0"}
+          value={summary.connection ? "â€”" : "0"}
         />
       </section>
 
@@ -247,6 +254,7 @@ export default async function DashboardPage({
           summary.latestSyncJob?.finishedAt?.toISOString() ?? null
         }
         lastSyncMessage={latestSyncMessage}
+        lastSyncOutcome={latestSyncOutcome}
         lastSyncStatus={latestSyncStatus}
         orderCount={summary.orderCount}
         productCount={summary.productCount}
@@ -260,13 +268,15 @@ export default async function DashboardPage({
           title="Insight del analista"
           body={
             snapshotCard?.summary ??
-            (latestSyncStatus === "succeeded"
-              ? `La última sincronización terminó bien. ID del último job: ${summary.latestSyncJob?.id}.`
-              : latestSyncStatus === "failed"
-                ? `La última sincronización falló. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
-                : summary.connection
-                  ? "Los insights van a mejorar ahora que productos y pedidos están entrando en Postgres."
-                  : "Conectá primero una tienda y luego sincronizá productos para empezar a construir insights.")
+            (latestSyncOutcome === "partial"
+              ? `La última sincronización quedó parcial. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
+              : latestSyncStatus === "succeeded"
+                ? `La última sincronización terminó bien. ID del último job: ${summary.latestSyncJob?.id}.`
+                : latestSyncStatus === "failed"
+                  ? `La última sincronización falló. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
+                  : summary.connection
+                    ? "Los insights van a mejorar ahora que productos y pedidos están entrando en Postgres."
+                    : "Conectá primero una tienda y luego sincronizá productos para empezar a construir insights.")
           }
           chatHref={snapshotChatHref}
           evidence={snapshotCard?.evidence}
@@ -279,25 +289,25 @@ export default async function DashboardPage({
           currency={metrics?.currency ?? null}
           helperLabel={
             summary.connection
-              ? `Facturación y unidades por producto en los últimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
-              : "Esperando la sincronización inicial"
+              ? `FacturaciÃ³n y unidades por producto en los Ãºltimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
+              : "Esperando la sincronizaciÃ³n inicial"
           }
           rows={topProducts}
         />
         <LowStockAlertCard alert={lowStockAlert} chatHref={lowStockChatHref} />
       </section>
 
-      <PinnedReportsPanel initialReports={savedReports} />
+      <PinnedReportsPanel initialReports={savedReports} storeId={resolvedStoreId} />
 
       {hasReconciliationData ? (
         <section className="surface-card rounded-2xl p-5">
           <div className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold">
-              Conciliación de facturación
+              ConciliaciÃ³n de facturaciÃ³n
             </h2>
             <p className="text-sm text-muted-foreground">
-              La venta bruta por producto y la facturación neta responden
-              preguntas distintas, así que pueden no coincidir exacto.
+              La venta bruta por producto y la facturaciÃ³n neta responden
+              preguntas distintas, asÃ­ que pueden no coincidir exacto.
             </p>
           </div>
 
@@ -312,7 +322,7 @@ export default async function DashboardPage({
             </div>
             <div className="rounded-xl border border-border bg-surface-muted p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Facturación neta
+                FacturaciÃ³n neta
               </p>
               <p className="mt-2 text-2xl font-semibold">
                 {formatCurrency(
@@ -335,8 +345,8 @@ export default async function DashboardPage({
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">
-            Las diferencias suelen venir de descuentos, envíos, impuestos o
-            redondeos entre el total final del pedido y la suma de líneas.
+            Las diferencias suelen venir de descuentos, envÃ­os, impuestos o
+            redondeos entre el total final del pedido y la suma de lÃ­neas.
           </p>
         </section>
       ) : null}

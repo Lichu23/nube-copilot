@@ -49,6 +49,66 @@ export const stores = pgTable("stores", {
   ...serviceRolePolicies("stores"),
 })).enableRLS();
 
+export const profiles = pgTable("profiles", {
+  id: uuid("id").primaryKey(),
+  email: text("email").unique(),
+  displayName: text("display_name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, () => ({
+  ...serviceRolePolicies("profiles"),
+})).enableRLS();
+
+export const storeMemberships = pgTable("store_memberships", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("owner"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  storeIdIdx: index("store_memberships_store_id_idx").on(table.storeId),
+  userIdIdx: index("store_memberships_user_id_idx").on(table.userId),
+  membershipUnique: uniqueIndex("store_memberships_user_id_store_id_uidx").on(table.userId, table.storeId),
+  ...serviceRolePolicies("store_memberships"),
+})).enableRLS();
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  topic: text("topic").notNull(),
+  externalEventId: text("external_event_id"),
+  payload: jsonb("payload").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  failedAt: timestamp("failed_at", { withTimezone: true }),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  storeIdIdx: index("webhook_events_store_id_idx").on(table.storeId),
+  externalEventIdx: index("webhook_events_external_event_id_idx").on(table.externalEventId),
+  ...serviceRolePolicies("webhook_events"),
+})).enableRLS();
+
+export const syncState = pgTable("sync_state", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  resource: text("resource").notNull(),
+  cursor: text("cursor"),
+  lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  storeIdIdx: index("sync_state_store_id_idx").on(table.storeId),
+  resourceUnique: uniqueIndex("sync_state_store_id_resource_uidx").on(table.storeId, table.resource),
+  ...serviceRolePolicies("sync_state"),
+})).enableRLS();
+
 export const storeConnections = pgTable("store_connections", {
   id: uuid("id").defaultRandom().primaryKey(),
   storeId: uuid("store_id")

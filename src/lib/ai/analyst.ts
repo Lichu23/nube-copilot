@@ -741,19 +741,21 @@ function buildDailySalesTrendResponse(
       : "No encontré ventas diarias suficientes para identificar un día pico.",
     confidence: output.trend.length > 0 ? "high" : "medium",
     evidence: [
-      peakDay
-        ? {
-            metric: `Día pico: ${formatDateLabel(peakDay.day)}`,
-            period: `últimos ${output.window.days} días`,
-            value: `${peakDay.orderCount} pedidos · ${formatCurrency(peakDay.revenue, output.summary.currency)}`,
-          }
-        : null,
+      ...(peakDay
+        ? [
+            {
+              metric: `Día pico: ${formatDateLabel(peakDay.day)}`,
+              period: `últimos ${output.window.days} días`,
+              value: `${peakDay.orderCount} pedidos · ${formatCurrency(peakDay.revenue, output.summary.currency)}`,
+            },
+          ]
+        : []),
       {
         metric: "Facturación total",
         period: `últimos ${output.window.days} días`,
         value: formatCurrency(output.summary.revenue, output.summary.currency),
       },
-    ].filter((item): item is { metric: string; period?: string; value: string } => item !== null),
+    ],
     recommendedActions: [
       actionStep(
         "Revisá los productos top de ese día",
@@ -811,14 +813,16 @@ function buildMonthlyTrendResponse(
         period: `últimos ${output.window.days} días`,
         value: formatScalar(output.summary.orderCount),
       },
-      peakDay
-        ? {
-            metric: `Día pico: ${formatDateLabel(peakDay.day)}`,
-            period: `últimos ${output.window.days} días`,
-            value: `${peakDay.orderCount} pedidos · ${formatCurrency(peakDay.revenue, output.summary.currency)}`,
-          }
-        : null,
-    ].filter((item): item is { metric: string; period?: string; value: string } => item !== null),
+      ...(peakDay
+        ? [
+            {
+              metric: `Día pico: ${formatDateLabel(peakDay.day)}`,
+              period: `últimos ${output.window.days} días`,
+              value: `${peakDay.orderCount} pedidos · ${formatCurrency(peakDay.revenue, output.summary.currency)}`,
+            },
+          ]
+        : []),
+    ],
     recommendedActions: [
       actionStep(
         "Revisá qué pasó en el día pico",
@@ -953,26 +957,30 @@ function buildNextWeekPrioritiesResponse(
       : "No pude armar una prioridad confiable para la próxima semana.",
     confidence: output.priorities.length > 0 ? "high" : "medium",
     evidence: [
-      topProduct
-        ? {
-            metric: `Producto foco: ${topProduct.name}`,
-            period: output.window.label,
-            value: formatCurrency(topProduct.revenue, output.summary.currency),
-          }
-        : null,
-      lowStockLead
-        ? {
-            metric: `Stock a revisar: ${lowStockLead.name}`,
-            period: "Stock actual",
-            value: `${lowStockLead.stock} unidades`,
-          }
-        : null,
+      ...(topProduct
+        ? [
+            {
+              metric: `Producto foco: ${topProduct.name}`,
+              period: output.window.label,
+              value: formatCurrency(topProduct.revenue, output.summary.currency),
+            },
+          ]
+        : []),
+      ...(lowStockLead
+        ? [
+            {
+              metric: `Stock a revisar: ${lowStockLead.name}`,
+              period: "Stock actual",
+              value: `${lowStockLead.stock} unidades`,
+            },
+          ]
+        : []),
       {
         metric: "Facturación semanal",
         period: output.window.label,
         value: formatCurrency(output.summary.revenue, output.summary.currency),
       },
-    ].filter((item): item is { metric: string; period?: string; value: string } => item !== null),
+    ],
     recommendedActions: output.priorities.map((priority) =>
       actionStep(priority.label, priority.reason, priority.nextStep),
     ),
@@ -1235,7 +1243,7 @@ async function executeForcedToolFallback(toolName: string): Promise<AnalystToolR
 
 export async function generateAnalystResponse(
   messages: ChatMessage[],
-  options?: { requestId?: string },
+  options?: { requestId?: string; storeId?: string },
 ): Promise<AnalystResponse> {
   const preparedMessages = trimMessages(messages);
   const latestUserMessage = getLatestUserMessage(messages);
@@ -1351,7 +1359,7 @@ export async function generateAnalystResponse(
       stopWhen: stepCountIs(2),
       system: analystSystemPrompt,
       toolChoice: toolSelection.toolChoice,
-      tools: buildAiTools(),
+      tools: buildAiTools({ storeId: options?.storeId }),
     });
 
     const toolResults = extractAllToolResults(result);

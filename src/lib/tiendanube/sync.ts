@@ -120,75 +120,8 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       storeId: connection.storeId,
     });
 
-    const ordersCreatedAtMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const {
-      orders,
-      rateLimit: ordersRateLimit,
-      totalCountHeader: ordersTotalCountHeader,
-      visitedPages: visitedOrderPages,
-    } = await fetchAllTiendanubeOrders(connection.storeExternalId, accessToken, {
-      createdAtMin: ordersCreatedAtMin,
-    });
-
-    const normalizedOrders = orders.map((order) => ({
-      cancelledAt: getDateOrNull(order.cancelled_at),
-      createdAtTiendanube: getDateOrNull(order.created_at),
-      currency: order.currency ?? null,
-      customer: order.customer?.id
-        ? {
-            email: order.customer.email ?? order.contact_email ?? null,
-            name: order.customer.name ?? order.contact_name ?? null,
-            phone: order.customer.phone ?? order.contact_phone ?? null,
-            raw: order.customer,
-            tiendanubeCustomerId: String(order.customer.id),
-          }
-        : null,
-      items: (order.products ?? []).map((item) => {
-        const quantity = getQuantity(item.quantity);
-        const unitPrice = getNumericString(item.price);
-        const computedTotal =
-          unitPrice && quantity > 0 ? String(Number(unitPrice) * quantity) : unitPrice;
-
-        return {
-          productName: item.name ?? null,
-          quantity,
-          tiendanubeProductId: item.product_id == null ? null : String(item.product_id),
-          tiendanubeVariantId: item.variant_id == null ? null : String(item.variant_id),
-          totalPrice: computedTotal,
-          unitPrice,
-        };
-      }),
-      orderNumber: order.number == null ? null : String(order.number),
-      paidAt: getDateOrNull(order.paid_at),
-      paymentStatus: order.payment_status ?? null,
-      raw: order,
-      shippingStatus: order.shipping_status ?? null,
-      status: order.status ?? null,
-      storeId: connection.storeId,
-      tiendanubeOrderId: String(order.id),
-      total: getNumericString(order.total),
-    }));
-
-    const persistedOrders = await upsertOrdersWithItems({
-      ordersToUpsert: normalizedOrders,
-      storeId: connection.storeId,
-    });
-
     const metadata = {
       apiVersion,
-      customerLinkedCount: persistedOrders.customerLinkedCount,
-      itemCount: persistedOrders.itemCount,
-      orderCount: persistedOrders.orderCount,
-      ordersCreatedAtMin,
-      ordersRateLimit,
-      ordersResponsePreview: normalizedOrders.slice(0, 3).map((order) => ({
-        itemCount: order.items.length,
-        orderNumber: order.orderNumber,
-        paymentStatus: order.paymentStatus,
-        status: order.status,
-        tiendanubeOrderId: order.tiendanubeOrderId,
-      })),
-      ordersTotalCountHeader,
       productCount: persisted.productCount,
       rateLimit,
       responsePreview: normalizedProducts.slice(0, 3).map((product) => ({
@@ -199,9 +132,112 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       })),
       totalCountHeader,
       variantCount: persisted.variantCount,
-      visitedOrderPages,
       visitedPages,
     };
+
+    try {
+      const ordersCreatedAtMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      const {
+        orders,
+        rateLimit: ordersRateLimit,
+        totalCountHeader: ordersTotalCountHeader,
+        visitedPages: visitedOrderPages,
+      } = await fetchAllTiendanubeOrders(connection.storeExternalId, accessToken, {
+        createdAtMin: ordersCreatedAtMin,
+      });
+
+      const normalizedOrders = orders.map((order) => ({
+        cancelledAt: getDateOrNull(order.cancelled_at),
+        createdAtTiendanube: getDateOrNull(order.created_at),
+        currency: order.currency ?? null,
+        customer: order.customer?.id
+          ? {
+              email: order.customer.email ?? order.contact_email ?? null,
+              name: order.customer.name ?? order.contact_name ?? null,
+              phone: order.customer.phone ?? order.contact_phone ?? null,
+              raw: order.customer,
+              tiendanubeCustomerId: String(order.customer.id),
+            }
+          : null,
+        items: (order.products ?? []).map((item) => {
+          const quantity = getQuantity(item.quantity);
+          const unitPrice = getNumericString(item.price);
+          const computedTotal =
+            unitPrice && quantity > 0 ? String(Number(unitPrice) * quantity) : unitPrice;
+
+          return {
+            productName: item.name ?? null,
+            quantity,
+            tiendanubeProductId: item.product_id == null ? null : String(item.product_id),
+            tiendanubeVariantId: item.variant_id == null ? null : String(item.variant_id),
+            totalPrice: computedTotal,
+            unitPrice,
+          };
+        }),
+        orderNumber: order.number == null ? null : String(order.number),
+        paidAt: getDateOrNull(order.paid_at),
+        paymentStatus: order.payment_status ?? null,
+        raw: order,
+        shippingStatus: order.shipping_status ?? null,
+        status: order.status ?? null,
+        storeId: connection.storeId,
+        tiendanubeOrderId: String(order.id),
+        total: getNumericString(order.total),
+      }));
+
+      const persistedOrders = await upsertOrdersWithItems({
+        ordersToUpsert: normalizedOrders,
+        storeId: connection.storeId,
+      });
+
+      metadata.customerLinkedCount = persistedOrders.customerLinkedCount;
+      metadata.itemCount = persistedOrders.itemCount;
+      metadata.orderCount = persistedOrders.orderCount;
+      metadata.ordersCreatedAtMin = ordersCreatedAtMin;
+      metadata.ordersRateLimit = ordersRateLimit;
+      metadata.visitedOrderPages = visitedOrderPages;
+      metadata.ordersResponsePreview = normalizedOrders.slice(0, 3).map((order) => ({
+        itemCount: order.items.length,
+        orderNumber: order.orderNumber,
+        paymentStatus: order.paymentStatus,
+        status: order.status,
+        tiendanubeOrderId: order.tiendanubeOrderId,
+      }));
+      metadata.ordersTotalCountHeader = ordersTotalCountHeader;
+      metadata.syncOutcome = "succeeded";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown sync error.";
+
+      metadata.syncOutcome = "partial";
+      metadata.partialErrorMessage = message;
+      metadata.partialStage = "orders";
+
+      console.error("[tiendanube-sync] initial sync partially failed", {
+        error: message,
+        jobId: syncJob.id,
+        storeExternalId: connection.storeExternalId,
+        storeId: connection.storeId,
+      });
+
+      await finishSyncJob(syncJob.id, {
+        errorMessage: message,
+        metadata,
+        status: "failed",
+      });
+
+      return {
+        data: {
+          ...metadata,
+          storeId: connection.storeId,
+          storeName: connection.storeName,
+        },
+        jobId: syncJob.id,
+        message: "Sincronización parcial: guardamos productos, pero falló la lectura de pedidos.",
+        ok: true,
+        status: 200,
+        warning: message,
+      };
+    }
 
     console.info("[tiendanube-sync] completed initial sync", {
       jobId: syncJob.id,

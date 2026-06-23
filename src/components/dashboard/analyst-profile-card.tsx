@@ -3,7 +3,13 @@ import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import { getPreferenceSummary, type AnalystPreferences } from "@/lib/analyst/preferences";
 
-export function AnalystProfileCard({ preferences }: { preferences: AnalystPreferences }) {
+export function AnalystProfileCard({
+  preferences,
+  storeId,
+}: {
+  preferences: AnalystPreferences;
+  storeId?: string;
+}) {
   return (
     <section className="rounded-2xl border border-border bg-card/80 p-5 shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -20,7 +26,10 @@ export function AnalystProfileCard({ preferences }: { preferences: AnalystPrefer
           </div>
         </div>
 
-        <Link href="/settings" className="inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-foreground">
+        <Link
+          href={storeId ? `/settings?storeId=${storeId}` : "/settings"}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-foreground"
+        >
           Ajustar foco
           <ArrowUpRight className="h-4 w-4" />
         </Link>

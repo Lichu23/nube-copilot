@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import {
   getAnalystPreferencesForActiveStore,
+  resolveActiveStoreId,
   upsertAnalystPreferencesForActiveStore,
 } from "@/lib/db/client";
 
@@ -19,24 +20,33 @@ const preferencesSchema = z.object({
   volume: z.string().min(1),
 });
 
-export async function GET() {
-  const preferences = await getAnalystPreferencesForActiveStore();
+function getStoreIdFromUrl(request: Request) {
+  const storeId = new URL(request.url).searchParams.get("storeId");
+  return storeId && storeId.length > 0 ? storeId : undefined;
+}
+
+export async function GET(request: Request) {
+  const storeId = getStoreIdFromUrl(request);
+  const resolvedStore = await resolveActiveStoreId(storeId);
+  const preferences = await getAnalystPreferencesForActiveStore(resolvedStore.storeId);
   return NextResponse.json({ ok: true, preferences });
 }
 
 export async function PUT(request: Request) {
   const parsed = preferencesSchema.safeParse(await request.json().catch(() => null));
+  const storeId = getStoreIdFromUrl(request);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: "Preferencias inválidas.", ok: false }, { status: 400 });
+    return NextResponse.json({ message: "Preferencias invalidas.", ok: false }, { status: 400 });
   }
 
   try {
-    const preferences = await upsertAnalystPreferencesForActiveStore(parsed.data);
+    const resolvedStore = await resolveActiveStoreId(storeId);
+    const preferences = await upsertAnalystPreferencesForActiveStore(parsed.data, resolvedStore.storeId);
     return NextResponse.json({ ok: true, preferences });
   } catch {
     return NextResponse.json(
-      { message: "Conectá una tienda antes de guardar preferencias.", ok: false },
+      { message: "Conecta una tienda antes de guardar preferencias.", ok: false },
       { status: 409 },
     );
   }

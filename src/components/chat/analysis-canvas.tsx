@@ -16,10 +16,12 @@ export function AnalysisCanvas({
   lastSyncLabel,
   model,
   isPending = false,
+  storeId,
 }: {
   lastSyncLabel: string;
   model: CanvasModel | null;
   isPending?: boolean;
+  storeId?: string;
 }) {
   const [activeTab, setActiveTab] = useState<"chart" | "table">("chart");
   const [actionState, setActionState] = useState<"already-pinned" | "copied" | "error" | "exported" | "image" | "idle" | "pinned">("idle");
@@ -77,7 +79,7 @@ export function AnalysisCanvas({
     if (!model) return;
 
     try {
-      const result = await pinReport(model);
+      const result = await pinReport(model, storeId);
       setActionState(result.status);
     } catch {
       setActionState("error");

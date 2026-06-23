@@ -7,6 +7,7 @@ export const chatMessageSchema = z.object({
 
 export const chatRequestSchema = z.object({
   messages: z.array(chatMessageSchema).min(1).max(20),
+  storeId: z.string().uuid().optional(),
 });
 
 export const aiAnalystResponseSchema = z.object({

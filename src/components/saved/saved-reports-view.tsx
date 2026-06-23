@@ -11,9 +11,11 @@ import { getPinnedReports, pinnedReportsChangedEvent, removePinnedReport, type P
 export function SavedReportsView({
   initialReports,
   lastSyncLabel,
+  storeId,
 }: {
   initialReports: PinnedReport[];
   lastSyncLabel: string;
+  storeId?: string;
 }) {
   const [reports, setReports] = useState(initialReports);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(initialReports[0]?.id ?? null);
@@ -21,17 +23,17 @@ export function SavedReportsView({
 
   useEffect(() => {
     async function refreshReports() {
-      const nextReports = await getPinnedReports();
+      const nextReports = await getPinnedReports(storeId);
       setReports(nextReports);
       setSelectedReportId((current) => current ?? nextReports[0]?.id ?? null);
     }
 
     window.addEventListener(pinnedReportsChangedEvent, refreshReports);
     return () => window.removeEventListener(pinnedReportsChangedEvent, refreshReports);
-  }, []);
+  }, [storeId]);
 
   async function handleRemove(reportId: string) {
-    const nextReports = await removePinnedReport(reportId).catch(() => reports);
+    const nextReports = await removePinnedReport(reportId, storeId).catch(() => reports);
     setReports(nextReports);
     setSelectedReportId((current) => (current === reportId ? (nextReports[0]?.id ?? null) : current));
   }
@@ -46,7 +48,7 @@ export function SavedReportsView({
         <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
           Fijá un reporte desde el canvas del chat para volver a abrirlo acá sin perder el contexto.
         </p>
-        <ButtonLink href="/chat" className="mt-6">
+        <ButtonLink href={storeId ? `/chat?storeId=${storeId}` : "/chat"} className="mt-6">
           Ir al analista
           <ArrowUpRight className="h-4 w-4" />
         </ButtonLink>
@@ -80,7 +82,7 @@ export function SavedReportsView({
                 </button>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Link
-                    href={`/chat?prompt=${encodeURIComponent(report.question)}`}
+                    href={storeId ? `/chat?prompt=${encodeURIComponent(report.question)}&storeId=${encodeURIComponent(storeId)}` : `/chat?prompt=${encodeURIComponent(report.question)}`}
                     className="rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-border-strong"
                   >
                     Preguntar de nuevo
@@ -102,7 +104,7 @@ export function SavedReportsView({
 
       <section className="min-h-[720px] overflow-hidden rounded-[1.6rem] border border-border bg-card">
         {selectedReport?.model ? (
-          <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={selectedReport.model} />
+          <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={selectedReport.model} storeId={storeId} />
         ) : (
           <div className="flex min-h-[720px] items-center justify-center p-8 text-center">
             <div>
@@ -112,7 +114,7 @@ export function SavedReportsView({
                 Este guardado se creó antes de que el canvas persistiera el modelo completo. Podés reabrir la pregunta en el chat.
               </p>
               {selectedReport ? (
-                <ButtonLink href={`/chat?prompt=${encodeURIComponent(selectedReport.question)}`} className="mt-6">
+                <ButtonLink href={storeId ? `/chat?prompt=${encodeURIComponent(selectedReport.question)}&storeId=${encodeURIComponent(storeId)}` : `/chat?prompt=${encodeURIComponent(selectedReport.question)}`} className="mt-6">
                   Reabrir en chat
                 </ButtonLink>
               ) : null}

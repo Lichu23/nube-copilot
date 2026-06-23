@@ -29,6 +29,13 @@
       "when": 1781442979238,
       "tag": "0003_past_luminals",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782222764391,
+      "tag": "0004_faulty_magdalene",
+      "breakpoints": true
     }
   ]
 }

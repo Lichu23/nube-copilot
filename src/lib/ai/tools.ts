@@ -94,8 +94,8 @@ function fillMissingTrendDays(
   return days;
 }
 
-async function requireActiveStoreId() {
-  const connection = await getActiveTiendanubeConnection();
+async function requireActiveStoreId(storeId?: string) {
+  const connection = await getActiveTiendanubeConnection(storeId);
 
   if (!connection) {
     throw new Error("No active Tiendanube connection found. Connect a store before using AI chat.");
@@ -104,8 +104,11 @@ async function requireActiveStoreId() {
   return connection.storeId;
 }
 
-export async function executeComparePeriodsTool(input: z.infer<typeof dateWindowSchema>) {
-  const storeId = await requireActiveStoreId();
+export async function executeComparePeriodsTool(
+  input: z.infer<typeof dateWindowSchema>,
+  storeId?: string,
+) {
+  const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(previousEndDate.getTime() - days * 24 * 60 * 60 * 1000);
@@ -115,7 +118,7 @@ export async function executeComparePeriodsTool(input: z.infer<typeof dateWindow
     currentStart: startDate,
     previousEnd: previousEndDate,
     previousStart: previousStartDate,
-    storeId,
+    storeId: resolvedStoreId,
   });
 
   return {
@@ -133,13 +136,16 @@ export async function executeComparePeriodsTool(input: z.infer<typeof dateWindow
   };
 }
 
-export async function executeSalesSummaryTool(input: z.infer<typeof dateWindowSchema>) {
-  const storeId = await requireActiveStoreId();
+export async function executeSalesSummaryTool(
+  input: z.infer<typeof dateWindowSchema>,
+  storeId?: string,
+) {
+  const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
   const summary = await getSalesSummary({
     endDate,
     startDate,
-    storeId,
+    storeId: resolvedStoreId,
   });
 
   return {
@@ -152,20 +158,23 @@ export async function executeSalesSummaryTool(input: z.infer<typeof dateWindowSc
   };
 }
 
-export async function executeTopProductsTool(input: z.infer<typeof dateWindowSchema> & { limit?: number | string }) {
-  const storeId = await requireActiveStoreId();
+export async function executeTopProductsTool(
+  input: z.infer<typeof dateWindowSchema> & { limit?: number | string },
+  storeId?: string,
+) {
+  const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
   const limit = toInteger(input.limit, 5);
   const products = await getTopProducts({
     endDate,
     limit,
     startDate,
-    storeId,
+    storeId: resolvedStoreId,
   });
   const summary = await getSalesSummary({
     endDate,
     startDate,
-    storeId,
+    storeId: resolvedStoreId,
   });
 
   return {
@@ -183,12 +192,12 @@ export async function executeTopProductsTool(input: z.infer<typeof dateWindowSch
   };
 }
 
-export async function executeWeeklyBusinessSnapshotTool() {
+export async function executeWeeklyBusinessSnapshotTool(storeId?: string) {
   const days = 7;
   const [summary, comparison, topProducts] = await Promise.all([
-    executeSalesSummaryTool({ days }),
-    executeComparePeriodsTool({ days }),
-    executeTopProductsTool({ days, limit: 3 }),
+    executeSalesSummaryTool({ days }, storeId),
+    executeComparePeriodsTool({ days }, storeId),
+    executeTopProductsTool({ days, limit: 3 }, storeId),
   ]);
 
   return {
@@ -206,8 +215,8 @@ export async function executeLowStockOpportunitiesTool(input: {
   limit?: number | string;
   recentDays?: number | string;
   stockThreshold?: number | string;
-}) {
-  const storeId = await requireActiveStoreId();
+}, storeId?: string) {
+  const resolvedStoreId = await requireActiveStoreId(storeId);
   const limit = toInteger(input.limit, 5);
   const recentDays = toInteger(input.recentDays, 30);
   const stockThreshold = toInteger(input.stockThreshold, 5);
@@ -215,7 +224,7 @@ export async function executeLowStockOpportunitiesTool(input: {
     limit,
     recentDays,
     stockThreshold,
-    storeId,
+    storeId: resolvedStoreId,
   });
 
   return {
@@ -228,23 +237,23 @@ export async function executeLowStockOpportunitiesTool(input: {
   };
 }
 
-export async function executeAverageOrderValueTool(input: z.infer<typeof dateWindowSchema>) {
-  return executeSalesSummaryTool(input);
+export async function executeAverageOrderValueTool(input: z.infer<typeof dateWindowSchema>, storeId?: string) {
+  return executeSalesSummaryTool(input, storeId);
 }
 
-export async function executeSalesTrendTool(input: z.infer<typeof dateWindowSchema>) {
-  const storeId = await requireActiveStoreId();
+export async function executeSalesTrendTool(input: z.infer<typeof dateWindowSchema>, storeId?: string) {
+  const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
   const rawTrend = await getSalesTrend({
     endDate,
     startDate,
-    storeId,
+    storeId: resolvedStoreId,
   });
   const trend = fillMissingTrendDays(rawTrend, startDate, endDate);
   const summary = await getSalesSummary({
     endDate,
     startDate,
-    storeId,
+    storeId: resolvedStoreId,
   });
 
   const peakDay = trend.reduce<{ day: string; orderCount: number; revenue: number } | undefined>((best, item) => {
@@ -267,8 +276,8 @@ export async function executeSalesTrendTool(input: z.infer<typeof dateWindowSche
   };
 }
 
-export async function executeMonthlyTrendTool() {
-  const storeId = await requireActiveStoreId();
+export async function executeMonthlyTrendTool(storeId?: string) {
+  const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = getMonthToDateWindow();
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(previousEndDate.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
@@ -277,17 +286,17 @@ export async function executeMonthlyTrendTool() {
     getSalesTrend({
       endDate,
       startDate,
-      storeId,
+      storeId: resolvedStoreId,
     }),
     getSalesSummary({
       endDate,
       startDate,
-      storeId,
+      storeId: resolvedStoreId,
     }),
     getSalesSummary({
       endDate: previousEndDate,
       startDate: previousStartDate,
-      storeId,
+      storeId: resolvedStoreId,
     }),
   ]);
   const trend = fillMissingTrendDays(rawTrend, startDate, endDate);
@@ -335,10 +344,10 @@ export async function executeMonthlyTrendTool() {
   };
 }
 
-export async function executeNextWeekPrioritiesTool() {
+export async function executeNextWeekPrioritiesTool(storeId?: string) {
   const [weeklySnapshot, lowStock] = await Promise.all([
-    executeWeeklyBusinessSnapshotTool(),
-    executeLowStockOpportunitiesTool({ limit: 3, recentDays: 30, stockThreshold: 5 }),
+    executeWeeklyBusinessSnapshotTool(storeId),
+    executeLowStockOpportunitiesTool({ limit: 3, recentDays: 30, stockThreshold: 5 }, storeId),
   ]);
 
   const currency = weeklySnapshot.summary.summary.currency;
@@ -394,49 +403,50 @@ export async function executeNextWeekPrioritiesTool() {
   };
 }
 
-export function buildAiTools() {
+export function buildAiTools(options?: { storeId?: string }) {
+  const storeId = options?.storeId;
   return {
     compare_periods: tool({
       description:
         "Compare the current trailing period versus the immediately preceding period for revenue, orders, units sold, and average order value.",
       inputSchema: dateWindowSchema,
-      execute: executeComparePeriodsTool,
+      execute: (input) => executeComparePeriodsTool(input, storeId),
     }),
     get_sales_summary: tool({
       description:
         "Get a sales summary for a trailing date window including revenue, order count, units sold, and average order value.",
       inputSchema: dateWindowSchema,
-      execute: executeSalesSummaryTool,
+      execute: (input) => executeSalesSummaryTool(input, storeId),
     }),
     get_average_order_value: tool({
       description:
         "Get the average order value for a trailing date window, along with supporting sales context.",
       inputSchema: dateWindowSchema,
-      execute: executeAverageOrderValueTool,
+      execute: (input) => executeAverageOrderValueTool(input, storeId),
     }),
     get_sales_trend: tool({
       description:
         "Get daily sales trend for a trailing date window and identify the peak day by revenue.",
       inputSchema: dateWindowSchema,
-      execute: executeSalesTrendTool,
+      execute: (input) => executeSalesTrendTool(input, storeId),
     }),
     get_monthly_trend: tool({
       description:
         "Get a month-to-date sales trend, peak day, and comparison against the previous equivalent period.",
       inputSchema: z.object({}),
-      execute: executeMonthlyTrendTool,
+      execute: () => executeMonthlyTrendTool(storeId),
     }),
     get_top_products: tool({
       description: "Get top products by revenue for a trailing date window.",
       inputSchema: dateWindowSchema.extend({
         limit: numericIntegerSchema(1, 10).default(5).optional(),
       }),
-      execute: executeTopProductsTool,
+      execute: (input) => executeTopProductsTool(input, storeId),
     }),
     get_weekly_business_snapshot: tool({
       description: "Get a weekly business snapshot with summary metrics, trend comparison, and top products.",
       inputSchema: z.object({}),
-      execute: executeWeeklyBusinessSnapshotTool,
+      execute: () => executeWeeklyBusinessSnapshotTool(storeId),
     }),
     get_low_stock_opportunities: tool({
       description: "Get products that have low stock and recent selling activity.",
@@ -445,13 +455,13 @@ export function buildAiTools() {
         recentDays: numericIntegerSchema(1, 90).default(30).optional(),
         stockThreshold: numericIntegerSchema(0, 20).default(5).optional(),
       }),
-      execute: executeLowStockOpportunitiesTool,
+      execute: (input) => executeLowStockOpportunitiesTool(input, storeId),
     }),
     get_next_week_priorities: tool({
       description:
         "Get a ranked action plan for next week based on recent sales performance, top products, and stock risk.",
       inputSchema: z.object({}),
-      execute: executeNextWeekPrioritiesTool,
+      execute: () => executeNextWeekPrioritiesTool(storeId),
     }),
   };
 }

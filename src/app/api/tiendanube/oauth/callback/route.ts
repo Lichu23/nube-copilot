@@ -12,15 +12,21 @@ function buildRedirectUrl(request: NextRequest, search: string) {
   return new URL(`/connect${search}`, request.url);
 }
 
-function buildSuccessRedirectUrl(request: NextRequest) {
-  return new URL("/connect?status=success&autoSync=1", request.url);
+function buildSuccessRedirectUrl(request: NextRequest, storeId?: string) {
+  const url = new URL("/connect", request.url);
+  url.searchParams.set("status", "success");
+  url.searchParams.set("autoSync", "1");
+
+  if (storeId) {
+    url.searchParams.set("storeId", storeId);
+  }
+
+  return url;
 }
 
-function redirectWithStatus(request: NextRequest, status: "success" | "error", reason?: string) {
+function redirectWithStatus(request: NextRequest, status: "success" | "error", reason?: string, storeId?: string) {
   const response = NextResponse.redirect(
-    status === "success"
-      ? buildSuccessRedirectUrl(request)
-      : buildRedirectUrl(request, `?status=${status}&reason=${reason}`),
+    status === "success" ? buildSuccessRedirectUrl(request, storeId) : buildRedirectUrl(request, `?status=${status}&reason=${reason}`),
   );
 
   response.cookies.set({
@@ -46,15 +52,13 @@ export async function GET(request: NextRequest) {
     const config = getTiendanubeOAuthConfig({ requireEncryptionSecret: true });
     const token = await exchangeCodeForToken(code);
     const storeMetadata = await fetchTiendanubeStoreMetadata(token.access_token, token.user_id);
-
-    await persistTiendanubeConnection({
+    const store = await persistTiendanubeConnection({
       accessTokenEncrypted: encryptSecret(token.access_token, config.encryptionSecret!),
       ...storeMetadata,
       scopes: token.scope.split(",").map((scope) => scope.trim()).filter(Boolean),
       storeExternalId: token.user_id,
     });
-
-    return redirectWithStatus(request, "success");
+    return redirectWithStatus(request, "success", undefined, store.storeId);
   } catch {
     return redirectWithStatus(request, "error", "exchange");
   }

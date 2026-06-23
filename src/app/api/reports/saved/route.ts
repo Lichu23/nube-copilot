@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   deleteSavedReportForActiveStore,
   getSavedReportsForActiveStore,
+  resolveActiveStoreId,
   upsertSavedReportForActiveStore,
   type SavedReportRecord,
 } from "@/lib/db/client";
@@ -18,30 +19,40 @@ const savedReportSchema = z.object({
   windowLabel: z.string().min(1),
 });
 
-export async function GET() {
-  const reports = await getSavedReportsForActiveStore();
+function getStoreIdFromUrl(request: Request) {
+  const storeId = new URL(request.url).searchParams.get("storeId");
+  return storeId && storeId.length > 0 ? storeId : undefined;
+}
+
+export async function GET(request: Request) {
+  const storeId = getStoreIdFromUrl(request);
+  const resolvedStore = await resolveActiveStoreId(storeId);
+  const reports = await getSavedReportsForActiveStore(resolvedStore.storeId);
   return NextResponse.json({ ok: true, reports });
 }
 
 export async function POST(request: Request) {
   const parsed = savedReportSchema.safeParse(await request.json().catch(() => null));
+  const storeId = getStoreIdFromUrl(request);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: "Reporte inválido.", ok: false }, { status: 400 });
+    return NextResponse.json({ message: "Reporte invalido.", ok: false }, { status: 400 });
   }
 
   try {
-    const report = await upsertSavedReportForActiveStore(parsed.data as SavedReportRecord);
+    const resolvedStore = await resolveActiveStoreId(storeId);
+    const report = await upsertSavedReportForActiveStore(parsed.data as SavedReportRecord, resolvedStore.storeId);
     return NextResponse.json({ ok: true, report });
   } catch {
     return NextResponse.json(
-      { message: "Conectá una tienda antes de guardar reportes.", ok: false },
+      { message: "Conecta una tienda antes de guardar reportes.", ok: false },
       { status: 409 },
     );
   }
 }
 
 export async function DELETE(request: Request) {
+  const storeId = getStoreIdFromUrl(request);
   const reportId = new URL(request.url).searchParams.get("id");
 
   if (!reportId) {
@@ -49,11 +60,12 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await deleteSavedReportForActiveStore(reportId);
+    const resolvedStore = await resolveActiveStoreId(storeId);
+    await deleteSavedReportForActiveStore(reportId, resolvedStore.storeId);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
-      { message: "Conectá una tienda antes de eliminar reportes.", ok: false },
+      { message: "Conecta una tienda antes de eliminar reportes.", ok: false },
       { status: 409 },
     );
   }
