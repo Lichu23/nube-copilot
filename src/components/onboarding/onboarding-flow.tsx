@@ -15,6 +15,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { saveAnalystPreferences } from "@/lib/analyst/preferences";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { t } from "@/lib/i18n/t";
 
 type OnboardingFlowProps = {
   detectedOrderCount: number;
@@ -30,17 +32,7 @@ type Choice = {
 };
 
 const roles = ["Dueño/a", "Manager", "Marketing", "Operaciones", "Otro"];
-
-const categories = [
-  "Indumentaria",
-  "Belleza",
-  "Hogar",
-  "Electrónica",
-  "Alimentos",
-  "Salud",
-  "Deportes",
-  "Otro",
-];
+const categories = ["Indumentaria", "Belleza", "Hogar", "Electrónica", "Alimentos", "Salud", "Deportes", "Otro"];
 
 const stages: Choice[] = [
   { description: "Menos de un año, validando demanda.", label: "Empezando", value: "Empezando" },
@@ -86,41 +78,27 @@ function inferVolume(orderCount: number) {
 }
 
 function BrandHeader({ storeId }: { storeId?: string }) {
+  const { messages } = useI18n();
   return (
     <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-8">
       <Link href="/" className="inline-flex items-center gap-3">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink-navy !text-white shadow-soft">
           <Sparkles className="h-4.5 w-4.5" />
         </span>
-        <span className="font-semibold text-foreground">NubeCopilot</span>
+        <span className="font-semibold text-foreground">{messages.common.appName}</span>
         <span className="text-sm text-muted-foreground">para Tiendanube</span>
       </Link>
       <Link href={storeId ? `/chat?storeId=${storeId}` : "/chat"} className="text-sm font-medium text-muted-foreground transition hover:text-foreground">
-        Omitir por ahora
+        {messages.onboarding.skip}
       </Link>
     </header>
   );
 }
 
-function OptionButton({
-  choice,
-  selected,
-  onClick,
-}: {
-  choice: Choice;
-  selected: boolean;
-  onClick: () => void;
-}) {
+function OptionButton({ choice, selected, onClick }: { choice: Choice; selected: boolean; onClick: () => void }) {
   const Icon = choice.icon;
-
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center gap-4 rounded-[1rem] border p-4 text-left transition ${
-        selected ? "border-ink-navy bg-white shadow-card" : "border-border bg-card hover:border-border-strong"
-      }`}
-    >
+    <button type="button" onClick={onClick} className={`flex w-full items-center gap-4 rounded-[1rem] border p-4 text-left transition ${selected ? "border-ink-navy bg-white shadow-card" : "border-border bg-card hover:border-border-strong"}`}>
       {Icon ? (
         <span className={`inline-flex h-10 w-10 items-center justify-center rounded-[0.9rem] ${selected ? "bg-ink-navy !text-white" : "bg-muted text-ink-navy"}`}>
           <Icon className="h-5 w-5" />
@@ -138,6 +116,7 @@ function OptionButton({
 }
 
 export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: OnboardingFlowProps) {
+  const { messages } = useI18n();
   const [step, setStep] = useState(0);
   const [role, setRole] = useState("Dueño/a");
   const [category, setCategory] = useState("Indumentaria");
@@ -162,9 +141,7 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
       stage,
       tone,
       volume,
-    }).catch(() => {
-      // The settings page can retry persistence if the store connection is missing.
-    });
+    }).catch(() => {});
   }, [cadence, category, friction, goal, role, stage, step, tone, volume]);
 
   return (
@@ -176,7 +153,7 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
         {step < 5 ? (
           <div className="mb-12">
             <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
-              <span>Paso {step + 1} de 5</span>
+              <span>{t("onboarding.progress", "es", { current: step + 1, total: 5 })}</span>
               <span>{progress}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-muted">
@@ -187,23 +164,15 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
 
         {step === 0 ? (
           <>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Sobre vos</p>
-            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">Empecemos por lo básico.</h1>
-            <p className="mt-5 text-lg text-muted-foreground">As? tu analista entiende mejor tu rol dentro de la tienda.</p>
-
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">{messages.onboarding.step0Eyebrow}</p>
+            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">{messages.onboarding.step0Title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{messages.onboarding.step0Description}</p>
             <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-8 shadow-card">
               <div>
-                <p className="text-sm font-semibold text-foreground">Tu rol</p>
+                <p className="text-sm font-semibold text-foreground">{messages.onboarding.roleTitle}</p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {roles.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => setRole(item)}
-                      className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
-                        role === item ? "border-ink-navy bg-ink-navy !text-white" : "border-border bg-white text-foreground hover:border-border-strong"
-                      }`}
-                    >
+                    <button key={item} type="button" onClick={() => setRole(item)} className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${role === item ? "border-ink-navy bg-ink-navy !text-white" : "border-border bg-white text-foreground hover:border-border-strong"}`}>
                       {item}
                     </button>
                   ))}
@@ -215,34 +184,24 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
 
         {step === 1 ? (
           <>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Tu tienda</p>
-            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">Contanos del negocio.</h1>
-            <p className="mt-5 text-lg text-muted-foreground">Pocos datos, mejores recomendaciones. El volumen lo inferimos de tu sincronización.</p>
-
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">{messages.onboarding.step1Eyebrow}</p>
+            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">{messages.onboarding.step1Title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{messages.onboarding.step1Description}</p>
             <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-8 shadow-card">
               <p className="text-sm font-semibold text-foreground">Categoría</p>
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
                 {categories.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setCategory(item)}
-                    className={`rounded-full border px-4 py-3 text-sm font-semibold transition ${
-                      category === item ? "border-ink-navy bg-ink-navy !text-white" : "border-border bg-white text-foreground hover:border-border-strong"
-                    }`}
-                  >
+                  <button key={item} type="button" onClick={() => setCategory(item)} className={`rounded-full border px-4 py-3 text-sm font-semibold transition ${category === item ? "border-ink-navy bg-ink-navy !text-white" : "border-border bg-white text-foreground hover:border-border-strong"}`}>
                     {item}
                   </button>
                 ))}
               </div>
-
               <p className="mt-8 text-sm font-semibold text-foreground">Etapa del negocio</p>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 {stages.map((item) => (
                   <OptionButton key={item.value} choice={item} selected={stage === item.value} onClick={() => setStage(item.value)} />
                 ))}
               </div>
-
               <div className="mt-6 rounded-[1rem] border border-border bg-surface-muted p-5">
                 <p className="text-sm font-semibold text-foreground">Volumen detectado</p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -256,9 +215,9 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
 
         {step === 2 ? (
           <>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Objetivo principal</p>
-            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">¿Qué querés mejorar primero?</h1>
-            <p className="mt-5 text-lg text-muted-foreground">Elegí uno. Después podés cambiar el foco.</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">{messages.onboarding.step2Eyebrow}</p>
+            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">{messages.onboarding.step2Title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{messages.onboarding.step2Description}</p>
             <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-6 shadow-card">
               <div className="grid gap-3">
                 {goals.map((item) => (
@@ -271,9 +230,9 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
 
         {step === 3 ? (
           <>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Fricción principal</p>
-            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">¿Qué te saca más tiempo?</h1>
-            <p className="mt-5 text-lg text-muted-foreground">Esto ordena la prioridad del panel y del chat.</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">{messages.onboarding.step3Eyebrow}</p>
+            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">{messages.onboarding.step3Title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{messages.onboarding.step3Description}</p>
             <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-6 shadow-card">
               <div className="grid gap-3">
                 {frictions.map((item) => (
@@ -286,9 +245,9 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
 
         {step === 4 ? (
           <>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Cómo reportamos</p>
-            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">¿Cómo querés escuchar a tu analista?</h1>
-            <p className="mt-5 text-lg text-muted-foreground">Cadencia y tono. Lo podés ajustar después.</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">{messages.onboarding.step4Eyebrow}</p>
+            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">{messages.onboarding.step4Title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{messages.onboarding.step4Description}</p>
             <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-8 shadow-card">
               <p className="text-sm font-semibold text-foreground">Cadencia</p>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -308,9 +267,9 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
 
         {step === 5 ? (
           <>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Todo listo</p>
-            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">Así va a trabajar tu analista.</h1>
-            <p className="mt-5 text-lg text-muted-foreground">Guardamos estas preferencias en este navegador para personalizar el chat, el panel y los ajustes.</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">{messages.onboarding.step5Eyebrow}</p>
+            <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">{messages.onboarding.step5Title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground">{messages.onboarding.step5Description}</p>
             <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-card">
               <div className="border-b border-border p-8">
                 <div className="flex gap-4">

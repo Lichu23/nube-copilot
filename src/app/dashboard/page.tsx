@@ -86,14 +86,14 @@ export default async function DashboardPage({
     <AppShell
       active="dashboard"
       eyebrow={windowConfig.label}
-      title={`Buen dÃ­a, ${storeName}.`}
-      description="Esto es lo que se estÃ¡ moviendo en tu tienda esta semana."
+      title={`Buen día, ${storeName}.`}
+      description="Esto es lo que se está moviendo en tu tienda esta semana."
       storeId={resolvedStoreId}
       meta={
         <>
           {storeName}{" "}
           <span className="text-muted-foreground">
-            Â· Tiendanube Â· conectada
+            · Tiendanube · conectada
           </span>
         </>
       }
@@ -119,7 +119,7 @@ export default async function DashboardPage({
                   Modo desarrollo
                 </p>
                 <h2 className="mt-1 text-base font-semibold text-foreground">
-                  ComparaciÃ³n de perÃ­odo
+                  Comparación de período
                 </h2>
               </div>
               <form
@@ -195,7 +195,7 @@ export default async function DashboardPage({
                   percentageChange:
                     periodComparison?.revenue.percentageChange ?? null,
                 })
-              : "Conecta y sincroniza una tienda para ver datos reales."
+              : "Conectá y sincronizá una tienda para ver datos reales."
           }
           icon={<TrendingUp className="h-4.5 w-4.5" />}
           label={`Revenue (${windowConfig.label})`}
@@ -210,8 +210,8 @@ export default async function DashboardPage({
           definition={metricDefinitions.orderCount}
           helper={
             summary.connection
-              ? `${formatSignedPercent(periodComparison?.orderCount.percentageChange ?? null, windowConfig.label)} Â· Î” ${formatSignedNumber(periodComparison?.orderCount.absoluteChange ?? 0)} pedidos`
-              : "Esperando la conexiÃ³n de la tienda."
+              ? `${formatSignedPercent(periodComparison?.orderCount.percentageChange ?? null, windowConfig.label)} · Δ ${formatSignedNumber(periodComparison?.orderCount.absoluteChange ?? 0)} pedidos`
+              : "Esperando la conexión de la tienda."
           }
           icon={<ShoppingCart className="h-4.5 w-4.5" />}
           label={`Pedidos (${windowConfig.label})`}
@@ -222,8 +222,8 @@ export default async function DashboardPage({
           definition={metricDefinitions.averageOrderValue}
           helper={
             summary.connection
-              ? `${formatSignedPercent(periodComparison?.averageOrderValue.percentageChange ?? null, windowConfig.label)} Â· ${metrics?.unitsSold ?? 0} unidades`
-              : "Esperando la conexiÃ³n de la tienda."
+              ? `${formatSignedPercent(periodComparison?.averageOrderValue.percentageChange ?? null, windowConfig.label)} · ${metrics?.unitsSold ?? 0} unidades`
+              : "Esperando la conexión de la tienda."
           }
           icon={<PackageCheck className="h-4.5 w-4.5" />}
           label={`Ticket promedio (${windowConfig.label})`}
@@ -238,12 +238,12 @@ export default async function DashboardPage({
           helper={
             summary.connection
               ? "Pendiente de cohortes reales."
-              : "Esperando la conexiÃ³n de la tienda."
+              : "Esperando la conexión de la tienda."
           }
           icon={<UsersRound className="h-4.5 w-4.5" />}
           label="Clientes recurrentes"
           tone="warning"
-          value={summary.connection ? "â€”" : "0"}
+          value={summary.connection ? "—" : "0"}
         />
       </section>
 
@@ -289,8 +289,8 @@ export default async function DashboardPage({
           currency={metrics?.currency ?? null}
           helperLabel={
             summary.connection
-              ? `FacturaciÃ³n y unidades por producto en los Ãºltimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
-              : "Esperando la sincronizaciÃ³n inicial"
+              ? `Facturación y unidades por producto en los últimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
+              : "Esperando la sincronización inicial"
           }
           rows={topProducts}
         />
@@ -303,11 +303,11 @@ export default async function DashboardPage({
         <section className="surface-card rounded-2xl p-5">
           <div className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold">
-              ConciliaciÃ³n de facturaciÃ³n
+              Conciliación de facturación
             </h2>
             <p className="text-sm text-muted-foreground">
-              La venta bruta por producto y la facturaciÃ³n neta responden
-              preguntas distintas, asÃ­ que pueden no coincidir exacto.
+              La venta bruta por producto y la facturación neta responden
+              preguntas distintas, así que pueden no coincidir exacto.
             </p>
           </div>
 
@@ -322,7 +322,7 @@ export default async function DashboardPage({
             </div>
             <div className="rounded-xl border border-border bg-surface-muted p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                FacturaciÃ³n neta
+                Facturación neta
               </p>
               <p className="mt-2 text-2xl font-semibold">
                 {formatCurrency(
@@ -345,11 +345,13 @@ export default async function DashboardPage({
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">
-            Las diferencias suelen venir de descuentos, envÃ­os, impuestos o
-            redondeos entre el total final del pedido y la suma de lÃ­neas.
+            Las diferencias suelen venir de descuentos, envíos, impuestos o
+            redondeos entre el total final del pedido y la suma de líneas.
           </p>
         </section>
       ) : null}
     </AppShell>
   );
 }
+
+

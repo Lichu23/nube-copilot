@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:mojibake": "node scripts/check-mojibake.mjs",
     "probe:tiendanube-products": "node scripts/probe-tiendanube-products.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",

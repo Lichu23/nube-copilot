@@ -343,8 +343,8 @@ export function ChatPanel({
               <Link
                 href={buildTenantHref("/dashboard", storeId)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted"
-                aria-label="Abrir dashboard"
-                title="Abrir dashboard"
+                aria-label="Abrír dashboard"
+                title="Abrír dashboard"
               >
                 <LayoutDashboard className="h-4.5 w-4.5" />
               </Link>
@@ -572,3 +572,4 @@ export function ChatPanel({
     </div>
   );
 }
+

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Instrument_Serif, Inter } from "next/font/google";
 import "./globals.css";
+import { AppProvider } from "@/components/app-provider";
+import { defaultLocale } from "@/lib/i18n/messages";
 
 const inter = Inter({
   variable: "--font-ui",
@@ -30,10 +32,12 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang={defaultLocale}
       className={`${inter.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AppProvider locale={defaultLocale}>{children}</AppProvider>
+      </body>
     </html>
   );
 }
