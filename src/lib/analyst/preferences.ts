@@ -6,7 +6,6 @@ export type AnalystPreferences = {
   completedAt?: string;
   friction: string;
   goal: string;
-  name: string;
   role: string;
   stage: string;
   tone: string;
@@ -18,7 +17,6 @@ export const defaultAnalystPreferences: AnalystPreferences = {
   category: "Indumentaria",
   friction: "Saber qué reponer",
   goal: "Reducir inventario lento",
-  name: "",
   role: "Dueño/a",
   stage: "Creciendo",
   tone: "Detallado",
