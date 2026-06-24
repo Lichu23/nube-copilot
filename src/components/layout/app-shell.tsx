@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Bell, Bookmark, LayoutDashboard, MessageSquare, Settings, Sparkles } from "lucide-react";
+import { t } from "@/lib/i18n/t";
+import { defaultLocale } from "@/lib/i18n/messages";
 
 type AppShellProps = {
   active?: "chat" | "dashboard" | "saved" | "settings";
@@ -13,10 +15,10 @@ type AppShellProps = {
 };
 
 const navigation = [
-  { href: "/chat", label: "Chat del analista", key: "chat", icon: MessageSquare },
-  { href: "/dashboard", label: "Panel", key: "dashboard", icon: LayoutDashboard },
-  { href: "/saved", label: "Guardados", key: "saved", icon: Bookmark },
-  { href: "/settings", label: "Ajustes", key: "settings", icon: Settings },
+  { href: "/chat", label: t("navigation.analystChat"), key: "chat", icon: MessageSquare },
+  { href: "/dashboard", label: t("navigation.dashboard"), key: "dashboard", icon: LayoutDashboard },
+  { href: "/saved", label: t("navigation.saved"), key: "saved", icon: Bookmark },
+  { href: "/settings", label: t("navigation.settings"), key: "settings", icon: Settings },
 ] as const;
 
 function buildTenantHref(path: string, storeId?: string) {
@@ -31,7 +33,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-navy !text-white shadow-sm">
             <Sparkles className="h-5 w-5" />
           </span>
-          <span className="text-lg font-semibold tracking-tight">NubeCopilot</span>
+          <span className="text-lg font-semibold tracking-tight">{t("common.appName", defaultLocale)}</span>
         </Link>
 
         <nav className="mt-10 space-y-1">
@@ -62,7 +64,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
           className="mt-auto rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground transition hover:border-border-strong hover:text-foreground"
         >
           <span className="font-semibold text-foreground">Ajustar analista</span>
-          <span className="mt-1 block">Objetivos, tono y frecuencia.</span>
+          <span className="mt-1 block">{t("onboarding.subtitle", defaultLocale)}</span>
         </Link>
       </aside>
 
@@ -70,7 +72,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
         <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
           <div className="flex h-14 items-center justify-between px-5 lg:px-6">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{meta ?? "La Tiendita ? Tiendanube ? conectada"}</p>
+              <p className="truncate text-sm font-semibold">{meta ?? "Tiendanube conectada"}</p>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Bell className="h-4.5 w-4.5" />

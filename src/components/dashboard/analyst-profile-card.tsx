@@ -1,7 +1,8 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import { getPreferenceSummary, type AnalystPreferences } from "@/lib/analyst/preferences";
+import { t } from "@/lib/i18n/t";
 
 export function AnalystProfileCard({
   preferences,
@@ -18,10 +19,13 @@ export function AnalystProfileCard({
             <Sparkles className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Lectura personalizada</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              {t("dashboard.personalizedReading")}
+            </p>
             <h2 className="mt-1 text-lg font-semibold text-foreground">{getPreferenceSummary(preferences)}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Cadencia {preferences.cadence.toLowerCase()} · tono {preferences.tone.toLowerCase()} · {preferences.category.toLowerCase()}.
+              Cadencia {preferences.cadence.toLowerCase()} · tono {preferences.tone.toLowerCase()} ·{" "}
+              {preferences.category.toLowerCase()}.
             </p>
           </div>
         </div>
@@ -30,7 +34,7 @@ export function AnalystProfileCard({
           href={storeId ? `/settings?storeId=${storeId}` : "/settings"}
           className="inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-foreground"
         >
-          Ajustar foco
+          {t("dashboard.adjustFocus")}
           <ArrowUpRight className="h-4 w-4" />
         </Link>
       </div>

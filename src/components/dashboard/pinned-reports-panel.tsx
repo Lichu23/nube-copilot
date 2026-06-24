@@ -28,7 +28,7 @@ export function PinnedReportsPanel({
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Reportes fijados</p>
         <h2 className="text-lg font-semibold">Guardados en la tienda</h2>
-        <p className="text-sm text-zinc-600">Usalos para volver a revisar reportes importantes sin perder el contexto.</p>
+        <p className="text-sm text-zinc-600">Usalos para volver a revisár reportes importantes sin perder el contexto.</p>
       </div>
 
       <div className="mt-4 grid gap-3">
@@ -54,3 +54,4 @@ export function PinnedReportsPanel({
     </section>
   );
 }
+

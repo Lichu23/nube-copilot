@@ -24,8 +24,8 @@ export default async function LoginPage({
         <section className="rounded-[1.6rem] border border-border bg-card p-8 shadow-card">
           <LoginForm
             buttonLabel="Enviar enlace de acceso"
-            description="Te mandamos un enlace seguro por email. Abrilo para verificar tu cuenta y seguir en la app."
-            helperMessage="Usamos un enlace magico para entrar sin contrasena."
+            description="Te mandamos un enlace seguro por email. Abrílo para verificar tu cuenta y seguir en la app."
+            helperMessage="Usamos un enlace magico para entrar sin contraseña."
             nextPath={nextPath}
             successMessage="Revisá tu email. Abrí el enlace para verificar tu cuenta y seguir."
             title="Entra a tu tienda"
@@ -35,3 +35,4 @@ export default async function LoginPage({
     </main>
   );
 }
+

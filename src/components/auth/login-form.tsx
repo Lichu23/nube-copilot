@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import { useI18n } from "@/lib/i18n/i18n-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type LoginFormProps = {
@@ -19,17 +20,18 @@ type LoginFormProps = {
 };
 
 export function LoginForm({
-  buttonLabel = "Enviar enlace de acceso",
+  buttonLabel,
   cooldownSeconds = 45,
-  description = "Te mandamos un enlace seguro por email. Despues de entrar, la app te deja seguir con tu Tiendanube.",
-  emailLabel = "Email",
-  errorMessage = "No pudimos enviar el enlace. Verifica las variables de Supabase.",
-  helperMessage = "Usamos un enlace magico para entrar sin contrasena.",
+  description,
+  emailLabel,
+  errorMessage,
+  helperMessage,
   nextPath = "/dashboard",
-  placeholder = "vos@tu-tienda.com",
-  successMessage = "Revisa tu email. El enlace te devuelve a la app.",
-  title = "Entra a tu tienda",
+  placeholder,
+  successMessage,
+  title,
 }: LoginFormProps) {
+  const { messages } = useI18n();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -92,20 +94,20 @@ export function LoginForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Acceso</p>
-        <h1 className="text-3xl font-semibold text-foreground">{title}</h1>
-        <p className="text-base leading-7 text-muted-foreground">{description}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{messages.auth.access}</p>
+        <h1 className="text-3xl font-semibold text-foreground">{title ?? messages.auth.title}</h1>
+        <p className="text-base leading-7 text-muted-foreground">{description ?? messages.auth.description}</p>
       </div>
 
       <label className="block">
-        <span className="text-sm font-semibold text-foreground">{emailLabel}</span>
+        <span className="text-sm font-semibold text-foreground">{emailLabel ?? messages.auth.email}</span>
         <input
           type="email"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           className="mt-2 w-full rounded-[1rem] border border-input bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-          placeholder={placeholder}
+          placeholder={placeholder ?? messages.auth.placeholder}
         />
       </label>
 
@@ -115,14 +117,18 @@ export function LoginForm({
         className="inline-flex w-full items-center justify-center rounded-[1rem] btn-ink px-5 py-3 text-sm font-semibold shadow-card transition disabled:cursor-not-allowed disabled:opacity-60"
       >
         {status === "sending"
-          ? "Enviando..."
+          ? messages.auth.sending
           : secondsRemaining > 0
-            ? `Reenviar en ${secondsRemaining}s`
-            : buttonLabel}
+            ? messages.auth.resendIn.replace("{seconds}", String(secondsRemaining))
+            : buttonLabel ?? messages.auth.sendLink}
       </button>
 
       <p className="text-sm text-muted-foreground">
-        {status === "sent" ? successMessage : status === "error" ? errorMessage : helperMessage}
+        {status === "sent"
+          ? successMessage ?? messages.auth.success
+          : status === "error"
+            ? errorMessage ?? messages.auth.error
+            : helperMessage ?? messages.auth.helper}
       </p>
     </form>
   );

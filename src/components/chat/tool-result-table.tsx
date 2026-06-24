@@ -1,4 +1,4 @@
-
+﻿
 
 import type { ToolResult } from "@/lib/types"; 
 import { formatScalar } from "@/lib/formatting";
@@ -62,3 +62,4 @@ export function ToolResultTable({ items }: { items: ToolResult[] }) {
     </section>
   );
 }
+

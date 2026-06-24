@@ -1,4 +1,4 @@
-import { AnalystSettingsForm } from "@/components/settings/analyst-settings-form";
+﻿import { AnalystSettingsForm } from "@/components/settings/analyst-settings-form";
 import { AppShell } from "@/components/layout/app-shell";
 import { getAnalystPreferencesForActiveStore, getDashboardSyncSummary } from "@/lib/db/client";
 import { requireActiveStore } from "@/lib/routing/require-active-store";
@@ -38,3 +38,4 @@ export default async function SettingsPage({
     </AppShell>
   );
 }
+

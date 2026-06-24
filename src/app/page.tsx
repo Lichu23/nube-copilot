@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { ArrowRight, BarChart3, LockKeyhole, MessageSquare, PackageSearch, ShieldCheck, ShoppingBag, Sparkles, Store, Users } from "lucide-react";
 
 const howItWorks = [
@@ -23,7 +23,7 @@ const howItWorks = [
 ];
 
 const dataAccess = [
-  { icon: Store, title: "Perfil de tienda", body: "Nombre, pa?s, moneda e idioma." },
+  { icon: Store, title: "Perfil de tienda", body: "Nombre, país, moneda e idioma." },
   { icon: PackageSearch, title: "Productos y variantes", body: "SKU, precios, stock y estado de publicación." },
   { icon: BarChart3, title: "Pedidos recientes", body: "Totales, estados, items y fechas de los últimos 90 días." },
   { icon: ShoppingBag, title: "Items de pedidos", body: "Cantidades, precios unitarios y totales calculados." },
@@ -49,7 +49,7 @@ function ProductPreview() {
           <span className="h-3 w-3 rounded-full bg-border-strong" />
           <span className="h-3 w-3 rounded-full bg-border-strong" />
           <span className="h-3 w-3 rounded-full bg-border-strong" />
-          <span className="ml-4 text-sm text-muted-foreground">Chat + Canvas de an?lisis</span>
+          <span className="ml-4 text-sm text-muted-foreground">Chat + Canvas de análisis</span>
         </div>
         <span className="hidden rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success sm:inline-flex">
           Datos de tienda en vivo
@@ -81,7 +81,7 @@ function ProductPreview() {
             <div className="max-w-[18rem] rounded-[1.25rem] rounded-tl-sm border border-border bg-card p-4 shadow-soft">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Próxima acción</p>
               <p className="mt-2 text-sm leading-6 text-foreground">
-                Reponer 24 unidades del SKU Aurora-M y revisar el margen del combo más vendido.
+                Reponer 24 unidades del SKU Aurora-M y revisár el margen del combo más vendido.
               </p>
             </div>
           </div>
@@ -90,7 +90,7 @@ function ProductPreview() {
         <div className="bg-card p-5 text-left">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Canvas de an?lisis</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Canvas de análisis</p>
               <h3 className="mt-1 text-xl font-semibold text-foreground">Ventas semanales y riesgo de stock</h3>
             </div>
             <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">últimos 7 días</span>
@@ -98,7 +98,7 @@ function ProductPreview() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              ["$12,48k", "Facturaci?n", "+18%"],
+              ["$12,48k", "Facturación", "+18%"],
               ["318", "Pedidos", "+9%"],
               ["2", "Riesgos", "stock"],
             ].map(([value, label, delta]) => (
@@ -160,9 +160,9 @@ export default function HomePage() {
           <span className="text-sm text-muted-foreground">para Tiendanube</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-          <a href="#como-funciona" className="transition hover:text-foreground">Cómo funciona</a>
+          <a href="#cómo-funciona" className="transition hover:text-foreground">Cómo funciona</a>
           <a href="#tus-datos" className="transition hover:text-foreground">Tus datos</a>
-          <Link href="/chat" className="transition hover:text-foreground">Iniciar sesi?n</Link>
+          <Link href="/chat" className="transition hover:text-foreground">Iniciar sesión</Link>
         </nav>
       </header>
 
@@ -184,20 +184,20 @@ export default function HomePage() {
             Conectar tienda
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <a href="#como-funciona" className="inline-flex rounded-[1rem] px-5 py-4 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+          <a href="#cómo-funciona" className="inline-flex rounded-[1rem] px-5 py-4 text-sm font-medium text-muted-foreground transition hover:text-foreground">
             Ver cómo funciona
           </a>
         </div>
 
         <p className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
           <LockKeyhole className="h-4 w-4" />
-          Acceso solo lectura ? Desconectá cuando quieras
+          Acceso solo lectura · Desconectá cuando quieras
         </p>
 
         <ProductPreview />
       </section>
 
-      <section id="como-funciona" className="relative z-10 mx-auto max-w-6xl px-6 py-20">
+      <section id="cómo-funciona" className="relative z-10 mx-auto max-w-6xl px-6 py-20">
         <p className="text-center text-sm font-semibold uppercase tracking-[0.24em] text-primary">Cómo funciona</p>
         <h2 className="font-display mx-auto mt-4 max-w-3xl text-center text-[3.6rem] leading-none tracking-[-0.05em] text-heading-ink">
           De conexión a claridad en minutos.
@@ -260,3 +260,4 @@ export default function HomePage() {
     </main>
   );
 }
+
