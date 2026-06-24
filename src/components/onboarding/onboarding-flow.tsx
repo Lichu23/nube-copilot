@@ -139,7 +139,6 @@ function OptionButton({
 
 export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: OnboardingFlowProps) {
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
   const [role, setRole] = useState("Dueño/a");
   const [category, setCategory] = useState("Indumentaria");
   const [stage, setStage] = useState("Creciendo");
@@ -148,7 +147,6 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
   const [cadence, setCadence] = useState("Semanal");
   const [tone, setTone] = useState("Detallado");
   const volume = useMemo(() => inferVolume(detectedOrderCount), [detectedOrderCount]);
-  const canContinue = step !== 0 || name.trim().length > 1;
   const progress = Math.round(((step + 1) / 5) * 100);
 
   useEffect(() => {
@@ -160,7 +158,6 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
       completedAt: new Date().toISOString(),
       friction,
       goal,
-      name: name.trim(),
       role,
       stage,
       tone,
@@ -168,7 +165,7 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
     }).catch(() => {
       // The settings page can retry persistence if the store connection is missing.
     });
-  }, [cadence, category, friction, goal, name, role, stage, step, tone, volume]);
+  }, [cadence, category, friction, goal, role, stage, step, tone, volume]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
@@ -192,19 +189,10 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
           <>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Sobre vos</p>
             <h1 className="font-display mt-4 text-[4rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">Empecemos por lo básico.</h1>
-            <p className="mt-5 text-lg text-muted-foreground">Así tu analista sabe con quién está hablando.</p>
+            <p className="mt-5 text-lg text-muted-foreground">As? tu analista entiende mejor tu rol dentro de la tienda.</p>
 
             <div className="mt-8 rounded-[1.5rem] border border-border bg-card p-8 shadow-card">
-              <label className="block text-sm font-semibold text-foreground">
-                Tu nombre
-                <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Ej. Lucía Martínez"
-                  className="mt-4 w-full rounded-[1rem] border border-input bg-white px-5 py-4 text-base outline-none transition placeholder:text-text-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
-                />
-              </label>
-              <div className="mt-8">
+              <div>
                 <p className="text-sm font-semibold text-foreground">Tu rol</p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {roles.map((item) => (
@@ -339,7 +327,7 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
               </div>
               <div className="grid gap-4 p-8 md:grid-cols-2">
                 {[
-                  ["Nombre y rol", `${name || "Tu nombre"} · ${role}`],
+                  ["Rol", role],
                   ["Tienda", `${category} · ${stage} · ${volume}`],
                   ["Objetivo", goal],
                   ["Reporte", `${cadence} · ${tone}`],
@@ -377,7 +365,6 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
             <button
               type="button"
               onClick={() => setStep((current) => Math.min(5, current + 1))}
-              disabled={!canContinue}
               className="inline-flex items-center gap-2 rounded-[1rem] btn-ink px-7 py-4 text-sm font-semibold shadow-card transition disabled:cursor-not-allowed disabled:bg-muted-foreground"
             >
               {step === 4 ? "Revisar" : "Continuar"}

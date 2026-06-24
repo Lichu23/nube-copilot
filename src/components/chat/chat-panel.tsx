@@ -185,7 +185,6 @@ export function ChatPanel({
     lastAssistantIndex === -1 ? -1 : messages.length - 1 - lastAssistantIndex;
   const lastSyncLabel = getLastSyncLabel(lastSyncAt);
   const personalizedPrompts = useMemo(() => buildPromptCards(preferences), [preferences]);
-  const greetingName = preferences.name.trim() || storeName;
   useEffect(() => {
     if (messagesContainerRef.current) {
       setTimeout(() => {
@@ -367,10 +366,10 @@ export function ChatPanel({
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-accent" />
                 Personalizado para tu tienda
-              </div>
-              <h1 className="font-display mt-8 max-w-2xl text-[4rem] leading-[0.9] tracking-[-0.04em] text-foreground">
-                Hola {greetingName}. <span className="italic text-primary">Listo cuando quieras.</span>
-              </h1>
+                </div>
+                <h1 className="font-display mt-8 max-w-2xl text-[4rem] leading-[0.9] tracking-[-0.04em] text-foreground">
+                  Hola {storeName}. <span className="italic text-primary">Listo cuando quieras.</span>
+                </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
                 {hasConnection
                   ? `Armé tu espacio alrededor de ${preferences.goal.toLowerCase()} y ${preferences.friction.toLowerCase()}. ${lastSyncLabel}.`

@@ -87,15 +87,6 @@ export function AnalystSettingsForm({
     <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section className="surface-card rounded-[1.6rem] p-6">
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Nombre">
-            <input
-              value={preferences.name}
-              onChange={(event) => updatePreference("name", event.target.value)}
-              placeholder="Ej. Lucía Martínez"
-              className="w-full rounded-[1rem] border border-input bg-white px-4 py-3 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10"
-            />
-          </Field>
-
           <Field label="Rol">
             <SelectField value={preferences.role} options={preferenceOptions.roles} onChange={(value) => updatePreference("role", value)} />
           </Field>

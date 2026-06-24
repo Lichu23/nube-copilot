@@ -13,7 +13,6 @@ const preferencesSchema = z.object({
   completedAt: z.string().datetime().optional(),
   friction: z.string().min(1),
   goal: z.string().min(1),
-  name: z.string(),
   role: z.string().min(1),
   stage: z.string().min(1),
   tone: z.string().min(1),
