@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Instrument_Serif, Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppProvider } from "@/components/app-provider";
 import { defaultLocale } from "@/lib/i18n/messages";
@@ -37,6 +38,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AppProvider locale={defaultLocale}>{children}</AppProvider>
+        <Analytics />
       </body>
     </html>
   );
