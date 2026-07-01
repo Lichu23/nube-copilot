@@ -1,8 +1,9 @@
 ﻿import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight, Check, LockKeyhole, ShieldCheck, Sparkles, Store } from "lucide-react";
 
 import { ConnectSyncPanel } from "@/components/connect/connect-sync-panel";
-import { getDashboardSyncSummary, resolveActiveStoreId } from "@/lib/db/client";
+import { getActiveTiendanubeConnection, getDashboardSyncSummary, resolveActiveStoreId } from "@/lib/db/client";
 
 const reasonCopy: Record<string, string> = {
   auth: "Tenés que iniciár sesión en la app antes de conectar una tienda.",
@@ -90,6 +91,18 @@ export default async function ConnectPage({
   const status = typeof params.status === "string" ? params.status : undefined;
   const reason = typeof params.reason === "string" ? params.reason : undefined;
   const autoSync = params.autoSync === "1";
+
+  if (!status && !autoSync) {
+    const resolvedStore = await resolveActiveStoreId(storeId).catch(() => null);
+    const connection = resolvedStore
+      ? await getActiveTiendanubeConnection(resolvedStore.storeId).catch(() => null)
+      : null;
+
+    if (connection) {
+      redirect(`/dashboard?storeId=${encodeURIComponent(connection.storeId)}`);
+    }
+  }
+
   const resolvedStore = storeId ? await resolveActiveStoreId(storeId).catch(() => null) : null;
   const resolvedStoreId = resolvedStore?.storeId ?? storeId;
   const shouldLoadSummary = Boolean(resolvedStoreId) || status === "success" || autoSync;
