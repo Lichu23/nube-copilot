@@ -710,7 +710,6 @@ function toAnalystPreferences(row: typeof analystPreferences.$inferSelect): Anal
     completedAt: row.completedAt?.toISOString(),
     friction: row.friction,
     goal: row.goal,
-    name: row.name,
     role: row.role,
     stage: row.stage,
     tone: row.tone,
