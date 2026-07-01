@@ -120,8 +120,9 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       storeId: connection.storeId,
     });
 
-    const metadata = {
+    const metadata: Record<string, unknown> = {
       apiVersion,
+      customerLinkedCount: 0,
       productCount: persisted.productCount,
       rateLimit,
       responsePreview: normalizedProducts.slice(0, 3).map((product) => ({
