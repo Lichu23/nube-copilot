@@ -2,15 +2,12 @@
 
 import {
   ArrowUp,
-  ArrowUpRight,
   BarChart3,
-  Bookmark,
   ChevronLeft,
   ChevronRight,
   HelpCircle,
   LayoutDashboard,
   MessageSquare,
-  Settings2,
   Sparkles,
   Store,
 } from "lucide-react";
@@ -76,6 +73,10 @@ function getLastSyncLabel(lastSyncAt: string | null): string {
   return formatted === lastSyncAt ? "Sincronizado recientemente" : `Sincronizado ${formatted}`;
 }
 
+function buildTenantHref(path: string, storeId?: string) {
+  return storeId ? `${path}?storeId=${storeId}` : path;
+}
+
 function UnsupportedFeedbackCard({
   answer,
   onSuggestedQuestionClick,
@@ -109,50 +110,6 @@ function UnsupportedFeedbackCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function buildTenantHref(path: string, storeId?: string) {
-  return storeId ? `${path}?storeId=${storeId}` : path;
-}
-
-function WorkspaceSidebar({ storeId }: { storeId?: string }) {
-  return (
-    <aside className="hidden border-r border-border bg-card px-4 py-6 lg:flex lg:flex-col">
-      <Link href={buildTenantHref("/chat", storeId)} className="flex items-center gap-3 px-2">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-navy !text-white shadow-sm">
-          <Sparkles className="h-5 w-5" />
-        </span>
-        <span className="text-lg font-semibold tracking-tight">NubeCopilot</span>
-      </Link>
-
-      <nav className="mt-10 space-y-1">
-        <Link href={buildTenantHref("/chat", storeId)} aria-current="page" className="flex items-center gap-3 rounded-2xl bg-surface-muted px-3 py-2.5 text-sm font-medium text-foreground">
-          <MessageSquare className="h-4.5 w-4.5" />
-          Chat del analista
-        </Link>
-        <Link href={buildTenantHref("/dashboard", storeId)} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
-          <LayoutDashboard className="h-4.5 w-4.5" />
-          Panel
-        </Link>
-        <Link href={buildTenantHref("/saved", storeId)} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
-          <Bookmark className="h-4.5 w-4.5" />
-          Guardados
-        </Link>
-        <Link href={buildTenantHref("/settings", storeId)} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted hover:text-foreground">
-          <Settings2 className="h-4.5 w-4.5" />
-          Ajustes
-        </Link>
-      </nav>
-
-      <Link
-        href={buildTenantHref("/settings", storeId)}
-        className="mt-auto rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground transition hover:border-border-strong hover:text-foreground"
-      >
-        <span className="font-semibold text-foreground">Ajustar analista</span>
-        <span className="mt-1 block">Objetivos, tono y frecuencia.</span>
-      </Link>
-    </aside>
   );
 }
 
@@ -316,49 +273,19 @@ export function ChatPanel({
   return (
     <div
       className="min-h-screen bg-background text-foreground lg:grid lg:h-screen lg:overflow-hidden lg:transition-[grid-template-columns] lg:duration-300 lg:ease-out"
-      style={{
-        gridTemplateColumns: isChatVisible
-          ? "244px minmax(420px,42%) minmax(0,1fr)"
-          : "244px 0 minmax(0,1fr)",
-      }}
-    >
-      <WorkspaceSidebar storeId={storeId} />
-
+        style={{
+          gridTemplateColumns: isChatVisible
+            ? "minmax(420px,42%) minmax(0,1fr)"
+            : "0 minmax(0,1fr)",
+        }}
+      >
       <section
         id="chat-workspace"
         className={`flex min-h-screen flex-col border-r border-border bg-background lg:h-screen lg:overflow-hidden lg:transition-all lg:duration-300 lg:ease-out ${
           isChatVisible ? "lg:opacity-100 lg:translate-x-0" : "lg:pointer-events-none lg:opacity-0 lg:-translate-x-3"
         }`}
       >
-        <header className="shrink-0 border-b border-border bg-background/80 px-4 py-4 backdrop-blur sm:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Chat del analista</p>
-              <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                <Store className="h-3.5 w-3.5" />
-                {storeName} · Tiendanube · {hasConnection ? "conectada" : "no conectada"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-foreground">
-              <Link
-                href={buildTenantHref("/dashboard", storeId)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted"
-                aria-label="Abrír dashboard"
-                title="Abrír dashboard"
-              >
-                <LayoutDashboard className="h-4.5 w-4.5" />
-              </Link>
-              <Link
-                href={buildTenantHref("/settings", storeId)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted"
-                aria-label="Ajustar analista"
-                title="Ajustar analista"
-              >
-                <Settings2 className="h-4.5 w-4.5" />
-              </Link>
-            </div>
-          </div>
-        </header>
+
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-7 sm:px-6" ref={messagesContainerRef}>
           {messages.length === 0 ? (
@@ -398,7 +325,7 @@ export function ChatPanel({
                         disabled={!hasConnection || isPending}
                         className="cursor-pointer group min-h-32 rounded-[1.35rem] border border-border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-surface-muted text-foreground transition group-hover:bg-accent/15 group-hover:text-accent">
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-surface-muted text-foreground transition group-hover:bg-ink-navy group-hover:!text-white">
                           <Icon className="h-4.5 w-4.5" />
                         </span>
                         <span className="mt-4 block text-base font-semibold leading-6 text-foreground">{item.prompt}</span>
@@ -560,14 +487,7 @@ export function ChatPanel({
           {isChatVisible ? <ChevronLeft className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </button>
 
-        <div className="flex h-14 items-center justify-between border-b border-border px-6 text-sm text-muted-foreground">
-          <span>Canvas de análisis</span>
-          <Link href={buildTenantHref("/dashboard", storeId)} className="inline-flex items-center gap-1.5 transition hover:text-foreground">
-            Ver dashboard
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={canvasModel} isPending={isPending} storeId={storeId} />
+          <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={canvasModel} isPending={isPending} storeId={storeId} />
       </aside>
     </div>
   );

@@ -15,23 +15,15 @@ import { LowStockAlertCard } from "@/components/dashboard/low-stock-alert-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { PinnedReportsPanel } from "@/components/dashboard/pinned-reports-panel";
 import { SalesTrendChart } from "@/components/dashboard/sales-trend-chart";
-import { SyncControl } from "@/components/dashboard/sync-control";
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
-import { AppShell } from "@/components/layout/app-shell";
-import {
-  formatAsOfInputValue,
-  getCompareWindow,
-  getDashboardData,
-  getLatestSyncMessage,
-  getLatestSyncOutcome,
-  parseAsOfDate,
-} from "@/lib/dashboard/data-transformer";
+import { formatAsOfInputValue, getLatestSyncOutcome } from "@/lib/dashboard/data-transformer";
+import { getCachedDashboardPayload } from "@/lib/dashboard/cache";
 import {
   formatRevenueComparisonHelper,
   formatSignedNumber,
   formatSignedPercent,
 } from "@/lib/dashboard/formatters";
-import { getAnalystPreferencesForActiveStore, getDashboardSyncSummary, getSavedReportsForActiveStore } from "@/lib/db/client";
+import { getAnalystPreferencesForActiveStore, getSavedReportsForActiveStore } from "@/lib/db/client";
 import { formatCurrency, formatSignedCurrency } from "@/lib/formatting";
 import { metricDefinitions } from "@/lib/metrics/definitions";
 import { requireActiveStore } from "@/lib/routing/require-active-store";
@@ -69,23 +61,24 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams;
   const storeId = typeof params.storeId === "string" ? params.storeId : undefined;
-  const autoSync =
-    typeof params.autoSync === "string" && params.autoSync === "1";
-  const compareWindow = getCompareWindow(params.compareWindow);
   const isDevOverrideEnabled = process.env.NODE_ENV !== "production";
-  const asOfOverride = isDevOverrideEnabled ? parseAsOfDate(params.asOf) : null;
-  const endDate = asOfOverride ?? new Date();
-  const asOfInputValue = formatAsOfInputValue(endDate);
   const activeConnection = await requireActiveStore(storeId);
   const resolvedStoreId = storeId ?? activeConnection.storeId;
-  const [summary, preferences, savedReports] = await Promise.all([
-    getDashboardSyncSummary(resolvedStoreId),
+  const [dashboardPayload, preferences, savedReports] = await Promise.all([
+    getCachedDashboardPayload({
+      asOf: params.asOf,
+      compareWindow: params.compareWindow,
+      isDevOverrideEnabled,
+      storeId: resolvedStoreId,
+    }),
     getAnalystPreferencesForActiveStore(resolvedStoreId),
     getSavedReportsForActiveStore(resolvedStoreId),
   ]);
+  const { compareWindow, data: dashboardData, summary } = dashboardPayload;
+  const endDate = new Date(dashboardPayload.endDate);
+  const asOfInputValue = formatAsOfInputValue(endDate);
   const latestSyncStatus = summary.latestSyncJob?.status ?? null;
   const latestSyncOutcome = getLatestSyncOutcome(summary);
-  const latestSyncMessage = getLatestSyncMessage(summary);
   const {
     grossProductSales,
     lowStockAlert,
@@ -98,44 +91,23 @@ export default async function DashboardPage({
     topProducts,
     trend,
     windows,
-  } = await getDashboardData({ compareWindow, endDate, summary });
+  } = dashboardData;
   const { windowConfig } = windows;
   const hasReconciliationData = Boolean(summary.connection && metrics);
   const storeName = summary.connection?.storeName ?? "La Tiendita";
 
   return (
-    <AppShell
-      active="dashboard"
-      eyebrow={windowConfig.label}
-      title={`Buen día, ${storeName}.`}
-      description="Esto es lo que se esta moviendo en tu tienda esta semana."
-      storeId={resolvedStoreId}
-      meta={
-        <span className="flex flex-col gap-0.5">
-          <span>{storeName}</span>
-          <span className="text-xs font-medium text-muted-foreground">
-            Tiendanube - conectada
-          </span>
-        </span>
-      }
-      sidebarAction={
-        <SyncControl
-          autoRun={autoSync}
-          hasConnection={Boolean(summary.connection)}
-          lastSyncFinishedAt={
-            summary.latestSyncJob?.finishedAt?.toISOString() ?? null
-          }
-          lastSyncMessage={latestSyncMessage}
-          lastSyncOutcome={latestSyncOutcome}
-          lastSyncStatus={latestSyncStatus}
-          orderCount={summary.orderCount}
-          productCount={summary.productCount}
-          storeId={summary.connection?.storeId}
-          variant="sidebar"
-          variantCount={summary.variantCount}
-        />
-      }
-    >
+    <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 lg:px-8">
+      <section className="space-y-3">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">{windowConfig.label}</p>
+        <h1 className="max-w-4xl font-serif text-5xl leading-[0.95] tracking-[-0.05em] text-foreground">
+          {`Buen d?a, ${storeName}.`}
+        </h1>
+        <p className="max-w-3xl text-lg text-muted-foreground">
+          Esto es lo que se esta moviendo en tu tienda esta semana.
+        </p>
+      </section>
+
       <div className="flex items-center justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-soft">
         <div>
           <p className="text-sm font-semibold text-foreground">
@@ -345,6 +317,6 @@ export default async function DashboardPage({
           </p>
         </section>
       ) : null}
-    </AppShell>
+    </main>
   );
 }

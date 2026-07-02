@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
+import { getDashboardCacheTag, getSidebarCacheTag } from "@/lib/dashboard/cache";
 import { getActiveTiendanubeConnection, resolveActiveStoreId } from "@/lib/db/client";
 import { runInitialSync } from "@/lib/tiendanube/sync";
 
@@ -31,6 +33,9 @@ export async function POST(request: Request) {
     storeId: resolvedStore.storeId,
     warning: "warning" in result ? result.warning ?? null : null,
   });
+
+  revalidateTag(getSidebarCacheTag(resolvedStore.storeId), "max");
+  revalidateTag(getDashboardCacheTag(resolvedStore.storeId), "max");
 
   return NextResponse.json(result, { status: result.status });
 }

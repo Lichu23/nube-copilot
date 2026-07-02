@@ -267,6 +267,59 @@ Status: complete for this branch. Analyst preferences and saved reports persist 
 - Saved analyses fallback behavior.
 - Mobile adaptation pass.
 
+### Phase 9 - App shell stability and store-scoped caching
+
+Status: planned.
+
+Problem:
+
+- Dashboard navigation currently re-renders the full dashboard server page.
+- The sidebar store name and sync card are coupled to dashboard data loading.
+- `/dashboard` is explicitly dynamic, so entering the dashboard can show a full-page loading skeleton even when no Tiendanube sync is running.
+- "Not syncing" does not mean "not fetching"; the dashboard still reads store-scoped data from Postgres.
+
+Target behavior:
+
+- Logged-in app routes should keep the same stable sidebar while page content changes.
+- Store name, connection status, and sync metadata should not be blocked by dashboard analytics queries.
+- Dashboard analytics should be cached safely per store and invalidated after manual sync.
+- Redis can be introduced after the app shell split if database aggregation remains slow or we need cross-instance cache persistence.
+
+Implementation order:
+
+1. Move authenticated app routes into a shared app layout.
+   - Candidate route group: `/app/(app)/...` or equivalent Next.js route group without changing public URLs.
+   - Shared layout owns auth/store validation and renders the sidebar once.
+   - Dashboard, chat, saved, and settings render only their page content inside that shell.
+
+2. Split sidebar data from dashboard analytics data.
+   - Sidebar data: store name, connection status, latest sync status, latest sync timestamp, product/order/variant counts.
+   - Dashboard data: KPI metrics, revenue trend, comparisons, top products, low-stock opportunities, analyst insight.
+
+3. Add store-scoped cache for dashboard analytics.
+   - Cache key must include `storeId`, selected range, and dev-only `asOf` date when used.
+   - Never cache dashboard data globally by route.
+   - Suggested keys:
+     - `store:{storeId}:sidebar`
+     - `store:{storeId}:dashboard:{compareWindow}`
+     - `store:{storeId}:dashboard:{compareWindow}:{asOf}`
+
+4. Invalidate cache after sync.
+   - When `/api/sync/run` completes, invalidate only that store's sidebar and dashboard keys.
+   - This keeps repeated dashboard visits fast while guaranteeing fresh data after sync.
+
+5. Consider Redis / Vercel KV / Upstash as a second step.
+   - Use Redis for persistent cross-request/cross-instance cache if Next's built-in cache is not enough.
+   - Keep TTL conservative at first, around 5-15 minutes.
+   - Keep explicit invalidation on sync completion.
+
+Constraints:
+
+- Cache must be store-scoped to avoid multitenant data leaks.
+- Do not use Redis as a band-aid before separating the shared app shell.
+- Sidebar loading must remain independent from slow dashboard analytics.
+- Manual sync should remain the source of truth for cache invalidation.
+
 ## Implementation notes
 
 - Do not copy the reference UI blindly. Use it as direction.
