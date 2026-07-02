@@ -32,7 +32,16 @@ function buildTenantHref(path: string, storeId?: string) {
   return storeId ? `${path}?storeId=${storeId}` : path;
 }
 
-function StoreMeta({ summary }: { summary: SidebarSummary | null }) {
+function StoreMeta({ error, summary }: { error: string | null; summary: SidebarSummary | null }) {
+  if (error) {
+    return (
+      <span className="flex flex-col gap-0.5">
+        <span>No se pudo cargar la tienda</span>
+        <span className="text-xs font-medium text-muted-foreground">Actualizá la página</span>
+      </span>
+    );
+  }
+
   if (!summary) {
     return (
       <span className="flex flex-col gap-2">
@@ -52,7 +61,16 @@ function StoreMeta({ summary }: { summary: SidebarSummary | null }) {
   );
 }
 
-function SidebarAction({ autoRun, summary }: { autoRun?: boolean; summary: SidebarSummary | null }) {
+function SidebarAction({ autoRun, error, summary }: { autoRun?: boolean; error: string | null; summary: SidebarSummary | null }) {
+  if (error) {
+    return (
+      <div className="rounded-3xl border border-border bg-background p-4 text-sm text-muted-foreground">
+        <p className="font-semibold text-foreground">Resumen no disponible</p>
+        <p className="mt-2">{error}</p>
+      </div>
+    );
+  }
+
   if (!summary) {
     return (
       <div className="space-y-3 rounded-3xl border border-border bg-background p-4">
@@ -87,6 +105,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const requestedStoreId = searchParams.get("storeId") ?? undefined;
   const autoSync = active === "dashboard" && searchParams.get("autoSync") === "1";
   const [summary, setSummary] = useState<SidebarSummary | null>(null);
+  const [sidebarError, setSidebarError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -96,14 +115,26 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
     fetch(`/api/app/sidebar-summary?${params.toString()}`, {
       cache: "no-store",
+      credentials: "include",
       signal: controller.signal,
     })
-      .then((response) => (response.ok ? response.json() : null))
+      .then(async (response) => {
+        if (response.ok) {
+          return response.json();
+        }
+
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "No se pudo cargar el resumen de la tienda.");
+      })
       .then((data: SidebarSummary | null) => {
-        if (data) setSummary(data);
+        if (data) {
+          setSummary(data);
+          setSidebarError(null);
+        }
       })
       .catch((error) => {
         if (error instanceof Error && error.name !== "AbortError") {
+          setSidebarError(error.message);
           console.error("Unable to load sidebar summary", error);
         }
       });
@@ -112,8 +143,11 @@ export function AppChrome({ children }: { children: ReactNode }) {
   }, [requestedStoreId]);
 
   const resolvedStoreId = summary?.storeId ?? requestedStoreId;
-  const meta = useMemo(() => <StoreMeta summary={summary} />, [summary]);
-  const sidebarAction = useMemo(() => <SidebarAction autoRun={autoSync} summary={summary} />, [autoSync, summary]);
+  const meta = useMemo(() => <StoreMeta error={sidebarError} summary={summary} />, [sidebarError, summary]);
+  const sidebarAction = useMemo(
+    () => <SidebarAction autoRun={autoSync} error={sidebarError} summary={summary} />,
+    [autoSync, sidebarError, summary],
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[244px_minmax(0,1fr)]">
