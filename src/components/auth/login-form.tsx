@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, CheckCircle2, LoaderCircle, Mail } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n/i18n-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -37,6 +38,30 @@ export function LoginForm({
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const feedback = status === "sending"
+    ? {
+        icon: LoaderCircle,
+        text: "Estamos enviando el enlace mágico. Esperá unos segundos...",
+        tone: "border-primary/25 bg-accent text-foreground",
+      }
+    : status === "sent"
+      ? {
+          icon: CheckCircle2,
+          text: successMessage ?? messages.auth.success,
+          tone: "border-primary/25 bg-accent text-foreground",
+        }
+      : status === "error"
+        ? {
+            icon: AlertCircle,
+            text: errorMessage ?? messages.auth.error,
+            tone: "border-destructive/25 bg-red-50 text-red-900",
+          }
+        : {
+            icon: Mail,
+            text: helperMessage ?? messages.auth.helper,
+            tone: "border-border bg-surface-muted text-muted-foreground",
+          };
+  const FeedbackIcon = feedback.icon;
 
   useEffect(() => {
     if (!cooldownUntil) {
@@ -123,13 +148,14 @@ export function LoginForm({
             : buttonLabel ?? messages.auth.sendLink}
       </button>
 
-      <p className="text-sm text-muted-foreground">
-        {status === "sent"
-          ? successMessage ?? messages.auth.success
-          : status === "error"
-            ? errorMessage ?? messages.auth.error
-            : helperMessage ?? messages.auth.helper}
-      </p>
+      <div
+        aria-live="polite"
+        role={status === "error" ? "alert" : "status"}
+        className={`flex items-start gap-3 rounded-[1rem] border p-4 text-sm leading-6 ${feedback.tone}`}
+      >
+        <FeedbackIcon className={`mt-0.5 h-4 w-4 shrink-0 ${status === "sending" ? "animate-spin" : ""}`} />
+        <p>{feedback.text}</p>
+      </div>
     </form>
   );
 }

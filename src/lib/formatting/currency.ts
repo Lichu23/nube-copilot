@@ -1,7 +1,7 @@
 /**
  * Format a number as currency with Argentine Spanish locale
  * @param value - Number to format
- * @param currency - Currency code (default: "USD")
+ * @param currency - Currency code (default: "ARS")
  * @param options - Formatting options
  */
 export function formatCurrency(
@@ -13,9 +13,9 @@ export function formatCurrency(
   }
 ): string {
   return new Intl.NumberFormat("es-AR", {
-    currency: currency ?? "USD",
-    maximumFractionDigits: options?.maxFractionDigits ?? 0,
-    minimumFractionDigits: options?.minFractionDigits ?? 0,
+    currency: currency ?? "ARS",
+    maximumFractionDigits: options?.maxFractionDigits ?? 2,
+    minimumFractionDigits: options?.minFractionDigits ?? 2,
     style: "currency",
   }).format(value);
 }

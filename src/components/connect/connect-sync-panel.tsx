@@ -72,6 +72,9 @@ export function ConnectSyncPanel({
   }, [hasConnection, hasSynced, isPending]);
 
   const progress = Math.round((activeStep / syncSteps.length) * 100);
+  const onboardingHref = storeId
+    ? `/onboarding?storeId=${encodeURIComponent(storeId)}&flow=setup`
+    : "/onboarding?flow=setup";
 
   const triggerSync = useCallback((options?: { auto?: boolean }) => {
     if (!hasConnection || isPending) return;
@@ -149,8 +152,8 @@ export function ConnectSyncPanel({
 
       <div className="mt-8 flex justify-center">
         {hasSynced ? (
-          <ButtonLink href={storeId ? `/dashboard?storeId=${storeId}` : "/dashboard"} size="lg" className="shadow-card">
-            Ir al dashboard
+          <ButtonLink href={onboardingHref} size="lg" className="shadow-card">
+            Continuar onboarding
             <ArrowRight className="h-4 w-4" />
           </ButtonLink>
         ) : (

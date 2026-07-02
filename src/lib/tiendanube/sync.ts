@@ -94,6 +94,12 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
   });
 
   try {
+    console.info("[tiendanube-sync] fetching products", {
+      jobId: syncJob.id,
+      storeExternalId: connection.storeExternalId,
+      storeId: connection.storeId,
+    });
+
     const { apiVersion, products, rateLimit, totalCountHeader, visitedPages } = await fetchAllTiendanubeProducts(
       connection.storeExternalId,
       accessToken,
@@ -120,6 +126,16 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       storeId: connection.storeId,
     });
 
+    console.info("[tiendanube-sync] persisted products", {
+      apiVersion,
+      jobId: syncJob.id,
+      persistedProductCount: persisted.productCount,
+      persistedVariantCount: persisted.variantCount,
+      productPages: visitedPages.length,
+      storeId: connection.storeId,
+      totalCountHeader,
+    });
+
     const metadata: Record<string, unknown> = {
       apiVersion,
       customerLinkedCount: 0,
@@ -138,6 +154,14 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
 
     try {
       const ordersCreatedAtMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+      console.info("[tiendanube-sync] fetching orders", {
+        createdAtMin: ordersCreatedAtMin,
+        jobId: syncJob.id,
+        storeExternalId: connection.storeExternalId,
+        storeId: connection.storeId,
+      });
+
       const {
         orders,
         rateLimit: ordersRateLimit,
@@ -191,6 +215,17 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
         storeId: connection.storeId,
       });
 
+      console.info("[tiendanube-sync] persisted orders", {
+        fetchedOrderCount: normalizedOrders.length,
+        jobId: syncJob.id,
+        orderCount: persistedOrders.orderCount,
+        customerLinkedCount: persistedOrders.customerLinkedCount,
+        itemCount: persistedOrders.itemCount,
+        orderPages: visitedOrderPages.length,
+        storeId: connection.storeId,
+        totalCountHeader: ordersTotalCountHeader,
+      });
+
       metadata.customerLinkedCount = persistedOrders.customerLinkedCount;
       metadata.itemCount = persistedOrders.itemCount;
       metadata.orderCount = persistedOrders.orderCount;
@@ -206,6 +241,23 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       }));
       metadata.ordersTotalCountHeader = ordersTotalCountHeader;
       metadata.syncOutcome = "succeeded";
+
+      if (normalizedOrders.length === 0) {
+        console.info("[tiendanube-sync] orders fetch returned no rows", {
+          jobId: syncJob.id,
+          storeId: connection.storeId,
+          visitedOrderPages,
+        });
+      }
+
+      if (persistedOrders.orderCount !== normalizedOrders.length) {
+        console.warn("[tiendanube-sync] order persist count mismatch", {
+          fetchedOrderCount: normalizedOrders.length,
+          jobId: syncJob.id,
+          persistedOrderCount: persistedOrders.orderCount,
+          storeId: connection.storeId,
+        });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown sync error.";
 

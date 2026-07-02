@@ -113,6 +113,13 @@ export async function executeComparePeriodsTool(
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(previousEndDate.getTime() - days * 24 * 60 * 60 * 1000);
 
+  console.info("[ai-tools] compare periods", {
+    days,
+    endDate: endDate.toISOString(),
+    resolvedStoreId,
+    startDate: startDate.toISOString(),
+  });
+
   const comparison = await comparePeriods({
     currentEnd: endDate,
     currentStart: startDate,
@@ -142,6 +149,14 @@ export async function executeSalesSummaryTool(
 ) {
   const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
+
+  console.info("[ai-tools] sales summary", {
+    days,
+    endDate: endDate.toISOString(),
+    resolvedStoreId,
+    startDate: startDate.toISOString(),
+  });
+
   const summary = await getSalesSummary({
     endDate,
     startDate,
@@ -165,6 +180,15 @@ export async function executeTopProductsTool(
   const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
   const limit = toInteger(input.limit, 5);
+
+  console.info("[ai-tools] top products", {
+    days,
+    endDate: endDate.toISOString(),
+    limit,
+    resolvedStoreId,
+    startDate: startDate.toISOString(),
+  });
+
   const products = await getTopProducts({
     endDate,
     limit,
@@ -244,6 +268,14 @@ export async function executeAverageOrderValueTool(input: z.infer<typeof dateWin
 export async function executeSalesTrendTool(input: z.infer<typeof dateWindowSchema>, storeId?: string) {
   const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
+
+  console.info("[ai-tools] sales trend", {
+    days,
+    endDate: endDate.toISOString(),
+    resolvedStoreId,
+    startDate: startDate.toISOString(),
+  });
+
   const rawTrend = await getSalesTrend({
     endDate,
     startDate,

@@ -15,6 +15,20 @@ import { buildLowStockAlert } from "./low-stock-alert";
 
 type DashboardSyncSummary = Awaited<ReturnType<typeof import("@/lib/db/client").getDashboardSyncSummary>>;
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function startOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function endOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+}
+
+function shiftUtcDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * DAY_IN_MS);
+}
+
 export function getCompareWindow(value: string | string[] | undefined): CompareWindowKey {
   if (typeof value !== "string") {
     return DEFAULT_COMPARE_WINDOW;
@@ -36,24 +50,6 @@ export function formatAsOfInputValue(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-export function buildDashboardHref(
-  compareWindow: CompareWindowKey,
-  asOf: string | null,
-  storeId?: string | null,
-) {
-  const searchParams = new URLSearchParams({ compareWindow });
-
-  if (asOf) {
-    searchParams.set("asOf", asOf);
-  }
-
-  if (storeId) {
-    searchParams.set("storeId", storeId);
-  }
-
-  return `/dashboard?${searchParams.toString()}`;
-}
-
 export function buildChatHref(prompt: string, storeId?: string | null) {
   const searchParams = new URLSearchParams({ prompt });
 
@@ -66,16 +62,18 @@ export function buildChatHref(prompt: string, storeId?: string | null) {
 
 export function buildDashboardDateWindows(input: { compareWindow: CompareWindowKey; endDate: Date }) {
   const windowConfig = compareWindowConfig[input.compareWindow];
-  const startDate = new Date(input.endDate.getTime() - windowConfig.days * 24 * 60 * 60 * 1000);
-  const previousEndDate = new Date(startDate.getTime() - 1);
-  const previousStartDate = new Date(previousEndDate.getTime() - windowConfig.days * 24 * 60 * 60 * 1000);
-  const weeklyStartDate = new Date(input.endDate.getTime() - WEEKLY_SNAPSHOT_DAYS * 24 * 60 * 60 * 1000);
-  const weeklyPreviousEndDate = new Date(weeklyStartDate.getTime() - 1);
-  const weeklyPreviousStartDate = new Date(
-    weeklyPreviousEndDate.getTime() - WEEKLY_SNAPSHOT_DAYS * 24 * 60 * 60 * 1000,
+  const windowEndDate = endOfUtcDay(input.endDate);
+  const startDate = startOfUtcDay(shiftUtcDays(windowEndDate, -(windowConfig.days - 1)));
+  const previousEndDate = endOfUtcDay(shiftUtcDays(startDate, -1));
+  const previousStartDate = startOfUtcDay(shiftUtcDays(previousEndDate, -(windowConfig.days - 1)));
+  const weeklyStartDate = startOfUtcDay(shiftUtcDays(windowEndDate, -(WEEKLY_SNAPSHOT_DAYS - 1)));
+  const weeklyPreviousEndDate = endOfUtcDay(shiftUtcDays(weeklyStartDate, -1));
+  const weeklyPreviousStartDate = startOfUtcDay(
+    shiftUtcDays(weeklyPreviousEndDate, -(WEEKLY_SNAPSHOT_DAYS - 1)),
   );
 
   return {
+    endDate: windowEndDate,
     previousEndDate,
     previousStartDate,
     startDate,

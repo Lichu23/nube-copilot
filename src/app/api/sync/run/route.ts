@@ -23,5 +23,14 @@ export async function POST(request: Request) {
     storeId: resolvedStore.storeId,
   });
 
+  console.info("[tiendanube-sync] api route finished", {
+    jobId: result.jobId,
+    message: result.message,
+    ok: result.ok,
+    status: result.status,
+    storeId: resolvedStore.storeId,
+    warning: "warning" in result ? result.warning ?? null : null,
+  });
+
   return NextResponse.json(result, { status: result.status });
 }
