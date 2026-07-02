@@ -46,7 +46,7 @@ export function SavedReportsView({
         </div>
         <h2 className="mt-5 font-display text-3xl leading-tight text-foreground">Todavía no hay análisis guardados.</h2>
         <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-          Fijá un reporte desde el canvas del chat para volver a abrirlo acá sin perder el contexto.
+          Fijá un reporte desde el panel de análisis del chat para volver a abrirlo acá sin perder el contexto.
         </p>
         <ButtonLink href={storeId ? `/chat?storeId=${storeId}` : "/chat"} className="mt-6">
           Ir al analista

@@ -20,7 +20,7 @@ export default async function SettingsPage({
       <section className="space-y-3">
         <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">Ajustes del analista</p>
         <h1 className="max-w-4xl font-serif text-5xl leading-[0.95] tracking-[-0.05em] text-foreground">
-          Afin? el foco, el tono y la cadencia.
+          Afiná el foco, el tono y la cadencia.
         </h1>
         <p className="max-w-3xl text-lg text-muted-foreground">
           Estas preferencias personalizan las sugerencias del chat y la lectura del panel.

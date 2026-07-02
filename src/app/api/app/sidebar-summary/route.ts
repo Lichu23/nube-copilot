@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       variantCount: summary.variantCount,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to resolve sidebar summary.";
+    const message = error instanceof Error ? error.message : "No se pudo resolver el resumen del sidebar.";
     const status = message.includes("signed in") ? 401 : 403;
 
     return NextResponse.json({ error: message }, { status });

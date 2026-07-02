@@ -213,7 +213,7 @@ export async function getDashboardData(input: {
     comparison: weeklySnapshotComparison,
     metrics: weeklySnapshotMetrics,
     topProduct: weeklySnapshotTopProduct,
-    windowLabel: "ultimos 7 dias",
+    windowLabel: "?ltimos 7 d?as",
   });
   const snapshotChatHref = snapshotCard ? buildChatHref(snapshotCard.askAiPrompt, storeId) : undefined;
 

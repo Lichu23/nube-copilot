@@ -49,7 +49,7 @@ function ProductPreview() {
           <span className="h-3 w-3 rounded-full bg-border-strong" />
           <span className="h-3 w-3 rounded-full bg-border-strong" />
           <span className="h-3 w-3 rounded-full bg-border-strong" />
-          <span className="ml-4 text-sm text-muted-foreground">Chat + Canvas de análisis</span>
+          <span className="ml-4 text-sm text-muted-foreground">Chat + panel de análisis</span>
         </div>
         <span className="hidden rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success sm:inline-flex">
           Datos de tienda en vivo
@@ -90,7 +90,7 @@ function ProductPreview() {
         <div className="bg-card p-5 text-left">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Canvas de análisis</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Panel de análisis</p>
               <h3 className="mt-1 text-xl font-semibold text-foreground">Ventas semanales y riesgo de stock</h3>
             </div>
             <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">últimos 7 días</span>

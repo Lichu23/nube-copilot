@@ -56,7 +56,7 @@ function buildChartModel(item: ToolResult): ChartModel | null {
         { label: previousLabel, value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
       subtitle: "Comparacion de facturacion con metricas SQL reales.",
-      title: "Facturacion por periodo",
+      title: "Facturación por periodo",
     };
   }
 
@@ -93,8 +93,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars,
-      subtitle: "Facturacion de los productos mas vendidos en la ventana elegida.",
-      title: "Facturacion de productos top",
+      subtitle: "Facturación de los productos mas vendidos en la ventana elegida.",
+      title: "Facturación de productos top",
     };
   }
 
@@ -153,11 +153,11 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars: [
-        { label: "Facturacion", value: revenue, valueLabel: formatCurrency(revenue, currency) },
+        { label: "Facturación", value: revenue, valueLabel: formatCurrency(revenue, currency) },
         { label: "Pedidos", value: orders, valueLabel: `${orders} pedidos` },
         { label: "Unidades vendidas", value: unitsSold, valueLabel: `${unitsSold} unidades` },
       ],
-      subtitle: days ? `Resumen de los ultimos ${days} dias.` : "Resumen de la ventana elegida.",
+      subtitle: days ? `Resumen de los ?ltimos ${days} d?as.` : "Resumen de la ventana elegida.",
       title: "Resumen de ventas",
     };
   }
@@ -182,7 +182,7 @@ function buildChartModel(item: ToolResult): ChartModel | null {
       bars: [
         { label: "Ticket promedio", value: averageOrderValue, valueLabel: formatCurrency(averageOrderValue, currency) },
       ],
-      subtitle: days ? `Ticket promedio de los ultimos ${days} dias.` : "Ticket promedio de la ventana elegida.",
+      subtitle: days ? `Ticket promedio de los ?ltimos ${days} d?as.` : "Ticket promedio de la ventana elegida.",
       title: "Ticket promedio",
     };
   }
@@ -204,8 +204,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars: [
-        { label: "Ultimos 7 dias", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
-        { label: "7 dias anteriores", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
+        { label: "?ltimos 7 d?as", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
+        { label: "7 d?as anteriores", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
       subtitle: "Tendencia de facturacion usada por el resumen semanal.",
       title: "Tendencia semanal de facturacion",

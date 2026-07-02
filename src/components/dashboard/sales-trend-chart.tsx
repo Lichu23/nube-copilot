@@ -37,7 +37,7 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">Tendencia de ventas</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Facturacion diaria en la ventana seleccionada.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Facturación diaria en la ventana seleccionada.</p>
         </div>
         {maxRevenue > 0 ? (
           <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
@@ -50,13 +50,13 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
         <div className="mt-4 flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-zinc-50 px-6 text-center">
           <p className="text-sm font-semibold text-zinc-800">Todavia no hay ventas recientes para graficar.</p>
           <p className="mt-2 max-w-md text-sm text-zinc-500">
-            Sin pedidos sincronizados en esta ventana, el grafico queda vacio. Sincroniza la tienda o cambia la ventana de comparacion.
+            Sin pedidos sincronizados en esta ventana, el gráfico queda vacío. Sincronizá la tienda o cambia la ventana de comparación.
           </p>
         </div>
       ) : (
         <div className="mt-4 rounded-xl border border-border bg-surface-muted p-4">
           <div className="relative h-60 overflow-hidden rounded-xl bg-card p-3">
-            <svg className="h-full w-full" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="Tendencia de facturacion diaria">
+            <svg className="h-full w-full" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="Tendencia de facturación diaria">
               <defs>
                 <linearGradient id="salesTrendArea" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.22" />

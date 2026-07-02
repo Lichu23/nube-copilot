@@ -49,7 +49,7 @@ export default async function StoresPage() {
                   href={`/dashboard?storeId=${membership.storeId}`}
                   className="inline-flex items-center gap-2 rounded-full btn-ink px-4 py-2 text-sm font-semibold shadow-sm transition"
                 >
-                  Abrir dashboard
+                  Abrir panel
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

@@ -28,10 +28,10 @@ export function buildWeeklySnapshotCardContent(input: WeeklySnapshotCardInput): 
   const currency = input.metrics.currency;
   const topProductLine = input.topProduct
     ? `${input.topProduct.name} lidera con ${formatCurrency(input.topProduct.revenue, currency)} en ventas.`
-    : "No se identifico un producto top para esta ventana.";
+    : "No se identific? un producto top para esta ventana.";
   const comparisonSentence =
     input.comparison?.revenue.percentageChange == null
-      ? "La comparacion contra la semana anterior no esta disponible."
+      ? "La comparación contra la semana anterior no esta disponible."
       : `Eso da ${revenueDelta} versus la semana anterior.`;
 
   const summary = [
@@ -43,10 +43,10 @@ export function buildWeeklySnapshotCardContent(input: WeeklySnapshotCardInput): 
   return {
     askAiPrompt: "Que paso esta semana, por que cambio y que deberia hacer ahora?",
     evidence: [
-      { label: "Facturacion (7d)", value: formatCurrency(input.metrics.revenue, currency) },
+      { label: "Facturación (7d)", value: formatCurrency(input.metrics.revenue, currency) },
       { label: "Pedidos (7d)", value: String(input.metrics.orderCount) },
       {
-        label: "Facturacion vs semana anterior",
+        label: "Facturación vs semana anterior",
         value:
           input.comparison?.revenue.percentageChange == null
             ? "No disponible"

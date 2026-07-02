@@ -101,10 +101,10 @@ export default async function DashboardPage({
       <section className="space-y-3">
         <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">{windowConfig.label}</p>
         <h1 className="max-w-4xl font-serif text-5xl leading-[0.95] tracking-[-0.05em] text-foreground">
-          {`Buen d?a, ${storeName}.`}
+          {`Buen día, ${storeName}.`}
         </h1>
         <p className="max-w-3xl text-lg text-muted-foreground">
-          Esto es lo que se esta moviendo en tu tienda esta semana.
+          Esto es lo que se está moviendo en tu tienda esta semana.
         </p>
       </section>
 
@@ -169,7 +169,7 @@ export default async function DashboardPage({
                 : "Conectá y sincronizá una tienda para ver datos reales."
             }
             icon={<TrendingUp className="h-4.5 w-4.5" />}
-            label={`Revenue (${windowConfig.label})`}
+            label={`Facturación (${windowConfig.label})`}
             tone="positive"
             value={
               metrics
@@ -221,7 +221,7 @@ export default async function DashboardPage({
 
       <DashboardSection
         title="Evolución e insight"
-        description="La tendencia muestra movimiento diario; el insight resume qué mirar primero."
+        description="La tendencia muestra movimiento d?ario; el insight resume qué mirar primero."
       >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <SalesTrendChart data={trend} />
@@ -255,7 +255,7 @@ export default async function DashboardPage({
             currency={metrics?.currency ?? null}
             helperLabel={
               summary.connection
-                ? `Facturación y unidades por producto en los ultimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
+                ? `Facturación y unidades por producto en los ?ltimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
                 : "Esperando la sincronización inicial"
             }
             rows={topProducts}
