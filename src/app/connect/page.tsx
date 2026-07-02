@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Check, LockKeyhole, ShieldCheck, Sparkles, Store } from "lucide-react";
 
 import { ConnectSyncPanel } from "@/components/connect/connect-sync-panel";
-import { getActiveTiendanubeConnection, getDashboardSyncSummary, resolveActiveStoreId } from "@/lib/db/client";
+import {
+  getActiveTiendanubeConnection,
+  getAnalystPreferencesForActiveStore,
+  getDashboardSyncSummary,
+  resolveActiveStoreId,
+} from "@/lib/db/client";
 
 const reasonCopy: Record<string, string> = {
   auth: "Tenés que iniciár sesión en la app antes de conectar una tienda.",
@@ -99,7 +104,12 @@ export default async function ConnectPage({
       : null;
 
     if (connection) {
-      redirect(`/dashboard?storeId=${encodeURIComponent(connection.storeId)}`);
+      const preferences = await getAnalystPreferencesForActiveStore(connection.storeId).catch(() => null);
+      const nextPath = preferences?.completedAt
+        ? `/dashboard?storeId=${encodeURIComponent(connection.storeId)}`
+        : `/onboarding?storeId=${encodeURIComponent(connection.storeId)}&flow=setup`;
+
+      redirect(nextPath);
     }
   }
 
@@ -115,7 +125,7 @@ export default async function ConnectPage({
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 mx-auto h-[34rem] max-w-3xl rounded-full bg-accent/70 blur-3xl" />
       <BrandHeader />
 
-      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-20 pt-16">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-10 ">
         {hasConnection && !showSync ? (
           <div className="mx-auto mb-8 max-w-2xl rounded-[1.25rem] border border-border bg-surface-muted p-5">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Conexión activa</p>
@@ -130,7 +140,7 @@ export default async function ConnectPage({
 
         {showSync ? (
           <>
-            <div className="mx-auto mb-10 max-w-2xl">
+            <div className="mx-auto max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Sincronizando</p>
               <h1 className="font-display mt-4 text-[4.25rem] leading-[0.9] tracking-[-0.055em] text-heading-ink">
                 Leyendo tu tienda...
@@ -166,4 +176,3 @@ export default async function ConnectPage({
     </main>
   );
 }
-

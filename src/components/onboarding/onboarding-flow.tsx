@@ -141,8 +141,8 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
       stage,
       tone,
       volume,
-    }).catch(() => {});
-  }, [cadence, category, friction, goal, role, stage, step, tone, volume]);
+    }, storeId).catch(() => {});
+  }, [cadence, category, friction, goal, role, stage, step, storeId, tone, volume]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
@@ -316,8 +316,8 @@ export function OnboardingFlow({ detectedOrderCount, storeId, storeName }: Onboa
           </button>
 
           {step === 5 ? (
-            <Link href={storeId ? `/chat?storeId=${storeId}` : "/chat"} className="inline-flex items-center gap-2 rounded-[1rem] btn-ink px-7 py-4 text-sm font-semibold shadow-card transition">
-              Ir al analista
+            <Link href={storeId ? `/dashboard?storeId=${storeId}` : "/dashboard"} className="inline-flex items-center gap-2 rounded-[1rem] btn-ink px-7 py-4 text-sm font-semibold shadow-card transition">
+              Ir al dashboard
               <ArrowRight className="h-4 w-4" />
             </Link>
           ) : (

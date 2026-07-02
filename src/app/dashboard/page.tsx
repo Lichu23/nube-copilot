@@ -9,6 +9,7 @@ import {
 
 import { InsightCard } from "@/components/dashboard/insight-card";
 import { AnalystProfileCard } from "@/components/dashboard/analyst-profile-card";
+import { DashboardRangeSelector } from "@/components/dashboard/dashboard-range-selector";
 import { LowStockAlertCard } from "@/components/dashboard/low-stock-alert-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { PinnedReportsPanel } from "@/components/dashboard/pinned-reports-panel";
@@ -17,11 +18,6 @@ import { SyncControl } from "@/components/dashboard/sync-control";
 import { TopProductsTable } from "@/components/dashboard/top-products-table";
 import { AppShell } from "@/components/layout/app-shell";
 import {
-  compareWindowConfig,
-  type CompareWindowKey,
-} from "@/lib/dashboard/config";
-import {
-  buildDashboardHref,
   formatAsOfInputValue,
   getCompareWindow,
   getDashboardData,
@@ -112,7 +108,7 @@ export default async function DashboardPage({
 
       {isDevOverrideEnabled ? (
         <section className="rounded-2xl border border-border bg-card/70 p-4 shadow-soft">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
             <div className="min-w-0 space-y-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -122,63 +118,12 @@ export default async function DashboardPage({
                   Comparación de período
                 </h2>
               </div>
-              <form
-                action="/dashboard"
-                method="get"
-                className="flex flex-wrap items-end gap-2"
-              >
-                {storeId ? <input type="hidden" name="storeId" value={storeId} /> : null}
-                <input
-                  type="hidden"
-                  name="compareWindow"
-                  value={compareWindow}
-                />
-                <input type="hidden" name="storeId" value={resolvedStoreId} />
-                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                  Fecha de corte
-                  <input
-                    name="asOf"
-                    type="date"
-                    defaultValue={asOfInputValue}
-                    className="h-10 rounded-full border border-border bg-white px-4 text-sm text-foreground outline-none transition focus:border-primary"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="inline-flex h-10 items-center justify-center rounded-full btn-ink px-4 text-sm font-semibold transition"
-                >
-                  Aplicar
-                </button>
-              </form>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              {(
-                Object.entries(compareWindowConfig) as Array<
-                  [
-                    CompareWindowKey,
-                    (typeof compareWindowConfig)[CompareWindowKey],
-                  ]
-                >
-              ).map(([key, config]) => (
-                  <Link
-                  key={key}
-                  href={buildDashboardHref(
-                    key,
-                    asOfOverride ? asOfInputValue : null,
-                    resolvedStoreId,
-                  )}
-                  aria-current={compareWindow === key ? "page" : undefined}
-                  className={`inline-flex h-10 min-w-28 items-center justify-center rounded-full px-4 text-sm font-semibold whitespace-nowrap transition ${
-                    compareWindow === key
-                      ? "bg-ink-navy !text-white shadow-sm"
-                      : "border border-border bg-white text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {config.title}
-                </Link>
-              ))}
-            </div>
+            <DashboardRangeSelector
+              asOfInputValue={asOfInputValue}
+              compareWindow={compareWindow}
+              storeId={resolvedStoreId}
+            />
           </div>
         </section>
       ) : null}

@@ -1,5 +1,4 @@
-﻿export const compareWindowConfig = {
-  "1d": { days: 1, label: "1d", title: "Ultimo 1 dia" },
+export const compareWindowConfig = {
   "7d": { days: 7, label: "7d", title: "Ultimos 7 dias" },
   "30d": { days: 30, label: "30d", title: "Ultimos 30 dias" },
 } as const;

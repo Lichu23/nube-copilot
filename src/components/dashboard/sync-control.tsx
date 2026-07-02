@@ -40,6 +40,7 @@ export function SyncControl({
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState(lastSyncMessage);
   const hasAutoStartedRef = useRef(false);
+  const activeRequestRef = useRef<AbortController | null>(null);
 
   const statusTone = useMemo(() => {
     if (isPending) {
@@ -66,6 +67,10 @@ export function SyncControl({
       return;
     }
 
+    activeRequestRef.current?.abort();
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+
     setFeedback(options?.auto ? "Conectamos tu tienda. Estamos corriendo la primera sincronizacion..." : "Corriendo sincronizacion...");
 
     startTransition(async () => {
@@ -78,6 +83,7 @@ export function SyncControl({
               }
             : undefined,
           method: "POST",
+          signal: controller.signal,
         });
 
         const payload = (await response.json()) as SyncResponse;
@@ -90,7 +96,11 @@ export function SyncControl({
         }
         router.refresh();
       } catch {
-        setFeedback("La solicitud de sincronizacion fallo antes de llegar al servidor.");
+        setFeedback(controller.signal.aborted ? "Sincronizacion cancelada." : "La solicitud de sincronizacion fallo antes de llegar al servidor.");
+      } finally {
+        if (activeRequestRef.current === controller) {
+          activeRequestRef.current = null;
+        }
       }
     });
   }, [hasConnection, pathname, router, searchParams, startTransition, storeId]);
@@ -103,6 +113,19 @@ export function SyncControl({
     hasAutoStartedRef.current = true;
     triggerSync({ auto: true });
   }, [autoRun, hasConnection, triggerSync]);
+
+  useEffect(() => {
+    const abortPendingRequest = () => {
+      activeRequestRef.current?.abort();
+    };
+
+    window.addEventListener("beforeunload", abortPendingRequest);
+
+    return () => {
+      window.removeEventListener("beforeunload", abortPendingRequest);
+      abortPendingRequest();
+    };
+  }, []);
 
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
