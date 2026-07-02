@@ -15,6 +15,7 @@ type SyncControlProps = {
   productCount: number;
   storeId?: string;
   variantCount: number;
+  variant?: "card" | "sidebar";
 };
 
 type SyncResponse = {
@@ -33,6 +34,7 @@ export function SyncControl({
   productCount,
   storeId,
   variantCount,
+  variant = "card",
 }: SyncControlProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -127,13 +129,43 @@ export function SyncControl({
     };
   }, []);
 
+  const isSidebar = variant === "sidebar";
+  const lastSyncLabel = formatDateTimeLabel(lastSyncFinishedAt);
+
+  if (isSidebar) {
+    return (
+      <section className="rounded-2xl border border-border bg-background p-3">
+        <div className="space-y-3 text-xs">
+          <p className={statusTone}>
+            Estado:{" "}
+            <span className="font-medium">
+              {isPending ? "corriendo" : lastSyncOutcome === "partial" ? "parcial" : (lastSyncStatus ?? "idle")}
+            </span>
+          </p>
+          <p className="text-zinc-600">
+            Ultima actualizacion:{" "}
+            <span className="font-medium text-zinc-950">{lastSyncLabel}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => triggerSync()}
+            disabled={!hasConnection || isPending}
+            className="inline-flex w-full items-center justify-center rounded-xl btn-ink px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:bg-zinc-300"
+          >
+            {isPending ? "Sincronizando..." : "Sincronizar ahora"}
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium text-zinc-500">Sincronizacion de catalogo</p>
-            <h2 className="text-lg font-semibold">Traer productos desde Tiendanube</h2>
+            <p className="text-sm font-medium text-zinc-500">Sincronizacion</p>
+            <h2 className="text-lg font-semibold">Traer datos de Tiendanube</h2>
           </div>
           <p className="text-sm text-zinc-600">
             {hasConnection
@@ -151,8 +183,8 @@ export function SyncControl({
               Pedidos sincronizados: <span className="font-medium text-zinc-950">{orderCount}</span> pedidos
             </p>
             <p>
-              Ultima sincronizacion completada:{" "}
-              <span className="font-medium text-zinc-950">{formatDateTimeLabel(lastSyncFinishedAt)}</span>
+              Ultima actualizacion:{" "}
+              <span className="font-medium text-zinc-950">{lastSyncLabel}</span>
             </p>
           </div>
         </div>

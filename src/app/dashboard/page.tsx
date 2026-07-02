@@ -1,4 +1,5 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ArrowUpRight,
   PackageCheck,
@@ -36,6 +37,30 @@ import { metricDefinitions } from "@/lib/metrics/definitions";
 import { requireActiveStore } from "@/lib/routing/require-active-store";
 
 export const dynamic = "force-dynamic";
+
+function DashboardSection({
+  children,
+  description,
+  title,
+}: {
+  children: ReactNode;
+  description: string;
+  title: string;
+}) {
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">
+          {title}
+        </h2>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          {description}
+        </p>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -83,21 +108,46 @@ export default async function DashboardPage({
       active="dashboard"
       eyebrow={windowConfig.label}
       title={`Buen día, ${storeName}.`}
-      description="Esto es lo que se está moviendo en tu tienda esta semana."
+      description="Esto es lo que se esta moviendo en tu tienda esta semana."
       storeId={resolvedStoreId}
       meta={
-        <>
-          {storeName}{" "}
-          <span className="text-muted-foreground">
-            · Tiendanube · conectada
+        <span className="flex flex-col gap-0.5">
+          <span>{storeName}</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            Tiendanube - conectada
           </span>
-        </>
+        </span>
+      }
+      sidebarAction={
+        <SyncControl
+          autoRun={autoSync}
+          hasConnection={Boolean(summary.connection)}
+          lastSyncFinishedAt={
+            summary.latestSyncJob?.finishedAt?.toISOString() ?? null
+          }
+          lastSyncMessage={latestSyncMessage}
+          lastSyncOutcome={latestSyncOutcome}
+          lastSyncStatus={latestSyncStatus}
+          orderCount={summary.orderCount}
+          productCount={summary.productCount}
+          storeId={summary.connection?.storeId}
+          variant="sidebar"
+          variantCount={summary.variantCount}
+        />
       }
     >
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-soft">
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            Vista general de performance
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Métricas, tendencia e inventario para decidir rápido.
+          </p>
+        </div>
         <Link
           href={`/chat?storeId=${resolvedStoreId}`}
-          className="inline-flex items-center gap-2 rounded-full btn-ink px-4 py-2.5 text-sm font-semibold shadow-sm transition"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full btn-ink px-4 py-2.5 text-sm font-semibold shadow-sm transition"
         >
           Preguntar al analista
           <ArrowUpRight className="h-4 w-4" />
@@ -128,119 +178,119 @@ export default async function DashboardPage({
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          definition={metricDefinitions.netRevenue}
-          helper={
-            summary.connection
-              ? formatRevenueComparisonHelper({
-                  absoluteChange: periodComparison?.revenue.absoluteChange ?? 0,
-                  currency: metrics?.currency ?? null,
-                  label: windowConfig.label,
-                  percentageChange:
-                    periodComparison?.revenue.percentageChange ?? null,
-                })
-              : "Conectá y sincronizá una tienda para ver datos reales."
-          }
-          icon={<TrendingUp className="h-4.5 w-4.5" />}
-          label={`Revenue (${windowConfig.label})`}
-          tone="positive"
-          value={
-            metrics
-              ? formatCurrency(metrics.revenue, metrics.currency)
-              : "$0.00"
-          }
-        />
-        <MetricCard
-          definition={metricDefinitions.orderCount}
-          helper={
-            summary.connection
-              ? `${formatSignedPercent(periodComparison?.orderCount.percentageChange ?? null, windowConfig.label)} · Δ ${formatSignedNumber(periodComparison?.orderCount.absoluteChange ?? 0)} pedidos`
-              : "Esperando la conexión de la tienda."
-          }
-          icon={<ShoppingCart className="h-4.5 w-4.5" />}
-          label={`Pedidos (${windowConfig.label})`}
-          tone="positive"
-          value={String(metrics?.orderCount ?? 0)}
-        />
-        <MetricCard
-          definition={metricDefinitions.averageOrderValue}
-          helper={
-            summary.connection
-              ? `${formatSignedPercent(periodComparison?.averageOrderValue.percentageChange ?? null, windowConfig.label)} · ${metrics?.unitsSold ?? 0} unidades`
-              : "Esperando la conexión de la tienda."
-          }
-          icon={<PackageCheck className="h-4.5 w-4.5" />}
-          label={`Ticket promedio (${windowConfig.label})`}
-          tone="positive"
-          value={
-            metrics
-              ? formatCurrency(metrics.averageOrderValue, metrics.currency)
-              : "$0.00"
-          }
-        />
-        <MetricCard
-          helper={
-            summary.connection
-              ? "Pendiente de cohortes reales."
-              : "Esperando la conexión de la tienda."
-          }
-          icon={<UsersRound className="h-4.5 w-4.5" />}
-          label="Clientes recurrentes"
-          tone="warning"
-          value={summary.connection ? "—" : "0"}
-        />
-      </section>
+      <DashboardSection
+        title="Resumen del período"
+        description={`Indicadores principales de los últimos ${windowConfig.label}, comparados contra el período anterior.`}
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            definition={metricDefinitions.netRevenue}
+            helper={
+              summary.connection
+                ? formatRevenueComparisonHelper({
+                    absoluteChange: periodComparison?.revenue.absoluteChange ?? 0,
+                    currency: metrics?.currency ?? null,
+                    label: windowConfig.label,
+                    percentageChange:
+                      periodComparison?.revenue.percentageChange ?? null,
+                  })
+                : "Conectá y sincronizá una tienda para ver datos reales."
+            }
+            icon={<TrendingUp className="h-4.5 w-4.5" />}
+            label={`Revenue (${windowConfig.label})`}
+            tone="positive"
+            value={
+              metrics
+                ? formatCurrency(metrics.revenue, metrics.currency)
+                : "$0.00"
+            }
+          />
+          <MetricCard
+            definition={metricDefinitions.orderCount}
+            helper={
+              summary.connection
+                ? `${formatSignedPercent(periodComparison?.orderCount.percentageChange ?? null, windowConfig.label)} | Cambio ${formatSignedNumber(periodComparison?.orderCount.absoluteChange ?? 0)} pedidos`
+                : "Esperando la conexión de la tienda."
+            }
+            icon={<ShoppingCart className="h-4.5 w-4.5" />}
+            label={`Pedidos (${windowConfig.label})`}
+            tone="positive"
+            value={String(metrics?.orderCount ?? 0)}
+          />
+          <MetricCard
+            definition={metricDefinitions.averageOrderValue}
+            helper={
+              summary.connection
+                ? `${formatSignedPercent(periodComparison?.averageOrderValue.percentageChange ?? null, windowConfig.label)} | ${metrics?.unitsSold ?? 0} unidades`
+                : "Esperando la conexión de la tienda."
+            }
+            icon={<PackageCheck className="h-4.5 w-4.5" />}
+            label={`Ticket promedio (${windowConfig.label})`}
+            tone="positive"
+            value={
+              metrics
+                ? formatCurrency(metrics.averageOrderValue, metrics.currency)
+                : "$0.00"
+            }
+          />
+          <MetricCard
+            helper={
+              summary.connection
+                ? "Pendiente de cohortes reales."
+                : "Esperando la conexión de la tienda."
+            }
+            icon={<UsersRound className="h-4.5 w-4.5" />}
+            label="Clientes recurrentes"
+            tone="warning"
+            value={summary.connection ? "—" : "0"}
+          />
+        </div>
+      </DashboardSection>
 
-      <SyncControl
-        autoRun={autoSync}
-        hasConnection={Boolean(summary.connection)}
-        lastSyncFinishedAt={
-          summary.latestSyncJob?.finishedAt?.toISOString() ?? null
-        }
-        lastSyncMessage={latestSyncMessage}
-        lastSyncOutcome={latestSyncOutcome}
-        lastSyncStatus={latestSyncStatus}
-        orderCount={summary.orderCount}
-        productCount={summary.productCount}
-        storeId={summary.connection?.storeId}
-        variantCount={summary.variantCount}
-      />
+      <DashboardSection
+        title="Evolución e insight"
+        description="La tendencia muestra movimiento diario; el insight resume qué mirar primero."
+      >
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+          <SalesTrendChart data={trend} />
+          <InsightCard
+            title="Insight del analista"
+            body={
+              snapshotCard?.summary ??
+              (latestSyncOutcome === "partial"
+                ? `La última sincronización quedó parcial. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
+                : latestSyncStatus === "succeeded"
+                  ? `La última sincronización terminó bien. ID del último job: ${summary.latestSyncJob?.id}.`
+                  : latestSyncStatus === "failed"
+                    ? `La última sincronización falló. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
+                    : summary.connection
+                      ? "Los insights van a mejorar ahora que productos y pedidos estan entrando en Postgres."
+                      : "Conectá primero una tienda y luego sincronizá productos para empezar a construir insights.")
+            }
+            chatHref={snapshotChatHref}
+            evidence={snapshotCard?.evidence}
+            shareText={snapshotCard?.shareText}
+          />
+        </div>
+      </DashboardSection>
 
-      <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <SalesTrendChart data={trend} />
-        <InsightCard
-          title="Insight del analista"
-          body={
-            snapshotCard?.summary ??
-            (latestSyncOutcome === "partial"
-              ? `La última sincronización quedó parcial. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
-              : latestSyncStatus === "succeeded"
-                ? `La última sincronización terminó bien. ID del último job: ${summary.latestSyncJob?.id}.`
-                : latestSyncStatus === "failed"
-                  ? `La última sincronización falló. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
-                  : summary.connection
-                    ? "Los insights van a mejorar ahora que productos y pedidos están entrando en Postgres."
-                    : "Conectá primero una tienda y luego sincronizá productos para empezar a construir insights.")
-          }
-          chatHref={snapshotChatHref}
-          evidence={snapshotCard?.evidence}
-          shareText={snapshotCard?.shareText}
-        />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <TopProductsTable
-          currency={metrics?.currency ?? null}
-          helperLabel={
-            summary.connection
-              ? `Facturación y unidades por producto en los últimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
-              : "Esperando la sincronización inicial"
-          }
-          rows={topProducts}
-        />
-        <LowStockAlertCard alert={lowStockAlert} chatHref={lowStockChatHref} />
-      </section>
+      <DashboardSection
+        title="Productos e inventario"
+        description="Ranking de productos que generan ventas y señales de stock para evitar quedarte corto."
+      >
+        <div className="grid gap-4 xl:grid-cols-2">
+          <TopProductsTable
+            currency={metrics?.currency ?? null}
+            helperLabel={
+              summary.connection
+                ? `Facturación y unidades por producto en los ultimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
+                : "Esperando la sincronización inicial"
+            }
+            rows={topProducts}
+          />
+          <LowStockAlertCard alert={lowStockAlert} chatHref={lowStockChatHref} />
+        </div>
+      </DashboardSection>
 
       <PinnedReportsPanel initialReports={savedReports} storeId={resolvedStoreId} />
 
@@ -298,5 +348,3 @@ export default async function DashboardPage({
     </AppShell>
   );
 }
-
-
