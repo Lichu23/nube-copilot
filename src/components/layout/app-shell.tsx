@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Bell, Bookmark, LayoutDashboard, MessageSquare, Settings, Sparkles } from "lucide-react";
+import { Bookmark, LayoutDashboard, MessageSquare, Settings, Sparkles } from "lucide-react";
 import { t } from "@/lib/i18n/t";
 import { defaultLocale } from "@/lib/i18n/messages";
 
@@ -10,6 +10,7 @@ type AppShellProps = {
   title: string;
   description: string;
   meta?: ReactNode;
+  sidebarAction?: ReactNode;
   storeId?: string;
   children: ReactNode;
 };
@@ -25,7 +26,16 @@ function buildTenantHref(path: string, storeId?: string) {
   return storeId ? `${path}?storeId=${storeId}` : path;
 }
 
-export function AppShell({ active = "dashboard", eyebrow, title, description, meta, storeId, children }: AppShellProps) {
+export function AppShell({
+  active = "dashboard",
+  eyebrow,
+  title,
+  description,
+  meta,
+  sidebarAction,
+  storeId,
+  children,
+}: AppShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[244px_minmax(0,1fr)]">
       <aside className="hidden border-r border-border bg-card px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
@@ -35,6 +45,12 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
           </span>
           <span className="text-lg font-semibold tracking-tight">{t("common.appName", defaultLocale)}</span>
         </Link>
+
+        <div className="mt-5 px-2">
+          <div className="text-sm font-semibold text-foreground">
+            {meta ?? "Tiendanube conectada"}
+          </div>
+        </div>
 
         <nav className="mt-10 space-y-1">
           {navigation.map((item) => {
@@ -59,27 +75,20 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
           })}
         </nav>
 
+        {sidebarAction ? <div className="mt-6">{sidebarAction}</div> : null}
+
         <Link
           href={buildTenantHref("/settings", storeId)}
-          className="mt-auto rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground transition hover:border-border-strong hover:text-foreground"
+          className="mt-auto inline-flex items-center justify-center rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:border-border-strong hover:bg-surface-muted"
         >
-          <span className="font-semibold text-foreground">Ajustar analista</span>
-          <span className="mt-1 block">{t("onboarding.subtitle", defaultLocale)}</span>
+          Ajustar analista
         </Link>
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
-          <div className="flex h-14 items-center justify-between px-5 lg:px-6">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{meta ?? "Tiendanube conectada"}</p>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Bell className="h-4.5 w-4.5" />
-              <Link href={buildTenantHref("/settings", storeId)} aria-label="Ajustar analista" title="Ajustar analista">
-                <Settings className="h-4.5 w-4.5" />
-              </Link>
-            </div>
+        <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur lg:hidden">
+          <div className="flex h-14 items-center px-5">
+            <p className="truncate text-sm font-semibold">{meta ?? "Tiendanube conectada"}</p>
           </div>
           <nav className="flex gap-2 overflow-x-auto px-5 pb-3 lg:hidden">
             {navigation.map((item) => {
@@ -99,6 +108,7 @@ export function AppShell({ active = "dashboard", eyebrow, title, description, me
               );
             })}
           </nav>
+          {sidebarAction ? <div className="px-5 pb-4 lg:hidden">{sidebarAction}</div> : null}
         </header>
 
         <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 lg:px-8">
