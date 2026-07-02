@@ -19,6 +19,7 @@ export default async function ChatPage({
     getAnalystPreferencesForActiveStore(resolvedStoreId),
   ]);
 
+
   return (
     <ChatPanel
       hasConnection={Boolean(summary.connection)}
