@@ -1,6 +1,6 @@
 export const compareWindowConfig = {
-  "7d": { days: 7, label: "7d", title: "Ultimos 7 dias" },
-  "30d": { days: 30, label: "30d", title: "Ultimos 30 dias" },
+  "7d": { days: 7, label: "7d", title: "?ltimos 7 d?as" },
+  "30d": { days: 30, label: "30d", title: "?ltimos 30 d?as" },
 } as const;
 
 export type CompareWindowKey = keyof typeof compareWindowConfig;

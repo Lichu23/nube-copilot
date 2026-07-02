@@ -97,7 +97,7 @@ export const messages = {
     },
     saved: {
       emptyTitle: "Todavía no hay análisis guardados.",
-      emptyDescription: "Fijá un reporte desde el canvas del chat para volver a abrirlo acá sin perder el contexto.",
+      emptyDescription: "Fijá un reporte desde el panel de análisis del chat para volver a abrirlo acá sin perder el contexto.",
       library: "Biblioteca",
       reportCount: "{count} reportes fijados",
       openAgain: "Preguntar de nuevo",

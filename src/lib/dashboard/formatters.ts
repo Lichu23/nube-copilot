@@ -1,4 +1,11 @@
-﻿import { formatSignedCurrency } from "@/lib/formatting";
+import { formatSignedCurrency } from "@/lib/formatting";
+
+const percentageFormatter = new Intl.NumberFormat("es-AR", {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 1,
+});
+
+const HUGE_PERCENTAGE_THRESHOLD = 999;
 
 export function formatSignedNumber(value: number) {
   return value > 0 ? `+${value}` : String(value);
@@ -6,12 +13,17 @@ export function formatSignedNumber(value: number) {
 
 export function formatSignedPercent(value: number | null, label: string) {
   if (value == null) {
-    return `vs periodo anterior (${label}) no disponible`;
+    return `vs per\u00edodo anterior (${label}) no disponible`;
   }
 
-  const rounded = Math.abs(value).toFixed(1);
+  if (Math.abs(value) > HUGE_PERCENTAGE_THRESHOLD) {
+    return value > 0
+      ? `M\u00e1s de ${percentageFormatter.format(HUGE_PERCENTAGE_THRESHOLD)}% vs per\u00edodo anterior (${label})`
+      : `Ca\u00edda mayor a ${percentageFormatter.format(HUGE_PERCENTAGE_THRESHOLD)}% vs per\u00edodo anterior (${label})`;
+  }
+
   const sign = value > 0 ? "+" : value < 0 ? "-" : "";
-  return `${sign}${rounded}% vs periodo anterior (${label})`;
+  return `${sign}${percentageFormatter.format(Math.abs(value))}% vs per\u00edodo anterior (${label})`;
 }
 
 export function formatRevenueComparisonHelper(input: {
@@ -20,7 +32,7 @@ export function formatRevenueComparisonHelper(input: {
   label: string;
   percentageChange: number | null;
 }) {
-  return `${formatSignedPercent(input.percentageChange, input.label)} - Δ ${formatSignedCurrency(
+  return `${formatSignedPercent(input.percentageChange, input.label)} \u00b7 \u0394 ${formatSignedCurrency(
     input.absoluteChange,
     input.currency,
   )}`;
