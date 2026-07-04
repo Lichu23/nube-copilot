@@ -1,4 +1,5 @@
 import { SavedReportsView } from "@/components/saved/saved-reports-view";
+import { toIsoTimestamp } from "@/lib/dashboard/data-transformer";
 import { getDashboardSyncSummary, getSavedReportsForActiveStore } from "@/lib/db/client";
 import { formatDateTimeLabel } from "@/lib/formatting";
 import { requireActiveStore } from "@/lib/routing/require-active-store";
@@ -25,7 +26,7 @@ export default async function SavedPage({
     getDashboardSyncSummary(resolvedStoreId),
     getSavedReportsForActiveStore(resolvedStoreId),
   ]);
-  const lastSyncLabel = getLastSyncLabel(summary.latestSyncJob?.finishedAt?.toISOString() ?? null);
+  const lastSyncLabel = getLastSyncLabel(toIsoTimestamp(summary.latestSyncJob?.finishedAt));
 
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 lg:px-8">

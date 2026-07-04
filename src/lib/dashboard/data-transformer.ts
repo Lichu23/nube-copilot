@@ -50,6 +50,19 @@ export function formatAsOfInputValue(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
+export function toIsoTimestamp(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 export function buildChatHref(prompt: string, storeId?: string | null) {
   const searchParams = new URLSearchParams({ prompt });
 

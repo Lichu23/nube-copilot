@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCachedDashboardSyncSummary } from "@/lib/dashboard/cache";
-import { getLatestSyncMessage, getLatestSyncOutcome } from "@/lib/dashboard/data-transformer";
+import { getLatestSyncMessage, getLatestSyncOutcome, toIsoTimestamp } from "@/lib/dashboard/data-transformer";
 import { resolveActiveStoreId } from "@/lib/db/client";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       connection: summary.connection,
-      latestSyncFinishedAt: summary.latestSyncJob?.finishedAt?.toISOString() ?? null,
+      latestSyncFinishedAt: toIsoTimestamp(summary.latestSyncJob?.finishedAt),
       latestSyncMessage: getLatestSyncMessage(summary),
       latestSyncOutcome: getLatestSyncOutcome(summary),
       latestSyncStatus: summary.latestSyncJob?.status ?? null,
