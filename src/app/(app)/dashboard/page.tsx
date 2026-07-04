@@ -128,27 +128,26 @@ export default async function DashboardPage({
 
       <AnalystProfileCard preferences={preferences} storeId={storeId} />
 
-      {isDevOverrideEnabled ? (
-        <section className="rounded-2xl border border-border bg-card/70 p-4 shadow-soft">
-          <div className="space-y-3">
-            <div className="min-w-0 space-y-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Modo desarrollo
-                </p>
-                <h2 className="mt-1 text-base font-semibold text-foreground">
-                  Comparación de período
-                </h2>
-              </div>
+      <section className="rounded-2xl border border-border bg-card/70 p-4 shadow-soft">
+        <div className="space-y-3">
+          <div className="min-w-0 space-y-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Período
+              </p>
+              <h2 className="mt-1 text-base font-semibold text-foreground">
+                Comparación de período
+              </h2>
             </div>
-            <DashboardRangeSelector
-              asOfInputValue={asOfInputValue}
-              compareWindow={compareWindow}
-              storeId={resolvedStoreId}
-            />
           </div>
-        </section>
-      ) : null}
+          <DashboardRangeSelector
+            asOfInputValue={asOfInputValue}
+            compareWindow={compareWindow}
+            showAsOfControl={isDevOverrideEnabled}
+            storeId={resolvedStoreId}
+          />
+        </div>
+      </section>
 
       <DashboardSection
         title="Resumen del período"
