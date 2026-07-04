@@ -157,7 +157,7 @@ function buildChartModel(item: ToolResult): ChartModel | null {
         { label: "Pedidos", value: orders, valueLabel: `${orders} pedidos` },
         { label: "Unidades vendidas", value: unitsSold, valueLabel: `${unitsSold} unidades` },
       ],
-      subtitle: days ? `Resumen de los ?ltimos ${days} d?as.` : "Resumen de la ventana elegida.",
+      subtitle: days ? `Resumen de los Últimos ${days} días.` : "Resumen de la ventana elegida.",
       title: "Resumen de ventas",
     };
   }
@@ -182,7 +182,7 @@ function buildChartModel(item: ToolResult): ChartModel | null {
       bars: [
         { label: "Ticket promedio", value: averageOrderValue, valueLabel: formatCurrency(averageOrderValue, currency) },
       ],
-      subtitle: days ? `Ticket promedio de los ?ltimos ${days} d?as.` : "Ticket promedio de la ventana elegida.",
+      subtitle: days ? `Ticket promedio de los Últimos ${days} días.` : "Ticket promedio de la ventana elegida.",
       title: "Ticket promedio",
     };
   }
@@ -204,8 +204,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
 
     return {
       bars: [
-        { label: "?ltimos 7 d?as", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
-        { label: "7 d?as anteriores", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
+        { label: "Últimos 7 días", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
+        { label: "7 días anteriores", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
       subtitle: "Tendencia de facturacion usada por el resumen semanal.",
       title: "Tendencia semanal de facturacion",
