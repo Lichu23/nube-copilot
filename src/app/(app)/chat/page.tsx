@@ -1,5 +1,6 @@
 import { getAnalystPreferencesForActiveStore, getDashboardSyncSummary } from "@/lib/db/client";
 import { ChatPanel } from "@/components/chat/chat-panel";
+import { toIsoTimestamp } from "@/lib/dashboard/data-transformer";
 import { requireActiveStore } from "@/lib/routing/require-active-store";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export default async function ChatPage({
       hasConnection={Boolean(summary.connection)}
       initialInput={prompt}
       initialPreferences={preferences}
-      lastSyncAt={summary.latestSyncJob?.finishedAt?.toISOString() ?? null}
+      lastSyncAt={toIsoTimestamp(summary.latestSyncJob?.finishedAt)}
       storeId={summary.connection?.storeId ?? resolvedStoreId}
       storeName={summary.connection?.storeName ?? "Conecta tu tienda"}
     />
