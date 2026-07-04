@@ -220,7 +220,7 @@ export default async function DashboardPage({
 
       <DashboardSection
         title="Evolución e insight"
-        description="La tendencia muestra movimiento d?ario; el insight resume qué mirar primero."
+        description="La tendencia muestra movimiento diario; el insight resume qué mirar primero."
       >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <SalesTrendChart data={trend} />
@@ -254,7 +254,7 @@ export default async function DashboardPage({
             currency={metrics?.currency ?? null}
             helperLabel={
               summary.connection
-                ? `Facturación y unidades por producto en los ?ltimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
+                ? `Facturación y unidades por producto en los Últimos ${windowConfig.label} sobre ${summary.orderCount} pedidos sincronizados`
                 : "Esperando la sincronización inicial"
             }
             rows={topProducts}
