@@ -12,6 +12,7 @@ type SyncControlProps = {
   lastSyncMessage: string;
   lastSyncOutcome: string | null;
   lastSyncStatus: string | null;
+  onRefreshSummary?: () => void;
   orderCount: number;
   productCount: number;
   storeId?: string;
@@ -32,6 +33,7 @@ export function SyncControl({
   lastSyncMessage,
   lastSyncOutcome,
   lastSyncStatus,
+  onRefreshSummary,
   orderCount,
   productCount,
   storeId,
@@ -106,7 +108,11 @@ export function SyncControl({
           const nextQuery = nextParams.toString();
           router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
         }
-        router.refresh();
+        if (onRefreshSummary) {
+          onRefreshSummary();
+        } else {
+          router.refresh();
+        }
       } catch {
         setFeedback(controller.signal.aborted ? messages.sync.cancelled : messages.sync.requestFailed);
       } finally {
@@ -115,7 +121,7 @@ export function SyncControl({
         }
       }
     });
-  }, [hasConnection, lastSyncFinishedAt, messages.sync, pathname, router, searchParams, startTransition, storeId]);
+  }, [hasConnection, lastSyncFinishedAt, messages.sync, onRefreshSummary, pathname, router, searchParams, startTransition, storeId]);
 
   useEffect(() => {
     if (!isSyncRunning) {
@@ -123,11 +129,15 @@ export function SyncControl({
     }
 
     const interval = window.setInterval(() => {
-      router.refresh();
+      if (onRefreshSummary) {
+        onRefreshSummary();
+      } else {
+        router.refresh();
+      }
     }, 3000);
 
     return () => window.clearInterval(interval);
-  }, [isSyncRunning, router]);
+  }, [isSyncRunning, onRefreshSummary, router]);
 
   useEffect(() => {
     if (!autoRun || !hasConnection || hasAutoStartedRef.current) {
@@ -169,8 +179,8 @@ export function SyncControl({
             </span>
           </p>
           <p className="text-zinc-600">
-            {messages.sync.lastUpdate}:{" "}
-            <span className="font-medium text-zinc-950">{lastSyncLabel}</span>
+            {messages.sync.lastUpdate}:
+            <span className="mt-1 block font-medium text-zinc-950">{lastSyncLabel}</span>
           </p>
           <button
             type="button"
