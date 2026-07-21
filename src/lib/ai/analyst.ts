@@ -407,7 +407,7 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
     normalized.includes("campanas de meta")
   ) {
     return buildUnsupportedResponse(
-      "No tengo acceso a datos de Meta Ads ni a metricas publicitarias como ROAS. Por ahora solo puedo responder con metricas soportadas de Tiendanube.",
+    "No tengo acceso a datos de Meta Ads ni a métricas publicitarias como ROAS. Por ahora solo puedo responder con métricas soportadas de Tiendanube.",
       buildUnsupportedRecommendations(),
     );
   }
@@ -420,7 +420,7 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
     normalized.includes("engagement")
   ) {
     return buildUnsupportedResponse(
-      "Eso hoy esta fuera de alcance. No tengo acceso a metricas de Instagram; solo puedo ayudarte con ventas, productos e inventario de Tiendanube.",
+    "Eso hoy está fuera de alcance. No tengo acceso a métricas de Instagram; solo puedo ayudarte con ventas, productos e inventario de Tiendanube.",
       buildUnsupportedRecommendations(),
     );
   }
@@ -639,7 +639,7 @@ function buildUnsupportedResponse(answer: string, recommendedActions = buildUnsu
   return {
     answer:
       answer.trim() ||
-      "Todavia no puedo responder esa pregunta con datos confiables. Puedo ayudarte con ventas, comparaciones entre periodos, productos top, resumen semanal y oportunidades de stock bajo.",
+      "Todavía no puedo responder esa pregunta con datos confiables. Puedo ayudarte con ventas, comparaciones entre períodos, productos top, resumen semanal y oportunidades de stock bajo.",
     confidence: "low",
     evidence: [],
     recommendedActions,
@@ -988,7 +988,7 @@ function buildNextWeekPrioritiesResponse(
   };
 }
 function actionStep(label: string, why: string, next: string) {
-  return `${label}. Por que: ${why}. Siguiente paso: ${next}.`;
+  return `${label}. Por qué: ${why}. Siguiente paso: ${next}.`;
 }
 
 function makeResponseActionable(response: AnalystResponse, primary: AnalystToolResult): AnalystResponse {
@@ -999,12 +999,12 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
         answer: `${response.answer} Próximo paso: mirá qué productos o pedidos explicaron ese pico diario.`,
         recommendedActions: [
           actionStep(
-            "Revisa el día pico con productos top",
+            "Revisá el día pico con productos top",
             "la explicación real suele estar en un producto o combinación de productos",
             "pregunta qué productos vendieron más en esa misma ventana",
           ),
           actionStep(
-            "Compara ese día contra el promedio",
+            "Compará ese día contra el promedio",
             "así distinguís evento puntual de tendencia",
             "si querés, pedime la tendencia diaria completa",
           ),
@@ -1036,21 +1036,21 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
 
       return {
         ...response,
-        answer: `${response.answer} Proximo paso: ${
+        answer: `${response.answer} Próximo paso: ${
           revenueDown
-            ? "identifica si la caida viene por menos pedidos, menor ticket promedio o menos unidades vendidas."
-            : "revisa que productos sostienen el crecimiento y si tienen stock suficiente."
+            ? "identificá si la caída viene por menos pedidos, menor ticket promedio o menos unidades vendidas."
+            : "revisá qué productos sostienen el crecimiento y si tienen stock suficiente."
         }`,
         recommendedActions: [
           actionStep(
-            revenueDown ? "Investiga la causa antes de descontar" : "Protege lo que esta funcionando",
-            revenueDown ? "un descuento sin diagnostico puede destruir margen" : "el crecimiento se corta rapido si falta stock",
-            ordersDown ? "revisa productos con menos pedidos y canales de venta" : "consulta productos top del mismo periodo",
+            revenueDown ? "Investigá la causa antes de descontar" : "Protegé lo que está funcionando",
+            revenueDown ? "un descuento sin diagnóstico puede destruir margen" : "el crecimiento se corta rápido si falta stock",
+            ordersDown ? "revisá productos con menos pedidos y canales de venta" : "consultá productos top del mismo período",
           ),
           actionStep(
-            "Cruza la comparacion con productos top",
-            "el total no dice que producto explica el cambio",
-            "pregunta que productos vendieron mas en esta misma ventana",
+            "Cruzá la comparación con productos top",
+            "el total no dice qué producto explica el cambio",
+            "preguntá qué productos vendieron más en esta misma ventana",
           ),
         ],
       };
@@ -1061,21 +1061,21 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
 
       return {
         ...response,
-        answer: `${response.answer} Proximo paso: ${
+        answer: `${response.answer} Próximo paso: ${
           hasOrders
-            ? "comparalo contra el periodo anterior para saber si es mejora, caida o estabilidad."
-            : "confirma sincronizacion y pedidos antes de tomar decisiones comerciales."
+            ? "comparalo contra el período anterior para saber si es mejora, caída o estabilidad."
+            : "confirmá sincronización y pedidos antes de tomar decisiones comerciales."
         }`,
         recommendedActions: [
           actionStep(
-            hasOrders ? "Compara esta ventana contra la anterior" : "Valida la sincronizacion",
+            hasOrders ? "Compará esta ventana contra la anterior" : "Validá la sincronización",
             hasOrders ? "un total aislado no muestra tendencia" : "sin pedidos sincronizados no hay lectura confiable",
-            hasOrders ? `pedi comparar los ultimos ${output.window.days} dias contra el periodo anterior` : "corre sync y volve a consultar ventas",
+            hasOrders ? `pedí comparar los últimos ${output.window.days} días contra el período anterior` : "corré sync y volvé a consultar ventas",
           ),
           actionStep(
-            "Separa volumen y ticket promedio",
-            "las acciones cambian si vendiste menos pedidos o si bajo el ticket",
-            "revisa productos top antes de definir una promo",
+            "Separá volumen y ticket promedio",
+            "las acciones cambian si vendiste menos pedidos o si bajó el ticket",
+            "revisá productos top antes de definir una promo",
           ),
         ],
       };
@@ -1105,26 +1105,26 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
       return {
         ...response,
         answer: topProduct
-          ? `${response.answer} Proximo paso: revisa stock y margen de ${topProduct.name} antes de empujar mas demanda.`
-          : `${response.answer} Proximo paso: valida la sincronizacion o usa una ventana mas larga.`,
+          ? `${response.answer} Próximo paso: revisá stock y margen de ${topProduct.name} antes de empujar más demanda.`
+          : `${response.answer} Próximo paso: validá la sincronización o usá una ventana más larga.`,
         recommendedActions: topProduct
           ? [
               actionStep(
-                `Revisa stock de ${topProduct.name}`,
-                "promocionar un ganador sin stock convierte demanda en frustracion",
-                "confirma unidades disponibles antes de crear una promo",
+                `Revisá stock de ${topProduct.name}`,
+                "promocionar un ganador sin stock convierte demanda en frustración",
+                "confirmá unidades disponibles antes de crear una promo",
               ),
               actionStep(
-                "Arma una accion comercial alrededor del top 3",
-                "los productos que ya tienen demanda son la palanca mas rapida",
-                "define promo, bundle o destaque para el producto con mejor stock y margen",
+                "Armá una acción comercial alrededor del top 3",
+                "los productos que ya tienen demanda son la palanca más rápida",
+                "definí promo, bundle o destaque para el producto con mejor stock y margen",
               ),
             ]
           : [
               actionStep(
-                "Valida la sincronizacion y la ventana",
+                "Validá la sincronización y la ventana",
                 "sin ventas de productos no hay ranking accionable",
-                "corre sync y consulta una ventana mas larga",
+                "corré sync y consultá una ventana más larga",
               ),
             ],
       };
@@ -1136,21 +1136,21 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
 
       return {
         ...response,
-        answer: `${response.answer} Proximo paso: ${
+        answer: `${response.answer} Próximo paso: ${
           topProduct
-            ? `revisa stock de ${topProduct.name} y decidi si conviene sostener o empujar esa demanda.`
-            : "revisa si hubo pedidos sincronizados esta semana."
+            ? `revisá stock de ${topProduct.name} y decidí si conviene sostener o empujar esa demanda.`
+            : "revisá si hubo pedidos sincronizados esta semana."
         }`,
         recommendedActions: [
           actionStep(
-            "Elige una prioridad semanal",
-            "el snapshot tiene que terminar en una decision, no en observacion",
-            revenueDown ? "investiga la caida empezando por productos top y pedidos perdidos" : "protege el crecimiento revisando stock del producto top",
+            "Elegí una prioridad semanal",
+            "el snapshot tiene que terminar en una decisión, no en observación",
+            revenueDown ? "investigá la caída empezando por productos top y pedidos perdidos" : "protegé el crecimiento revisando stock del producto top",
           ),
           actionStep(
-            topProduct ? `Revisa ${topProduct.name}` : "Revisa el catalogo con ventas recientes",
-            topProduct ? "es el producto que mas explica la semana" : "necesitas encontrar el primer producto accionable",
-            topProduct ? "confirma stock, margen y si merece una promo corta" : "consulta productos top de los ultimos 7 dias",
+            topProduct ? `Revisá ${topProduct.name}` : "Revisá el catálogo con ventas recientes",
+            topProduct ? "es el producto que más explica la semana" : "necesitás encontrar el primer producto accionable",
+            topProduct ? "confirmá stock, margen y si merece una promo corta" : "consultá productos top de los últimos 7 días",
           ),
         ],
       };
@@ -1163,28 +1163,28 @@ function makeResponseActionable(response: AnalystResponse, primary: AnalystToolR
       return {
         ...response,
         answer: topRisk
-          ? `${response.answer} Proximo paso: ${
-              topRisk.stock <= 0 ? "reponelo antes de empujar mas trafico." : "defini si hay que reponerlo antes de que corte ventas."
+          ? `${response.answer} Próximo paso: ${
+              topRisk.stock <= 0 ? "reponelo antes de empujar más tráfico." : "definí si hay que reponerlo antes de que corte ventas."
             }`
-          : `${response.answer} Proximo paso: proba un umbral de stock mas alto o mas dias de ventas recientes.`,
+          : `${response.answer} Próximo paso: probá un umbral de stock más alto o más días de ventas recientes.`,
         recommendedActions: topRisk
           ? [
               actionStep(
-                outOfStockItems.length > 0 ? "Repon primero las variantes sin stock" : `Revisa primero ${topRisk.name}`,
-                outOfStockItems.length > 0 ? "ya estan bloqueando ventas hoy" : "combina stock bajo con demanda reciente",
-                "ordena la reposicion por ventas recientes, no solo por stock disponible",
+                outOfStockItems.length > 0 ? "Reponé primero las variantes sin stock" : `Revisá primero ${topRisk.name}`,
+                outOfStockItems.length > 0 ? "ya están bloqueando ventas hoy" : "combiná stock bajo con demanda reciente",
+                "ordená la reposición por ventas recientes, no solo por stock disponible",
               ),
               actionStep(
                 "Pausa promociones sobre productos en riesgo",
-                "mas demanda sin stock suficiente puede cortar ventas y empeorar la experiencia",
-                "promociona alternativas con stock sano hasta reponer",
+                "más demanda sin stock suficiente puede cortar ventas y empeorar la experiencia",
+                "promocioná alternativas con stock sano hasta reponer",
               ),
             ]
           : [
               actionStep(
-                "Amplia el umbral o la ventana de analisis",
+                "Ampliá el umbral o la ventana de análisis",
                 "puede no haber riesgo con el umbral actual",
-                "proba un umbral de stock mas alto o una ventana de ventas mas larga",
+                "probá un umbral de stock más alto o una ventana de ventas más larga",
               ),
             ],
       };

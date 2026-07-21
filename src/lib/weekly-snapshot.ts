@@ -35,7 +35,7 @@ export function buildWeeklySnapshotCardContent(input: WeeklySnapshotCardInput): 
       : `Eso da ${revenueDelta} versus la semana anterior.`;
 
   const summary = [
-    `La facturacion llego a ${formatCurrency(input.metrics.revenue, currency)} en ${input.metrics.orderCount} pedidos durante ${input.windowLabel}.`,
+    `La facturación llegó a ${formatCurrency(input.metrics.revenue, currency)} en ${input.metrics.orderCount} pedidos durante ${input.windowLabel}.`,
     comparisonSentence,
     topProductLine,
   ].join(" ");

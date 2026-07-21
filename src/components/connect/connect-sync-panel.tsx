@@ -1,9 +1,11 @@
-﻿"use client";
+"use client";
 
 import { ArrowRight, Check, LoaderCircle, PackageSearch, ShoppingBag, Store, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 type ConnectSyncPanelProps = {
   autoRun: boolean;
@@ -42,7 +44,7 @@ const syncSteps = [
   },
   {
     icon: ShoppingBag,
-    label: "Items de pedidos",
+    label: "Ítems de pedidos",
     detail: "Cantidades, precios y totales por línea",
   },
   {
@@ -60,16 +62,20 @@ export function ConnectSyncPanel({
   storeId,
   variantCount,
 }: ConnectSyncPanelProps) {
+  const { messages } = useI18n();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [hasSynced, setHasSynced] = useState(productCount > 0 || orderCount > 0 || variantCount > 0);
-  const [feedback, setFeedback] = useState(hasSynced ? "Tu tienda ya tiene datos sincronizados." : "Listo para leer datos de tu tienda.");
+  const hasSynced = productCount > 0 || orderCount > 0 || variantCount > 0;
+  const [feedback, setFeedback] = useState<string>(hasSynced ? messages.sync.alreadySynced : messages.sync.ready);
+  const [localSyncRunning, setLocalSyncRunning] = useState(false);
   const hasAutoStartedRef = useRef(false);
+  const isSyncRunning = isPending || (localSyncRunning && !hasSynced);
 
   const activeStep = useMemo(() => {
     if (hasSynced) return syncSteps.length;
-    if (isPending) return 2;
+    if (isSyncRunning) return 2;
     return hasConnection ? 1 : 0;
-  }, [hasConnection, hasSynced, isPending]);
+  }, [hasConnection, hasSynced, isSyncRunning]);
 
   const progress = Math.round((activeStep / syncSteps.length) * 100);
   const onboardingHref = storeId
@@ -77,9 +83,9 @@ export function ConnectSyncPanel({
     : "/onboarding?flow=setup";
 
   const triggerSync = useCallback((options?: { auto?: boolean }) => {
-    if (!hasConnection || isPending) return;
+    if (!hasConnection || isSyncRunning) return;
 
-    setFeedback(options?.auto ? "Conectamos tu tienda. Estamos leyendo los primeros datos..." : "Leyendo datos sincronizados de Tiendanube...");
+    setFeedback(options?.auto ? messages.sync.autoReading : messages.sync.reading);
 
     startTransition(async () => {
       try {
@@ -91,17 +97,32 @@ export function ConnectSyncPanel({
         const payload = (await response.json()) as SyncResponse;
 
         if (!response.ok || !payload.ok) {
-          setFeedback(payload.message ?? "No pudimos completar la sincronización. Volvé a intentarlo.");
+          setLocalSyncRunning(false);
+          setFeedback(payload.message ?? messages.sync.failed);
           return;
         }
 
-        setHasSynced(true);
-        setFeedback(payload.message ?? "Sincronización completada.");
+        setLocalSyncRunning(response.status === 202);
+        setFeedback(payload.message ?? (response.status === 202 ? messages.sync.syncing : messages.sync.completed));
+        router.refresh();
       } catch {
-        setFeedback("La solicitud de sincronización falló antes de llegar al servidor.");
+        setLocalSyncRunning(false);
+        setFeedback(messages.sync.requestFailed);
       }
     });
-  }, [hasConnection, isPending, startTransition, storeId]);
+  }, [hasConnection, isSyncRunning, messages.sync, router, startTransition, storeId]);
+
+  useEffect(() => {
+    if (!localSyncRunning) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      router.refresh();
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [localSyncRunning, router]);
 
   useEffect(() => {
     if (!autoRun || !hasConnection || hasAutoStartedRef.current || hasSynced) return;
@@ -124,7 +145,7 @@ export function ConnectSyncPanel({
       <div className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-card">
         {syncSteps.map((step, index) => {
           const isDone = hasSynced || index < activeStep - 1;
-          const isActive = !hasSynced && isPending && index === activeStep - 1;
+          const isActive = !hasSynced && isSyncRunning && index === activeStep - 1;
           const isWaiting = !isDone && !isActive;
 
           return (
@@ -160,16 +181,15 @@ export function ConnectSyncPanel({
           <Button
             type="button"
             onClick={() => triggerSync()}
-            disabled={!hasConnection || isPending}
+            disabled={!hasConnection || isSyncRunning}
             size="lg"
             className="shadow-card"
           >
-            {isPending ? "Leyendo tienda..." : "Leer tienda ahora"}
-            {isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            {isSyncRunning ? "Continuar onboarding" : "Leer tienda ahora"}
+            {!isSyncRunning ? <ArrowRight className="h-4 w-4" /> : null}
           </Button>
         )}
       </div>
     </section>
   );
 }
-

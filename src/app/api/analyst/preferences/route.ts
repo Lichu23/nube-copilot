@@ -36,7 +36,7 @@ export async function PUT(request: Request) {
   const storeId = getStoreIdFromUrl(request);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: "Preferencias invalidas.", ok: false }, { status: 400 });
+    return NextResponse.json({ message: "Preferencias inválidas.", ok: false }, { status: 400 });
   }
 
   try {

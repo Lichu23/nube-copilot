@@ -235,7 +235,7 @@ export default async function DashboardPage({
                   : latestSyncStatus === "failed"
                     ? `La última sincronización falló. ${summary.latestSyncJob?.errorMessage ?? "Revisá el detalle del job."}`
                     : summary.connection
-                      ? "Los insights van a mejorar ahora que productos y pedidos estan entrando en Postgres."
+                      ? "Los insights van a mejorar ahora que productos y pedidos están entrando en Postgres."
                       : "Conectá primero una tienda y luego sincronizá productos para empezar a construir insights.")
             }
             chatHref={snapshotChatHref}
