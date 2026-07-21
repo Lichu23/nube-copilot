@@ -108,11 +108,8 @@ export function SyncControl({
           const nextQuery = nextParams.toString();
           router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
         }
-        if (onRefreshSummary) {
-          onRefreshSummary();
-        } else {
-          router.refresh();
-        }
+        onRefreshSummary?.();
+        router.refresh();
       } catch {
         setFeedback(controller.signal.aborted ? messages.sync.cancelled : messages.sync.requestFailed);
       } finally {
@@ -129,11 +126,8 @@ export function SyncControl({
     }
 
     const interval = window.setInterval(() => {
-      if (onRefreshSummary) {
-        onRefreshSummary();
-      } else {
-        router.refresh();
-      }
+      onRefreshSummary?.();
+      router.refresh();
     }, 3000);
 
     return () => window.clearInterval(interval);
