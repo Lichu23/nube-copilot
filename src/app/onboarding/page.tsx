@@ -29,7 +29,12 @@ export default async function OnboardingPage({
   const activeStoreId = storeId ?? memberships[0]?.storeId;
 
   if (user && activeStoreId) {
-    await upsertStoreMembershipForUser({ storeId: activeStoreId, userId: user.id });
+    await upsertStoreMembershipForUser({
+      displayName: typeof user.user_metadata?.name === "string" ? user.user_metadata.name : null,
+      email: user.email,
+      storeId: activeStoreId,
+      userId: user.id,
+    });
   }
 
   const summary = activeStoreId ? await getDashboardSyncSummary(activeStoreId) : null;

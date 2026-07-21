@@ -9,6 +9,7 @@ import {
   customers,
   orderItems,
   orders,
+  profiles,
   productVariants,
   products,
   storeMemberships,
@@ -124,36 +125,58 @@ export async function persistTiendanubeConnection(input: PersistTiendanubeConnec
 }
 
 export async function upsertStoreMembershipForUser(input: {
+  email?: string | null;
+  displayName?: string | null;
   role?: string;
   storeId: string;
   userId: string;
 }) {
   const db = getDb();
   const now = new Date();
+  const profileUpdate = {
+    ...(input.displayName ? { displayName: input.displayName } : {}),
+    ...(input.email ? { email: input.email } : {}),
+    updatedAt: now,
+  };
 
-  const [membership] = await db
-    .insert(storeMemberships)
-    .values({
-      role: input.role ?? "owner",
-      storeId: input.storeId,
-      updatedAt: now,
-      userId: input.userId,
-    })
-    .onConflictDoUpdate({
-      target: [storeMemberships.userId, storeMemberships.storeId],
-      set: {
-        role: input.role ?? "owner",
+  return db.transaction(async (tx) => {
+    await tx
+      .insert(profiles)
+      .values({
+        displayName: input.displayName ?? null,
+        email: input.email ?? null,
+        id: input.userId,
         updatedAt: now,
-      },
-    })
-    .returning({
-      id: storeMemberships.id,
-      role: storeMemberships.role,
-      storeId: storeMemberships.storeId,
-      userId: storeMemberships.userId,
-    });
+      })
+      .onConflictDoUpdate({
+        target: profiles.id,
+        set: profileUpdate,
+      });
 
-  return membership;
+    const [membership] = await tx
+      .insert(storeMemberships)
+      .values({
+        role: input.role ?? "owner",
+        storeId: input.storeId,
+        updatedAt: now,
+        userId: input.userId,
+      })
+      .onConflictDoUpdate({
+        target: [storeMemberships.userId, storeMemberships.storeId],
+        set: {
+          role: input.role ?? "owner",
+          updatedAt: now,
+        },
+      })
+      .returning({
+        id: storeMemberships.id,
+        role: storeMemberships.role,
+        storeId: storeMemberships.storeId,
+        userId: storeMemberships.userId,
+      });
+
+    return membership;
+  });
 }
 
 export async function getActiveTiendanubeConnection(storeId?: string) {
