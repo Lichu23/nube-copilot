@@ -652,6 +652,24 @@ export async function createSyncJob(storeId: string, type: string, metadata?: Re
   return job;
 }
 
+export async function getRunningSyncJob(storeId: string) {
+  const db = getDb();
+  const [job] = await db
+    .select({
+      id: syncJobs.id,
+      metadata: syncJobs.metadata,
+      startedAt: syncJobs.startedAt,
+      status: syncJobs.status,
+      type: syncJobs.type,
+    })
+    .from(syncJobs)
+    .where(and(eq(syncJobs.storeId, storeId), eq(syncJobs.status, "running")))
+    .orderBy(desc(syncJobs.startedAt))
+    .limit(1);
+
+  return job ?? null;
+}
+
 export async function finishSyncJob(
   jobId: string,
   input: {

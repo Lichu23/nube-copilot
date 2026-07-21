@@ -105,7 +105,7 @@ This is the real launch gate.
 - [ ] Add user-to-store membership and authorization checks.
 - [ ] Make all store-scoped routes require explicit tenant context.
 - [ ] Replace manual-only sync with job-based initial + incremental sync.
-  - [ ] First slice: add sync_state watermarks and make repeated syncs incremental for orders.
+  - [ ] First slice: add sync_state watermarks, make repeated syncs incremental for orders, and prevent duplicate running sync jobs.
   - [ ] Second slice: move long-running sync work behind queued/background job status.
   - [ ] Third slice: add Tiendanube webhooks for product/order updates.
 - [ ] Implement Tiendanube webhook ingestion.

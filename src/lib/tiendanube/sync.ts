@@ -2,6 +2,7 @@
   createSyncJob,
   finishSyncJob,
   getActiveTiendanubeConnection,
+  getRunningSyncJob,
   getSyncState,
   upsertOrdersWithItems,
   upsertProductsWithVariants,
@@ -98,6 +99,35 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
     getSyncState(connection.storeId, "orders"),
   ]);
   const syncMode: SyncMode = productState?.lastSyncedAt && orderState?.lastSyncedAt ? "incremental" : "initial";
+  const runningJob = await getRunningSyncJob(connection.storeId);
+
+  if (runningJob) {
+    console.info("[tiendanube-sync] skipped duplicate sync request", {
+      existingJobId: runningJob.id,
+      existingJobStartedAt: runningJob.startedAt?.toISOString() ?? null,
+      existingJobType: runningJob.type,
+      requestedStoreId: input.storeId ?? null,
+      resolvedStoreId: connection.storeId,
+      syncMode,
+    });
+
+    return {
+      data: {
+        existingJobId: runningJob.id,
+        existingJobStartedAt: runningJob.startedAt?.toISOString() ?? null,
+        existingJobType: runningJob.type,
+        storeId: connection.storeId,
+        storeName: connection.storeName,
+        syncMode,
+      },
+      jobId: runningJob.id,
+      message: "Ya hay una sincronización en curso. Esperá a que termine antes de iniciar otra.",
+      ok: true,
+      status: 202,
+      syncMode,
+    };
+  }
+
   const syncStartedAt = new Date();
   const encryptionSecret = getTiendanubeOAuthConfig({ requireEncryptionSecret: true }).encryptionSecret!;
   const accessToken = decryptSecret(connection.accessTokenEncrypted, encryptionSecret);
