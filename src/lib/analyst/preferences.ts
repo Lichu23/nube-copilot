@@ -96,44 +96,11 @@ export function getPreferenceSummary(preferences: AnalystPreferences) {
 }
 
 export function getPersonalizedPrompts(preferences: AnalystPreferences) {
-  const normalizedGoal = preferences.goal.toLowerCase();
-  const normalizedFriction = preferences.friction.toLowerCase();
-
-  if (normalizedGoal.includes("ingresos")) {
-    return [
-      "¿Qué productos explican el crecimiento de ingresos esta semana?",
-      "¿Qué canal o categoría debería priorizar para vender más?",
-      "¿Dónde cayó el ticket promedio y qué puedo hacer?",
-    ];
-  }
-
-  if (normalizedGoal.includes("stock") || normalizedFriction.includes("reponer")) {
-    return [
-      "¿Qué productos tengo que reponer primero?",
-      "¿Qué variantes están en riesgo de quiebre de stock?",
-      "¿Qué productos puedo promocionar sin comprometer inventario?",
-    ];
-  }
-
-  if (normalizedGoal.includes("recompra")) {
-    return [
-      "¿Qué señales muestran clientes con potencial de recompra?",
-      "¿Qué productos podrían funcionar para una campaña de recompra?",
-      "¿Qué cambió en los pedidos de clientes recurrentes?",
-    ];
-  }
-
-  if (normalizedGoal.includes("inventario lento") || normalizedFriction.includes("no se mueven")) {
-    return [
-      "¿Qué productos no se vendieron en los últimos 30 días?",
-      "¿Qué debería poner en promoción para liberar stock?",
-      "¿Cuánto capital tengo atado en slow movers?",
-    ];
-  }
+  void preferences;
 
   return [
-    "¿Qué cambió en las ventas esta semana?",
-    "¿Qué productos merecen mi atención hoy?",
-    "¿Qué acción concreta debería tomar primero?",
+    "¿Cuáles fueron los 5 productos más vendidos en los últimos 30 días?",
+    "¿Qué productos necesito reponer primero?",
+    "¿Qué productos no se vendieron en los últimos 30 días?",
   ];
 }

@@ -36,32 +36,28 @@ type ChatPanelProps = {
 
 const emptyStatePrompts = [
   {
-    description: "Encontrá productos quietos y capital inmovilizado.",
+    description: "Detectá rápido qué productos empujan las ventas.",
     icon: BarChart3,
-    prompt: "¿Qué productos no se vendieron en los últimos 30 días?",
+    prompt: "¿Cuáles fueron los 5 productos más vendidos en los últimos 30 días?",
   },
   {
-    description: "Definí qué conviene liquidar primero.",
+    description: "Priorizá reposición antes de quedarte sin stock.",
     icon: Store,
-    prompt: "¿Qué debería poner en promoción para liberar stock?",
+    prompt: "¿Qué productos necesito reponer primero?",
   },
   {
-    description: "Calculá el impacto financiero del inventario lento.",
+    description: "Encontrá inventario lento para decidir qué mover.",
     icon: LayoutDashboard,
-    prompt: "¿Cuánto capital tengo atado en slow movers?",
+    prompt: "¿Qué productos no se vendieron en los últimos 30 días?",
   },
 ];
 
 function buildPromptCards(preferences: AnalystPreferences) {
   const icons = [BarChart3, Store, LayoutDashboard];
+  const descriptions = emptyStatePrompts.map((item) => item.description);
 
   return getPersonalizedPrompts(preferences).map((prompt, index) => ({
-    description:
-      index === 0
-        ? `Prioridad: ${preferences.goal.toLowerCase()}.`
-        : index === 1
-          ? `Foco operativo: ${preferences.friction.toLowerCase()}.`
-          : `Tono ${preferences.tone.toLowerCase()} para decidir más rápido.`,
+    description: descriptions[index] ?? "Elegí una pregunta para empezar.",
     icon: icons[index] ?? BarChart3,
     prompt,
   }));
