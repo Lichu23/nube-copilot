@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { formatDateTimeLabel } from "@/lib/formatting";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 type SyncControlProps = {
   autoRun?: boolean;
@@ -21,6 +22,7 @@ type SyncControlProps = {
 type SyncResponse = {
   message?: string;
   ok?: boolean;
+  syncMode?: "initial" | "incremental";
 };
 
 export function SyncControl({
@@ -36,6 +38,7 @@ export function SyncControl({
   variantCount,
   variant = "card",
 }: SyncControlProps) {
+  const { messages } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -73,7 +76,7 @@ export function SyncControl({
     const controller = new AbortController();
     activeRequestRef.current = controller;
 
-    setFeedback(options?.auto ? "Conectamos tu tienda. Estamos corriendo la primera sincronizacion..." : "Corriendo sincronizacion...");
+    setFeedback(options?.auto ? messages.sync.runningInitial : messages.sync.runningIncremental);
 
     startTransition(async () => {
       try {
@@ -89,7 +92,7 @@ export function SyncControl({
         });
 
         const payload = (await response.json()) as SyncResponse;
-        setFeedback(payload.message ?? (payload.ok ? "Sincronizacion completada." : "La sincronizacion fallo."));
+        setFeedback(payload.message ?? (payload.ok ? messages.sync.completed : messages.sync.failed));
         if (options?.auto) {
           const nextParams = new URLSearchParams(searchParams.toString());
           nextParams.delete("autoSync");
@@ -98,14 +101,14 @@ export function SyncControl({
         }
         router.refresh();
       } catch {
-        setFeedback(controller.signal.aborted ? "Sincronizacion cancelada." : "La solicitud de sincronizacion fallo antes de llegar al servidor.");
+        setFeedback(controller.signal.aborted ? messages.sync.cancelled : messages.sync.requestFailed);
       } finally {
         if (activeRequestRef.current === controller) {
           activeRequestRef.current = null;
         }
       }
     });
-  }, [hasConnection, pathname, router, searchParams, startTransition, storeId]);
+  }, [hasConnection, messages.sync, pathname, router, searchParams, startTransition, storeId]);
 
   useEffect(() => {
     if (!autoRun || !hasConnection || hasAutoStartedRef.current) {
@@ -137,13 +140,17 @@ export function SyncControl({
       <section className="rounded-2xl border border-border bg-background p-3">
         <div className="space-y-3 text-xs">
           <p className={statusTone}>
-            Estado:{" "}
+            {messages.sync.status}:{" "}
             <span className="font-medium">
-              {isPending ? "corriendo" : lastSyncOutcome === "partial" ? "parcial" : (lastSyncStatus ?? "idle")}
+              {isPending
+                ? messages.sync.runningStatus
+                : lastSyncOutcome === "partial"
+                  ? messages.sync.partialStatus
+                  : (lastSyncStatus ?? messages.sync.idleStatus)}
             </span>
           </p>
           <p className="text-zinc-600">
-            Ultima actualizacion:{" "}
+            {messages.sync.lastUpdate}:{" "}
             <span className="font-medium text-zinc-950">{lastSyncLabel}</span>
           </p>
           <button
@@ -152,7 +159,7 @@ export function SyncControl({
             disabled={!hasConnection || isPending}
             className="inline-flex w-full items-center justify-center rounded-xl btn-ink px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
-            {isPending ? "Sincronizando..." : "Sincronizar ahora"}
+            {isPending ? messages.sync.syncing : messages.sync.syncNow}
           </button>
         </div>
       </section>
@@ -164,26 +171,33 @@ export function SyncControl({
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium text-zinc-500">Sincronizacion</p>
-            <h2 className="text-lg font-semibold">Traer datos de Tiendanube</h2>
+            <p className="text-sm font-medium text-zinc-500">{messages.sync.syncLabel}</p>
+            <h2 className="text-lg font-semibold">{messages.sync.syncTitle}</h2>
           </div>
           <p className="text-sm text-zinc-600">
             {hasConnection
               ? autoRun && isPending
-                ? "Tu tienda se conecto bien. Estamos sincronizando la primera importacion de catalogo automaticamente."
-                : "Corre la sincronizacion inicial despues de agregar productos en tu tienda conectada."
-              : "Conecta primero una tienda Tiendanube para habilitar la sincronizacion."}
+                ? messages.sync.initialDescription
+                : messages.sync.incrementalDescription
+              : messages.sync.connectFirst}
           </p>
           <div className="text-sm text-zinc-600">
             <p>
-              Catalogo sincronizado: <span className="font-medium text-zinc-950">{productCount}</span> productos y{" "}
-              <span className="font-medium text-zinc-950">{variantCount}</span> variantes
+              {messages.sync.catalogSynced}:{" "}
+              <span className="font-medium text-zinc-950">
+                {messages.sync.productsAndVariants
+                  .replace("{products}", String(productCount))
+                  .replace("{variants}", String(variantCount))}
+              </span>
             </p>
             <p>
-              Pedidos sincronizados: <span className="font-medium text-zinc-950">{orderCount}</span> pedidos
+              {messages.sync.ordersSynced}:{" "}
+              <span className="font-medium text-zinc-950">
+                {messages.sync.orders.replace("{orders}", String(orderCount))}
+              </span>
             </p>
             <p>
-              Ultima actualizacion:{" "}
+              {messages.sync.lastUpdate}:{" "}
               <span className="font-medium text-zinc-950">{lastSyncLabel}</span>
             </p>
           </div>
@@ -195,15 +209,19 @@ export function SyncControl({
           disabled={!hasConnection || isPending}
           className="inline-flex items-center justify-center rounded-xl btn-ink px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
-          {isPending ? "Sincronizando..." : "Sincronizar ahora"}
+          {isPending ? messages.sync.syncing : messages.sync.syncNow}
         </button>
       </div>
 
       <div className="mt-4 rounded-xl border border-black/5 bg-zinc-50 px-4 py-3 text-sm">
         <p className={statusTone}>
-          Estado:{" "}
+          {messages.sync.status}:{" "}
           <span className="font-medium">
-            {isPending ? "corriendo" : lastSyncOutcome === "partial" ? "parcial" : (lastSyncStatus ?? "idle")}
+            {isPending
+              ? messages.sync.runningStatus
+              : lastSyncOutcome === "partial"
+                ? messages.sync.partialStatus
+                : (lastSyncStatus ?? messages.sync.idleStatus)}
           </span>
         </p>
         <p className="mt-1 text-zinc-600">{feedback}</p>

@@ -11,11 +11,11 @@ import {
 } from "@/lib/db/client";
 
 const reasonCopy: Record<string, string> = {
-  auth: "Tenés que iniciár sesión en la app antes de conectar una tienda.",
-  config: "Falta configuración de OAuth o no es valida. Agrega las variables necesarias antes de volver a intentar.",
-  exchange: "El callback llego a la app, pero fallo el intercambio del token o la persistencia.",
-  ownership: "Esta cuenta ya esta vinculada a otra tienda. Por ahora la app permite una sola tienda por usuario.",
-  state: "El estado del callback de OAuth faltaba o no era valido, asi que rechazamos la solicitud.",
+  auth: "Tenés que iniciar sesión en la app antes de conectar una tienda.",
+  config: "Falta configuración de OAuth o no es válida. Agregá las variables necesarias antes de volver a intentar.",
+  exchange: "El callback llegó a la app, pero falló el intercambio del token o la persistencia.",
+  ownership: "Esta cuenta ya está vinculada a otra tienda. Por ahora la app permite una sola tienda por usuario.",
+  state: "El estado del callback de OAuth faltaba o no era válido, así que rechazamos la solicitud.",
 };
 
 function BrandHeader() {
@@ -29,7 +29,7 @@ function BrandHeader() {
       </Link>
       <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
         <LockKeyhole className="h-4 w-4" />
-        Cifrado en transito
+        Cifrado en tránsito
       </p>
     </header>
   );
@@ -45,7 +45,7 @@ function ConnectCard({ errorReason }: { errorReason?: string }) {
         <div>
           <h2 className="text-xl font-semibold text-foreground">Tiendanube</h2>
           <p className="mt-2 text-base leading-7 text-muted-foreground">
-            Te vamos a redirigir para autorizar NubeCopilot. Tarda unos segundos y volves automaticamente.
+            Te vamos a redirigir para autorizar NubeCopilot. Tarda unos segundos y volvés automáticamente.
           </p>
         </div>
       </div>
@@ -53,7 +53,7 @@ function ConnectCard({ errorReason }: { errorReason?: string }) {
       <div className="mt-7 rounded-[1.25rem] border border-border bg-surface-muted p-5">
         {[
           "Leer perfil de tienda, productos, variantes e inventario",
-          "Leer pedidos e items de pedidos de los ultimos 90 dias",
+          "Leer pedidos e ítems de pedidos de los últimos 90 días",
           "Anonimizar emails y teléfonos de clientes antes de guardarlos",
         ].map((item) => (
           <p key={item} className="flex gap-3 py-2 text-base text-foreground">
@@ -65,7 +65,7 @@ function ConnectCard({ errorReason }: { errorReason?: string }) {
 
       {errorReason ? (
         <div className="mt-5 rounded-[1rem] border border-destructive/25 bg-red-50 p-4 text-sm text-red-900">
-          <p className="font-semibold">La conexión fallo</p>
+          <p className="font-semibold">La conexión falló</p>
           <p className="mt-1">{reasonCopy[errorReason] ?? "Error desconocido en el callback. Revisá los logs del servidor."}</p>
         </div>
       ) : null}
@@ -130,10 +130,10 @@ export default async function ConnectPage({
           <div className="mx-auto mb-8 max-w-2xl rounded-[1.25rem] border border-border bg-surface-muted p-5">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Conexión activa</p>
             <h3 className="mt-3 text-xl font-semibold text-foreground">
-              {summary?.connection?.storeName ?? "Tu tienda"} ya esta conectada.
+              {summary?.connection?.storeName ?? "Tu tienda"} ya está conectada.
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Si querés autorizar otra cuenta de Tiendanube, iniciá de nuevo el flujo con el boton de abajo.
+              Si querés autorizar otra cuenta de Tiendanube, iniciá de nuevo el flujo con el botón de abajo.
             </p>
           </div>
         ) : null}

@@ -4,6 +4,7 @@ import { ArrowRight, Check, LoaderCircle, PackageSearch, ShoppingBag, Store, Use
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 type ConnectSyncPanelProps = {
   autoRun: boolean;
@@ -60,9 +61,10 @@ export function ConnectSyncPanel({
   storeId,
   variantCount,
 }: ConnectSyncPanelProps) {
+  const { messages } = useI18n();
   const [isPending, startTransition] = useTransition();
   const [hasSynced, setHasSynced] = useState(productCount > 0 || orderCount > 0 || variantCount > 0);
-  const [feedback, setFeedback] = useState(hasSynced ? "Tu tienda ya tiene datos sincronizados." : "Listo para leer datos de tu tienda.");
+  const [feedback, setFeedback] = useState<string>(hasSynced ? messages.sync.alreadySynced : messages.sync.ready);
   const hasAutoStartedRef = useRef(false);
 
   const activeStep = useMemo(() => {
@@ -79,7 +81,7 @@ export function ConnectSyncPanel({
   const triggerSync = useCallback((options?: { auto?: boolean }) => {
     if (!hasConnection || isPending) return;
 
-    setFeedback(options?.auto ? "Conectamos tu tienda. Estamos leyendo los primeros datos..." : "Leyendo datos sincronizados de Tiendanube...");
+    setFeedback(options?.auto ? messages.sync.autoReading : messages.sync.reading);
 
     startTransition(async () => {
       try {
@@ -91,17 +93,17 @@ export function ConnectSyncPanel({
         const payload = (await response.json()) as SyncResponse;
 
         if (!response.ok || !payload.ok) {
-          setFeedback(payload.message ?? "No pudimos completar la sincronización. Volvé a intentarlo.");
+          setFeedback(payload.message ?? messages.sync.failed);
           return;
         }
 
         setHasSynced(true);
-        setFeedback(payload.message ?? "Sincronización completada.");
+        setFeedback(payload.message ?? messages.sync.completed);
       } catch {
-        setFeedback("La solicitud de sincronización falló antes de llegar al servidor.");
+        setFeedback(messages.sync.requestFailed);
       }
     });
-  }, [hasConnection, isPending, startTransition, storeId]);
+  }, [hasConnection, isPending, messages.sync, startTransition, storeId]);
 
   useEffect(() => {
     if (!autoRun || !hasConnection || hasAutoStartedRef.current || hasSynced) return;

@@ -12,7 +12,7 @@ export function buildLowStockAlert(input: LowStockAlertInput) {
 
   if (!topRisk) {
     return {
-      body: `No hay variantes por debajo de ${input.stockThreshold} unidades con la configuracion actual.`,
+      body: `No hay variantes por debajo de ${input.stockThreshold} unidades con la configuración actual.`,
       evidence: [],
       severity: "ok" as const,
       title: "Stock bajo",
@@ -22,8 +22,8 @@ export function buildLowStockAlert(input: LowStockAlertInput) {
   return {
     body:
       outOfStockCount > 0
-        ? `${outOfStockCount} variante${outOfStockCount === 1 ? " ya esta" : "s ya estan"} sin stock. Repon primero ${topRisk.name}.`
-        : `${input.rows.length} variante${input.rows.length === 1 ? " esta" : "s estan"} por debajo de ${input.stockThreshold} unidades. Revisa primero ${topRisk.name}.`,
+        ? `${outOfStockCount} variante${outOfStockCount === 1 ? " ya está" : "s ya están"} sin stock. Reponé primero ${topRisk.name}.`
+        : `${input.rows.length} variante${input.rows.length === 1 ? " está" : "s están"} por debajo de ${input.stockThreshold} unidades. Revisá primero ${topRisk.name}.`,
     evidence: input.rows.slice(0, 3).map((row) => ({
       label: row.sku ? `${row.name} (${row.sku})` : row.name,
       value: `${row.stock} en stock - ${row.recentUnitsSold} vendidas en ${input.recentDays}d`,

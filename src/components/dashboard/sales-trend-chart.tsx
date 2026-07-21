@@ -41,16 +41,16 @@ export function SalesTrendChart({ data }: SalesTrendChartProps) {
         </div>
         {maxRevenue > 0 ? (
           <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-            Maximo {formatCurrency(maxRevenue, null)}
+            Máximo {formatCurrency(maxRevenue, null)}
           </span>
         ) : null}
       </div>
 
       {data.length === 0 ? (
         <div className="mt-4 flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-zinc-50 px-6 text-center">
-          <p className="text-sm font-semibold text-zinc-800">Todavia no hay ventas recientes para graficar.</p>
+          <p className="text-sm font-semibold text-zinc-800">Todavía no hay ventas recientes para graficar.</p>
           <p className="mt-2 max-w-md text-sm text-zinc-500">
-            Sin pedidos sincronizados en esta ventana, el gráfico queda vacío. Sincronizá la tienda o cambia la ventana de comparación.
+            Sin pedidos sincronizados en esta ventana, el gráfico queda vacío. Sincronizá la tienda o cambiá la ventana de comparación.
           </p>
         </div>
       ) : (

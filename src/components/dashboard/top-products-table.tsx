@@ -1,4 +1,4 @@
-import type { TopProductRow } from "@/lib/db/queries/metrics";
+﻿import type { TopProductRow } from "@/lib/db/queries/metrics";
 import { formatCurrency } from "@/lib/formatting";
 
 type TopProductsTableProps = {
@@ -9,7 +9,7 @@ type TopProductsTableProps = {
 
 export function TopProductsTable({
   currency,
-  helperLabel = "Esperando la sincronizacion inicial",
+  helperLabel = "Esperando la sincronización inicial",
   rows,
 }: TopProductsTableProps) {
   const hasRows = rows.length > 0;
@@ -47,9 +47,9 @@ export function TopProductsTable({
             ) : (
               <tr>
                 <td colSpan={3} className="px-4 py-10 text-center">
-                  <p className="font-medium text-zinc-800">Todavia no hay productos con ventas en esta ventana.</p>
+                  <p className="font-medium text-zinc-800">Todavía no hay productos con ventas en esta ventana.</p>
                   <p className="mt-2 text-sm text-zinc-500">
-                    Sincronizá pedidos o cambia la ventana de comparación para llenar este ranking.
+                    Sincronizá pedidos o cambiá la ventana de comparación para llenar este ranking.
                   </p>
                 </td>
               </tr>

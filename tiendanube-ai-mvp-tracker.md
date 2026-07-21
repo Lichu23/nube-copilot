@@ -79,7 +79,7 @@ This is the real launch gate.
 | Connect flow | Keep the connect screen explicit even when a store is already linked; do not auto-skip authorization just because a previous connection exists. |
 | Auth | Add app authentication for merchants/admins; do not rely on raw Tiendanube OAuth alone for SaaS access. |
 | Route protection | Lock down `/api/chat`, `/api/sync/run`, saved-report actions, and any store-scoped read/write routes. |
-| Sync reliability | Move initial sync and incremental sync work into a retryable job model with status, error, and cursor tracking. |
+| Sync reliability | Move initial sync and incremental sync work into a retryable job model with status, error, and cursor tracking. First optimization slice: use sync_state watermarks so repeated manual syncs fetch only recent order changes instead of re-importing the full 90-day window. |
 | Webhooks | Replace the 501 webhook scaffold with real Tiendanube webhook handling for product/order/customer changes. |
 | Observability | Add error tracking, request logging, and sync job visibility for production support. |
 | UX hardening | Remove or gate debug/evidence panels and any developer-only controls from the default production UI. |
@@ -105,6 +105,9 @@ This is the real launch gate.
 - [ ] Add user-to-store membership and authorization checks.
 - [ ] Make all store-scoped routes require explicit tenant context.
 - [ ] Replace manual-only sync with job-based initial + incremental sync.
+  - [ ] First slice: add sync_state watermarks and make repeated syncs incremental for orders.
+  - [ ] Second slice: move long-running sync work behind queued/background job status.
+  - [ ] Third slice: add Tiendanube webhooks for product/order updates.
 - [ ] Implement Tiendanube webhook ingestion.
 - [ ] Add retry, dead-letter, and observability for sync/webhook failures.
 - [ ] Remove debug evidence panels from the default production experience.

@@ -55,7 +55,7 @@ function buildChartModel(item: ToolResult): ChartModel | null {
         { label: currentLabel, value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
         { label: previousLabel, value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
-      subtitle: "Comparacion de facturacion con metricas SQL reales.",
+    subtitle: "Comparación de facturación con métricas SQL reales.",
       title: "Facturación por periodo",
     };
   }
@@ -207,8 +207,8 @@ function buildChartModel(item: ToolResult): ChartModel | null {
         { label: "Últimos 7 días", value: currentRevenue, valueLabel: formatCurrency(currentRevenue, currency) },
         { label: "7 días anteriores", value: previousRevenue, valueLabel: formatCurrency(previousRevenue, currency) },
       ],
-      subtitle: "Tendencia de facturacion usada por el resumen semanal.",
-      title: "Tendencia semanal de facturacion",
+    subtitle: "Tendencia de facturación usada por el resumen semanal.",
+    title: "Tendencia semanal de facturación",
     };
   }
 

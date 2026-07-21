@@ -14,6 +14,7 @@ import {
   products,
   storeMemberships,
   storeConnections,
+  syncState,
   stores,
   savedReports,
   syncJobs,
@@ -670,6 +671,51 @@ export async function finishSyncJob(
       status: input.status,
     })
     .where(eq(syncJobs.id, jobId));
+}
+
+export type SyncResource = "orders" | "products";
+
+export async function getSyncState(storeId: string, resource: SyncResource) {
+  const db = getDb();
+  const [state] = await db
+    .select({
+      cursor: syncState.cursor,
+      lastSyncedAt: syncState.lastSyncedAt,
+      resource: syncState.resource,
+    })
+    .from(syncState)
+    .where(and(eq(syncState.storeId, storeId), eq(syncState.resource, resource)))
+    .limit(1);
+
+  return state ?? null;
+}
+
+export async function upsertSyncState(input: {
+  cursor?: string | null;
+  lastSyncedAt: Date;
+  resource: SyncResource;
+  storeId: string;
+}) {
+  const db = getDb();
+  const now = new Date();
+
+  await db
+    .insert(syncState)
+    .values({
+      cursor: input.cursor ?? null,
+      lastSyncedAt: input.lastSyncedAt,
+      resource: input.resource,
+      storeId: input.storeId,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [syncState.storeId, syncState.resource],
+      set: {
+        cursor: input.cursor ?? null,
+        lastSyncedAt: input.lastSyncedAt,
+        updatedAt: now,
+      },
+    });
 }
 
 export async function persistChatExchange(input: {

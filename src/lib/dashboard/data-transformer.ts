@@ -122,25 +122,38 @@ export function getLatestSyncOutcome(summary: DashboardSyncSummary) {
 export function getLatestSyncMessage(summary: DashboardSyncSummary) {
   const latestSyncStatus = summary.latestSyncJob?.status ?? null;
   const latestSyncOutcome = getLatestSyncOutcome(summary);
+  const metadata =
+    summary.latestSyncJob?.metadata && typeof summary.latestSyncJob.metadata === "object"
+      ? (summary.latestSyncJob.metadata as Record<string, unknown>)
+      : null;
+  const syncMode = metadata?.syncMode === "incremental" ? "incremental" : "initial";
   const counts = getLatestImportedCounts(summary);
 
   if (!summary.connection) {
-    return "Todavia no hay una conexion Tiendanube.";
+    return "Todavía no hay una conexión Tiendanube.";
   }
 
   if (latestSyncOutcome === "partial") {
-    return `La ultima sincronizacion quedo parcial: guardamos ${counts.productCount} productos, ${counts.variantCount} variantes y ${counts.orderCount} pedidos, pero fallo al leer pedidos completos.`;
+    if (syncMode === "incremental") {
+      return `La última sincronización incremental quedó parcial: conservamos el catálogo existente, pero falló al leer pedidos recientes.`;
+    }
+
+    return `La última sincronización quedó parcial: guardamos ${counts.productCount} productos, ${counts.variantCount} variantes y ${counts.orderCount} pedidos, pero falló al leer pedidos completos.`;
   }
 
   if (latestSyncStatus === "succeeded") {
-    return `La ultima sincronizacion trajo ${counts.productCount} productos, ${counts.variantCount} variantes y ${counts.orderCount} pedidos.`;
+    if (syncMode === "incremental") {
+      return `La última sincronización incremental trajo ${counts.orderCount} pedidos recientes. Catálogo existente: ${summary.productCount} productos y ${summary.variantCount} variantes.`;
+    }
+
+    return `La última sincronización trajo ${counts.productCount} productos, ${counts.variantCount} variantes y ${counts.orderCount} pedidos.`;
   }
 
   if (latestSyncStatus === "failed") {
-    return String(summary.latestSyncJob?.errorMessage ?? "La ultima sincronizacion fallo.");
+    return String(summary.latestSyncJob?.errorMessage ?? "La última sincronización falló.");
   }
 
-  return "Listo para correr la primera sincronizacion.";
+  return "Listo para correr la primera sincronización.";
 }
 
 export async function getDashboardData(input: {
