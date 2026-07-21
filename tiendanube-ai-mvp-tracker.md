@@ -106,7 +106,7 @@ This is the real launch gate.
 - [ ] Make all store-scoped routes require explicit tenant context.
 - [ ] Replace manual-only sync with job-based initial + incremental sync.
   - [ ] First slice: add sync_state watermarks, make repeated syncs incremental for orders, and prevent duplicate running sync jobs.
-  - [ ] Second slice: move long-running sync work behind queued/background job status.
+  - [ ] Second slice: move long-running sync work behind Vercel post-response background execution and refresh the UI while sync is running.
   - [ ] Third slice: add Tiendanube webhooks for product/order updates.
 - [ ] Implement Tiendanube webhook ingestion.
 - [ ] Add retry, dead-letter, and observability for sync/webhook failures.

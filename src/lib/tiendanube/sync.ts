@@ -14,10 +14,11 @@ import { fetchAllTiendanubeOrders, fetchAllTiendanubeProducts } from "@/lib/tien
 import { getLocalizedValue } from "@/lib/tiendanube/types";
 
 type RunInitialSyncInput = {
+  existingJobId?: string;
   storeId?: string;
 };
 
-type SyncMode = "initial" | "incremental";
+export type SyncMode = "initial" | "incremental";
 
 const INITIAL_ORDERS_LOOKBACK_DAYS = 90;
 const INCREMENTAL_OVERLAP_MINUTES = 10;
@@ -99,7 +100,7 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
     getSyncState(connection.storeId, "orders"),
   ]);
   const syncMode: SyncMode = productState?.lastSyncedAt && orderState?.lastSyncedAt ? "incremental" : "initial";
-  const runningJob = await getRunningSyncJob(connection.storeId);
+  const runningJob = input.existingJobId ? null : await getRunningSyncJob(connection.storeId);
 
   if (runningJob) {
     console.info("[tiendanube-sync] skipped duplicate sync request", {
@@ -131,13 +132,15 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
   const syncStartedAt = new Date();
   const encryptionSecret = getTiendanubeOAuthConfig({ requireEncryptionSecret: true }).encryptionSecret!;
   const accessToken = decryptSecret(connection.accessTokenEncrypted, encryptionSecret);
-  const syncJob = await createSyncJob(connection.storeId, syncMode, {
-    previousOrdersSyncedAt: orderState?.lastSyncedAt?.toISOString() ?? null,
-    previousProductsSyncedAt: productState?.lastSyncedAt?.toISOString() ?? null,
-    storeExternalId: connection.storeExternalId,
-    storeName: connection.storeName,
-    syncMode,
-  });
+  const syncJob = input.existingJobId
+    ? { id: input.existingJobId }
+    : await createSyncJob(connection.storeId, syncMode, {
+        previousOrdersSyncedAt: orderState?.lastSyncedAt?.toISOString() ?? null,
+        previousProductsSyncedAt: productState?.lastSyncedAt?.toISOString() ?? null,
+        storeExternalId: connection.storeExternalId,
+        storeName: connection.storeName,
+        syncMode,
+      });
 
   console.info("[tiendanube-sync] starting sync", {
     jobId: syncJob.id,
@@ -436,4 +439,65 @@ export async function runInitialSync(input: RunInitialSyncInput = {}) {
       syncMode,
     };
   }
+}
+
+export async function startTiendanubeSync(input: RunInitialSyncInput = {}) {
+  const connection = await getActiveTiendanubeConnection(input.storeId);
+
+  if (!connection) {
+    return {
+      message: "No active Tiendanube store connection was found.",
+      ok: false,
+      status: 404,
+    };
+  }
+
+  const [productState, orderState] = await Promise.all([
+    getSyncState(connection.storeId, "products"),
+    getSyncState(connection.storeId, "orders"),
+  ]);
+  const syncMode: SyncMode = productState?.lastSyncedAt && orderState?.lastSyncedAt ? "incremental" : "initial";
+  const runningJob = await getRunningSyncJob(connection.storeId);
+
+  if (runningJob) {
+    return {
+      data: {
+        existingJobId: runningJob.id,
+        existingJobStartedAt: runningJob.startedAt?.toISOString() ?? null,
+        existingJobType: runningJob.type,
+        storeId: connection.storeId,
+        storeName: connection.storeName,
+        syncMode,
+      },
+      jobId: runningJob.id,
+      message: "Ya hay una sincronización en curso. Esperá a que termine antes de iniciar otra.",
+      ok: true,
+      status: 202,
+      syncMode,
+    };
+  }
+
+  const syncJob = await createSyncJob(connection.storeId, syncMode, {
+    previousOrdersSyncedAt: orderState?.lastSyncedAt?.toISOString() ?? null,
+    previousProductsSyncedAt: productState?.lastSyncedAt?.toISOString() ?? null,
+    storeExternalId: connection.storeExternalId,
+    storeName: connection.storeName,
+    syncMode,
+  });
+
+  return {
+    data: {
+      storeId: connection.storeId,
+      storeName: connection.storeName,
+      syncMode,
+    },
+    jobId: syncJob.id,
+    message:
+      syncMode === "initial"
+        ? "Sincronización inicial iniciada. Podés seguir usando la app mientras termina."
+        : "Sincronización incremental iniciada. Estamos actualizando los pedidos recientes.",
+    ok: true,
+    status: 202,
+    syncMode,
+  };
 }

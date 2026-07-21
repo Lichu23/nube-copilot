@@ -44,11 +44,16 @@ export function SyncControl({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState(lastSyncMessage);
+  const [localSyncRunning, setLocalSyncRunning] = useState(lastSyncStatus === "running");
+  const [localSyncStartedAfter, setLocalSyncStartedAfter] = useState<string | null>(lastSyncFinishedAt);
   const hasAutoStartedRef = useRef(false);
   const activeRequestRef = useRef<AbortController | null>(null);
+  const isLocalJobPending = localSyncRunning && lastSyncFinishedAt === localSyncStartedAfter;
+  const isSyncRunning = isPending || isLocalJobPending || lastSyncStatus === "running";
+  const feedbackText = isSyncRunning ? feedback : lastSyncMessage;
 
   const statusTone = useMemo(() => {
-    if (isPending) {
+    if (isSyncRunning) {
       return "text-amber-600";
     }
 
@@ -65,7 +70,7 @@ export function SyncControl({
     }
 
     return "text-zinc-500";
-  }, [isPending, lastSyncOutcome, lastSyncStatus]);
+  }, [isSyncRunning, lastSyncOutcome, lastSyncStatus]);
 
   const triggerSync = useCallback((options?: { auto?: boolean }) => {
     if (!hasConnection) {
@@ -93,6 +98,8 @@ export function SyncControl({
 
         const payload = (await response.json()) as SyncResponse;
         setFeedback(payload.message ?? (payload.ok ? messages.sync.completed : messages.sync.failed));
+        setLocalSyncRunning(response.status === 202 && Boolean(payload.ok));
+        setLocalSyncStartedAfter(lastSyncFinishedAt);
         if (options?.auto) {
           const nextParams = new URLSearchParams(searchParams.toString());
           nextParams.delete("autoSync");
@@ -108,7 +115,19 @@ export function SyncControl({
         }
       }
     });
-  }, [hasConnection, messages.sync, pathname, router, searchParams, startTransition, storeId]);
+  }, [hasConnection, lastSyncFinishedAt, messages.sync, pathname, router, searchParams, startTransition, storeId]);
+
+  useEffect(() => {
+    if (!isSyncRunning) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      router.refresh();
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [isSyncRunning, router]);
 
   useEffect(() => {
     if (!autoRun || !hasConnection || hasAutoStartedRef.current) {
@@ -142,7 +161,7 @@ export function SyncControl({
           <p className={statusTone}>
             {messages.sync.status}:{" "}
             <span className="font-medium">
-              {isPending
+              {isSyncRunning
                 ? messages.sync.runningStatus
                 : lastSyncOutcome === "partial"
                   ? messages.sync.partialStatus
@@ -156,10 +175,10 @@ export function SyncControl({
           <button
             type="button"
             onClick={() => triggerSync()}
-            disabled={!hasConnection || isPending}
+            disabled={!hasConnection || isSyncRunning}
             className="inline-flex w-full items-center justify-center rounded-xl btn-ink px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
-            {isPending ? messages.sync.syncing : messages.sync.syncNow}
+            {isSyncRunning ? messages.sync.syncing : messages.sync.syncNow}
           </button>
         </div>
       </section>
@@ -176,7 +195,7 @@ export function SyncControl({
           </div>
           <p className="text-sm text-zinc-600">
             {hasConnection
-              ? autoRun && isPending
+              ? autoRun && isSyncRunning
                 ? messages.sync.initialDescription
                 : messages.sync.incrementalDescription
               : messages.sync.connectFirst}
@@ -206,10 +225,10 @@ export function SyncControl({
         <button
           type="button"
           onClick={() => triggerSync()}
-          disabled={!hasConnection || isPending}
+          disabled={!hasConnection || isSyncRunning}
           className="inline-flex items-center justify-center rounded-xl btn-ink px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
-          {isPending ? messages.sync.syncing : messages.sync.syncNow}
+          {isSyncRunning ? messages.sync.syncing : messages.sync.syncNow}
         </button>
       </div>
 
@@ -217,14 +236,14 @@ export function SyncControl({
         <p className={statusTone}>
           {messages.sync.status}:{" "}
           <span className="font-medium">
-            {isPending
+            {isSyncRunning
               ? messages.sync.runningStatus
               : lastSyncOutcome === "partial"
                 ? messages.sync.partialStatus
                 : (lastSyncStatus ?? messages.sync.idleStatus)}
           </span>
         </p>
-        <p className="mt-1 text-zinc-600">{feedback}</p>
+        <p className="mt-1 text-zinc-600">{feedbackText}</p>
       </div>
     </section>
   );
