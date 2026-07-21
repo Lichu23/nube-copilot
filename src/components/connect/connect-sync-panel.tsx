@@ -185,8 +185,8 @@ export function ConnectSyncPanel({
             size="lg"
             className="shadow-card"
           >
-            {isSyncRunning ? "Leyendo tienda..." : "Leer tienda ahora"}
-            {isSyncRunning ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            {isSyncRunning ? "Continuar onboarding" : "Leer tienda ahora"}
+            {!isSyncRunning ? <ArrowRight className="h-4 w-4" /> : null}
           </Button>
         )}
       </div>
