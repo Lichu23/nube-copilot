@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SyncControl } from "@/components/dashboard/sync-control";
 import { AppSidebar, appNavigation, type AppShellActive } from "@/components/layout/app-shell";
@@ -61,7 +61,17 @@ function StoreMeta({ error, summary }: { error: string | null; summary: SidebarS
   );
 }
 
-function SidebarAction({ autoRun, error, summary }: { autoRun?: boolean; error: string | null; summary: SidebarSummary | null }) {
+function SidebarAction({
+  autoRun,
+  error,
+  onRefreshSummary,
+  summary,
+}: {
+  autoRun?: boolean;
+  error: string | null;
+  onRefreshSummary: () => void;
+  summary: SidebarSummary | null;
+}) {
   if (error) {
     return (
       <div className="rounded-3xl border border-border bg-background p-4 text-sm text-muted-foreground">
@@ -89,6 +99,7 @@ function SidebarAction({ autoRun, error, summary }: { autoRun?: boolean; error: 
       lastSyncMessage={summary.latestSyncMessage}
       lastSyncOutcome={summary.latestSyncOutcome}
       lastSyncStatus={summary.latestSyncStatus}
+      onRefreshSummary={onRefreshSummary}
       orderCount={summary.orderCount}
       productCount={summary.productCount}
       storeId={summary.connection?.storeId ?? summary.storeId}
@@ -107,7 +118,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const [summary, setSummary] = useState<SidebarSummary | null>(null);
   const [sidebarError, setSidebarError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refreshSidebarSummary = useCallback(() => {
     const controller = new AbortController();
     const params = new URLSearchParams();
 
@@ -142,11 +153,20 @@ export function AppChrome({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [requestedStoreId]);
 
+  useEffect(() => refreshSidebarSummary(), [refreshSidebarSummary]);
+
   const resolvedStoreId = summary?.storeId ?? requestedStoreId;
   const meta = useMemo(() => <StoreMeta error={sidebarError} summary={summary} />, [sidebarError, summary]);
   const sidebarAction = useMemo(
-    () => <SidebarAction autoRun={autoSync} error={sidebarError} summary={summary} />,
-    [autoSync, sidebarError, summary],
+    () => (
+      <SidebarAction
+        autoRun={autoSync}
+        error={sidebarError}
+        onRefreshSummary={refreshSidebarSummary}
+        summary={summary}
+      />
+    ),
+    [autoSync, refreshSidebarSummary, sidebarError, summary],
   );
 
   return (

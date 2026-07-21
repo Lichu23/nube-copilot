@@ -1,7 +1,7 @@
-import { formatDistanceToNowStrict } from "date-fns";
+﻿import { formatDistanceToNowStrict } from "date-fns";
 
 /**
- * Format a date string (YYYY-MM-DD) to Argentine Spanish format
+ * Format a date string (YYYY-MM-DD) to Argentine Spanish format.
  */
 export function formatDateLabel(value: string): string {
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -34,7 +34,7 @@ export function formatShortDateLabel(value: string): string {
 }
 
 /**
- * Format an ISO timestamp to Argentine Spanish date/time.
+ * Format an ISO timestamp to Argentine Spanish date/time in the user's local timezone.
  */
 export function formatDateTimeLabel(value: string | null): string {
   if (!value) {
@@ -47,23 +47,22 @@ export function formatDateTimeLabel(value: string | null): string {
     return value;
   }
 
-  const day = parsed.getUTCDate();
-  const month = parsed.getUTCMonth() + 1;
-  const year = String(parsed.getUTCFullYear()).slice(-2);
-  const hours = parsed.getUTCHours();
-  const minutes = String(parsed.getUTCMinutes()).padStart(2, "0");
-  const period = hours >= 12 ? "p. m." : "a. m.";
-  const hour12 = hours % 12 || 12;
-
-  return `${day}/${month}/${year}, ${hour12}:${minutes} ${period}`;
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    hour: "numeric",
+    hour12: true,
+    minute: "2-digit",
+    month: "numeric",
+    year: "2-digit",
+  }).format(parsed);
 }
 
 /**
- * Format a date range (start and end dates)
+ * Format a date range (start and end dates).
  */
 export function formatDateRange(
   start?: string | null,
-  end?: string | null
+  end?: string | null,
 ): string {
   if (!start && !end) {
     return "Ventana sincronizada actual";
@@ -77,7 +76,7 @@ export function formatDateRange(
 }
 
 /**
- * Format last sync timestamp (distance from now)
+ * Format last sync timestamp (distance from now).
  */
 export function formatLastSyncLabel(lastSyncAt: string | null): string {
   if (!lastSyncAt) {
