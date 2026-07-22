@@ -104,12 +104,12 @@ export function DashboardRangeSelector({
               onClick={() => navigate(key)}
               disabled={isPending || isActive}
               aria-pressed={isActive}
-              className={`inline-flex h-9 cursor-pointer items-center justify-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition disabled:opacity-70 ${
+              className={`inline-flex h-9 cursor-pointer items-center justify-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition ${
                 isPending ? "disabled:cursor-wait" : "disabled:cursor-default"} ${
                 index > 0 ? "border-l border-border" : ""} ${
                 isActive
                   ? "bg-ink-navy !text-white"
-                  : "text-muted-foreground hover:bg-zinc-50 hover:text-foreground"
+                  : "text-foreground hover:bg-zinc-50"
               }`}
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
