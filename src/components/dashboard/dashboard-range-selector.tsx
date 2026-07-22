@@ -51,12 +51,16 @@ export function DashboardRangeSelector({
 
   const navigate = useCallback(
     (nextWindow: CompareWindowKey) => {
+      if (nextWindow === compareWindow) {
+        return;
+      }
+
       setPendingWindow(nextWindow);
       startTransition(() => {
         router.replace(buildDashboardHref(nextWindow, showAsOfControl ? asOfInputValue : null, storeId));
       });
     },
-    [asOfInputValue, router, showAsOfControl, storeId],
+    [asOfInputValue, compareWindow, router, showAsOfControl, storeId],
   );
 
   return (
@@ -98,9 +102,10 @@ export function DashboardRangeSelector({
               key={key}
               type="button"
               onClick={() => navigate(key)}
-              disabled={isPending}
+              disabled={isPending || isActive}
               aria-pressed={isActive}
-              className={`inline-flex h-9 cursor-pointer items-center justify-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition disabled:cursor-wait disabled:opacity-70 ${
+              className={`inline-flex h-9 cursor-pointer items-center justify-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition disabled:opacity-70 ${
+                isPending ? "disabled:cursor-wait" : "disabled:cursor-default"} ${
                 index > 0 ? "border-l border-border" : ""} ${
                 isActive
                   ? "bg-ink-navy !text-white"
