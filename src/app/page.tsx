@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import { ArrowRight, BarChart3, LockKeyhole, MessageSquare, PackageSearch, ShieldCheck, ShoppingBag, Sparkles, Store, Users } from "lucide-react";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 const howItWorks = [
   {
@@ -251,12 +252,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-border bg-card/80 px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> NubeCopilot · Creado para Tiendanube</span>
-          <span>© 2026 NubeCopilot. Todos los derechos reservados.</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
