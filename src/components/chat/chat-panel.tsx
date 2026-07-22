@@ -73,6 +73,14 @@ function buildTenantHref(path: string, storeId?: string) {
   return storeId ? `${path}?storeId=${storeId}` : path;
 }
 
+function getFriendlySubmissionError(message: string) {
+  if (message.includes("Failed to call a function") || message.includes("failed_generation")) {
+    return "No pude completar esa consulta en este intento. Probá reformularla o pedime una métrica más específica, como ventas, productos top o comparación por período.";
+  }
+
+  return message;
+}
+
 function UnsupportedFeedbackCard({
   answer,
   onSuggestedQuestionClick,
@@ -222,7 +230,7 @@ export function ChatPanel({
       }
     } catch (submissionError) {
       const message = submissionError instanceof Error ? submissionError.message : "Falló la solicitud del chat.";
-      setError(message);
+      setError(getFriendlySubmissionError(message));
       setMessages((current) =>
         current.filter(
           (message, index) =>

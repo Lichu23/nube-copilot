@@ -10,6 +10,25 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
   const summary = asRecord(output.summary);
   const window = asRecord(output.window);
   const currency = typeof summary?.currency === "string" ? summary.currency : null;
+  const sortBy = window?.sortBy === "unitsSold" || window?.sortBy === "orderCount" ? window.sortBy : "revenue";
+  const rankingTitle =
+    sortBy === "unitsSold"
+      ? "Ranking por unidades vendidas"
+      : sortBy === "orderCount"
+        ? "Ranking por pedidos"
+        : "Ranking por facturación";
+  const rankingFilter =
+    sortBy === "unitsSold"
+      ? "Ordenado por unidades vendidas"
+      : sortBy === "orderCount"
+        ? "Ordenado por cantidad de pedidos"
+        : "Ordenado por facturación bruta del producto";
+  const topMetricLabel =
+    sortBy === "unitsSold"
+      ? "Producto más vendido"
+      : sortBy === "orderCount"
+        ? "Producto con más pedidos"
+        : "Producto top por facturación";
   const totalUnitsSold = products.reduce((total, item) => {
     const record = asRecord(item);
     return total + (asNumber(record?.unitsSold) ?? 0);
@@ -35,21 +54,26 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
           const record = asRecord(item);
           if (!record || typeof record.name !== "string") return null;
           return {
-            current: asNumber(record.revenue) ?? 0,
+            current:
+              sortBy === "unitsSold"
+                ? asNumber(record.unitsSold) ?? 0
+                : sortBy === "orderCount"
+                  ? asNumber(record.orderCount) ?? 0
+                  : asNumber(record.revenue) ?? 0,
             label: record.name,
           };
         })
         .filter((item): item is ChartDatum => Boolean(item)),
-      title: "Ranking por facturación",
+      title: rankingTitle,
       variant: "ranking",
     },
     definitions: [metricDefinitions.topProductsRevenue, metricDefinitions.unitsSold, metricDefinitions.orderCount],
-    filters: ["Ordenado por facturación bruta del producto", "Unidades y facturación visibles lado a lado"],
+    filters: [rankingFilter, "Unidades y facturación visibles lado a lado"],
     metrics: [
       { label: "Productos", value: formatScalar(rows.length) },
       { definition: metricDefinitions.topProductsRevenue, label: "Facturación bruta", value: formatCurrency(asNumber(summary?.revenue) ?? 0, currency) },
       { definition: metricDefinitions.unitsSold, label: "Unidades vendidas", value: formatScalar(totalUnitsSold) },
-      { label: "Producto top por facturación", value: rows[0]?.[0] ?? "-" },
+      { label: topMetricLabel, value: rows[0]?.[0] ?? "-" },
     ],
     source: "Tiendanube · Órdenes + ítems de pedido",
     summary: result.answer,

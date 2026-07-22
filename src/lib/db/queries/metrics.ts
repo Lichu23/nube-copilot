@@ -29,6 +29,8 @@ export type TopProductRow = {
   unitsSold: number;
 };
 
+export type TopProductsSortBy = "orderCount" | "revenue" | "unitsSold";
+
 export type LowStockOpportunityRow = {
   name: string;
   raw: unknown;
@@ -121,9 +123,15 @@ export async function getSalesTrend(input: MetricsDateRangeInput): Promise<Sales
 }
 
 export async function getTopProducts(
-  input: MetricsDateRangeInput & { limit?: number },
+  input: MetricsDateRangeInput & { limit?: number; sortBy?: TopProductsSortBy },
 ): Promise<TopProductRow[]> {
   const db = getDb();
+  const sortExpression =
+    input.sortBy === "unitsSold"
+      ? sql`coalesce(sum(${orderItems.quantity})::int, 0)`
+      : input.sortBy === "orderCount"
+        ? sql`count(distinct ${orders.id})::int`
+        : sql`coalesce(sum(${orderItems.totalPrice})::double precision, 0)`;
 
   const rows = await db
     .select({
@@ -137,7 +145,7 @@ export async function getTopProducts(
     .leftJoin(products, eq(orderItems.productId, products.id))
     .where(getMetricsFilter(input))
     .groupBy(sql`coalesce(${products.name}, ${orderItems.productName}, 'Unknown product')`)
-    .orderBy(desc(sql`coalesce(sum(${orderItems.totalPrice})::double precision, 0)`))
+    .orderBy(desc(sortExpression))
     .limit(input.limit ?? 5);
 
   return rows.map((row) => ({
