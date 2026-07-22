@@ -18,6 +18,22 @@ function createRequestId() {
   return `chat-${crypto.randomUUID()}`;
 }
 
+function getFriendlyChatErrorMessage(message: string) {
+  if (message.includes("Failed to call a function") || message.includes("failed_generation")) {
+    return "No pude completar esa consulta en este intento. Probá reformularla o pedime una métrica más específica, como ventas, productos top o comparación por período.";
+  }
+
+  if (message.includes("No active Tiendanube connection")) {
+    return "Primero conectá y sincronizá una tienda Tiendanube para analizar datos reales.";
+  }
+
+  if (message.includes("configured")) {
+    return "El analista no está configurado correctamente. Revisá la configuración del servidor antes de volver a intentar.";
+  }
+
+  return "No pude completar la consulta. Probá de nuevo en unos segundos.";
+}
+
 export async function POST(request: Request) {
   const requestId = createRequestId();
   const startedAt = Date.now();
@@ -101,6 +117,7 @@ export async function POST(request: Request) {
     }
 
     const message = error instanceof Error ? error.message : "Falló la solicitud del chat.";
+    const userMessage = getFriendlyChatErrorMessage(message);
     const status = message.includes("configured") ? 500 : 400;
 
     console.error("[ai-chat] /api/chat error", {
@@ -114,7 +131,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        message,
+        message: userMessage,
       },
       { status },
     );

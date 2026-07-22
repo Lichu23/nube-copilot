@@ -96,9 +96,9 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
                   <p className="line-clamp-1 text-foreground">{item.label}</p>
                   <p className="shrink-0 font-medium text-muted-foreground">{item.current}</p>
                 </div>
-                <div className="h-3 rounded-full bg-card">
+                <div className="h-3 rounded-full bg-surface-muted">
                   <div
-                    className={`h-3 rounded-full ${chart.variant === "risk" ? "bg-orange-500" : "bg-accent"}`}
+                    className={`h-3 rounded-full ${chart.variant === "risk" ? "bg-orange-500" : "bg-primary"}`}
                     style={{ width: `${width}%` }}
                   />
                 </div>

@@ -36,6 +36,7 @@ export interface SalesSummaryOutput {
     startDate?: string;
     endDate?: string;
     days?: number;
+    sortBy?: "orderCount" | "revenue" | "unitsSold";
   };
 }
 

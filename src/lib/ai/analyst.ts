@@ -2,7 +2,8 @@
 import { generateText, stepCountIs } from "ai";
 import { analystSystemPrompt } from "@/lib/ai/prompts";
 import type { ChatMessage } from "@/lib/ai/schemas";
-import { buildAiTools, executeWeeklyBusinessSnapshotTool } from "@/lib/ai/tools";
+import { buildAiTools, executeMonthlyTrendTool, executeSalesTrendTool, executeWeeklyBusinessSnapshotTool } from "@/lib/ai/tools";
+import type { TopProductsSortBy } from "@/lib/db/queries/metrics";
 import { getLocalizedValue } from "@/lib/tiendanube/types";
 
 type AnalystToolResult = {
@@ -120,6 +121,7 @@ type TopProductsOutput = {
     days: number;
     endDate: string;
     limit: number;
+    sortBy?: TopProductsSortBy;
     startDate: string;
   };
 };
@@ -428,11 +430,98 @@ function getUnsupportedIntentResponse(latestUserMessage: string): AnalystRespons
   return null;
 }
 
-function getIntentToolSelection(latestUserMessage: string) {
-  const normalized = latestUserMessage
+function normalizeIntentText(value: string) {
+  return value
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getTopProductsMetricIntent(normalized: string): TopProductsSortBy | "ambiguous" | null {
+  const hasTopProductsIntent =
+    normalized.includes("que producto vendio mas") ||
+    normalized.includes("producto top") ||
+    normalized.includes("top product") ||
+    normalized.includes("top products") ||
+    (normalized.includes("top") && normalized.includes("producto")) ||
+    normalized.includes("productos top") ||
+    normalized.includes("productos con mas") ||
+    normalized.includes("productos mas vendidos") ||
+    normalized.includes("mejores productos");
+
+  if (!hasTopProductsIntent) {
+    return null;
+  }
+
+  const asksUnits =
+    normalized.includes("mas vendido") ||
+    normalized.includes("mas vendidos") ||
+    normalized.includes("vendio mas") ||
+    normalized.includes("vendieron mas") ||
+    normalized.includes("unidades") ||
+    normalized.includes("cantidad") ||
+    normalized.includes("volumen");
+  const asksRevenue =
+    normalized.includes("facturacion") ||
+    normalized.includes("ingresos") ||
+    normalized.includes("revenue") ||
+    normalized.includes("monto") ||
+    normalized.includes("importe") ||
+    normalized.includes("dinero") ||
+    normalized.includes("valor");
+  const asksOrders =
+    normalized.includes("pedidos") ||
+    normalized.includes("ordenes") ||
+    normalized.includes("compras");
+
+  const requestedMetrics = [asksUnits, asksRevenue, asksOrders].filter(Boolean).length;
+
+  if (requestedMetrics > 1) {
+    return "ambiguous";
+  }
+
+  if (asksUnits) return "unitsSold";
+  if (asksRevenue) return "revenue";
+  if (asksOrders) return "orderCount";
+
+  return "ambiguous";
+}
+
+function getAmbiguousTopProductsResponse(latestUserMessage: string): AnalystResponse | null {
+  const intent = getTopProductsMetricIntent(normalizeIntentText(latestUserMessage));
+
+  if (intent !== "ambiguous") {
+    return null;
+  }
+
+  return buildUnsupportedResponse(
+    "¿Querés ver los productos top por unidades vendidas o por facturación? Para responder bien necesito elegir una métrica de orden.",
+    [
+      "Mostrame los productos más vendidos por unidades.",
+      "Mostrame los productos top por facturación.",
+      "Mostrame los productos con más pedidos.",
+    ],
+  );
+}
+
+function getIntentToolSelection(latestUserMessage: string) {
+  const normalized = normalizeIntentText(latestUserMessage);
+  const topProductsMetricIntent = getTopProductsMetricIntent(normalized);
+  const hasMonthlyWindowIntent =
+    normalized.includes("este mes") ||
+    normalized.includes("mes actual") ||
+    normalized.includes("mensual") ||
+    normalized.includes("this month") ||
+    normalized.includes("monthly");
+  const hasDailyPeakIntent =
+    normalized.includes("que dia") ||
+    normalized.includes("dia tuv") ||
+    normalized.includes("sales by day") ||
+    normalized.includes("peak day") ||
+    normalized.includes("mejor dia") ||
+    normalized.includes("pico de ventas") ||
+    normalized.includes("mayor ventas") ||
+    normalized.includes("ventas por dia");
 
   if (
     normalized.includes("ticket promedio") ||
@@ -468,19 +557,14 @@ function getIntentToolSelection(latestUserMessage: string) {
     };
   }
 
-  if (
-    normalized.includes("que dia") ||
-    normalized.includes("qué dia") ||
-    normalized.includes("dia tuve") ||
-    normalized.includes("día tuve") ||
-    normalized.includes("sales by day") ||
-    normalized.includes("peak day") ||
-    normalized.includes("mejor dia") ||
-    normalized.includes("pico de ventas") ||
-    normalized.includes("mayor ventas") ||
-    normalized.includes("ventas por dia") ||
-    normalized.includes("ventas por día")
-  ) {
+  if (hasMonthlyWindowIntent && hasDailyPeakIntent) {
+    return {
+      activeTools: ["get_monthly_trend"] as const,
+      toolChoice: "required" as const,
+    };
+  }
+
+  if (hasDailyPeakIntent) {
     return {
       activeTools: ["get_sales_trend"] as const,
       toolChoice: "required" as const,
@@ -488,13 +572,9 @@ function getIntentToolSelection(latestUserMessage: string) {
   }
 
   if (
-    normalized.includes("este mes") ||
     normalized.includes("tendencia mensual") ||
-    normalized.includes("mes actual") ||
-    normalized.includes("mensual") ||
-    normalized.includes("this month") ||
     normalized.includes("monthly trend") ||
-    normalized.includes("monthly")
+    hasMonthlyWindowIntent
   ) {
     return {
       activeTools: ["get_monthly_trend"] as const,
@@ -521,17 +601,10 @@ function getIntentToolSelection(latestUserMessage: string) {
     };
   }
 
-  if (
-    normalized.includes("que producto vendio mas") ||
-    normalized.includes("producto top") ||
-    normalized.includes("top product") ||
-    normalized.includes("top products") ||
-    normalized.includes("productos top") ||
-    normalized.includes("productos mas vendidos") ||
-    normalized.includes("mejores productos")
-  ) {
+  if (topProductsMetricIntent && topProductsMetricIntent !== "ambiguous") {
     return {
       activeTools: ["get_top_products"] as const,
+      topProductsSortBy: topProductsMetricIntent,
       toolChoice: "required" as const,
     };
   }
@@ -842,12 +915,26 @@ function buildMonthlyTrendResponse(
 function buildTopProductsResponse(_answer: string, output: TopProductsOutput, toolResults: AnalystToolResult[]): AnalystResponse {
   const { products, summary, window } = output;
   const topProduct = products[0] ?? null;
+  const sortBy = window.sortBy ?? "revenue";
+  const rankingLabel =
+    sortBy === "unitsSold"
+      ? "unidades vendidas"
+      : sortBy === "orderCount"
+        ? "pedidos"
+        : "facturación";
+  const topValue = topProduct
+    ? sortBy === "unitsSold"
+      ? `${formatScalar(topProduct.unitsSold)} unidades`
+      : sortBy === "orderCount"
+        ? `${formatScalar(topProduct.orderCount)} pedidos`
+        : formatCurrency(topProduct.revenue, summary.currency)
+    : null;
 
   return {
     answer: topProduct
       ? [
-        `Producto top por facturación: ${topProduct.name} lidera con ${formatCurrency(topProduct.revenue, summary.currency)}.`,
-        `Sumó ${topProduct.unitsSold} unidades en ${topProduct.orderCount} pedidos durante los últimos ${window.days} días.`,
+        `Producto top por ${rankingLabel}: ${topProduct.name} lidera con ${topValue}.`,
+        `También sumó ${formatCurrency(topProduct.revenue, summary.currency)}, ${topProduct.unitsSold} unidades y ${topProduct.orderCount} pedidos durante los últimos ${window.days} días.`,
         products.length === 1
           ? "Dejé en la evidencia el producto principal para esta respuesta."
           : `Dejé en la evidencia los ${products.length} productos principales para esta respuesta.`,
@@ -857,12 +944,17 @@ function buildTopProductsResponse(_answer: string, output: TopProductsOutput, to
     evidence: products.slice(0, Math.min(products.length, 3)).map((product, index) => ({
       metric: `#${index + 1} ${product.name}`,
       period: `últimos ${window.days} días`,
-      value: formatCurrency(product.revenue, summary.currency),
+      value:
+        sortBy === "unitsSold"
+          ? `${formatScalar(product.unitsSold)} unidades`
+          : sortBy === "orderCount"
+            ? `${formatScalar(product.orderCount)} pedidos`
+            : formatCurrency(product.revenue, summary.currency),
     })),
     recommendedActions:
       products.length > 0
         ? [
-          "Revisá si tus productos top por facturación tienen stock suficiente para sostener la demanda.",
+          `Revisá si tus productos top por ${rankingLabel} tienen stock suficiente para sostener la demanda.`,
           "Usá la lista de productos top para definir promos o bundles.",
         ]
         : ["Corré una revisión de sync y confirmá que hubo pedidos completados en la ventana elegida."],
@@ -1225,13 +1317,31 @@ function buildResponseFromToolResults(answer: string, toolResults: AnalystToolRe
   }
 }
 
-async function executeForcedToolFallback(toolName: string): Promise<AnalystToolResult[] | null> {
+async function executeForcedToolFallback(toolName: string, storeId?: string): Promise<AnalystToolResult[] | null> {
   switch (toolName) {
+    case "get_sales_trend":
+      return [
+        {
+          input: { days: 7 },
+          output: await executeSalesTrendTool({ days: 7 }, storeId),
+          toolCallId: "fallback-sales-trend",
+          toolName,
+        },
+      ];
+    case "get_monthly_trend":
+      return [
+        {
+          input: {},
+          output: await executeMonthlyTrendTool(storeId),
+          toolCallId: "fallback-monthly-trend",
+          toolName,
+        },
+      ];
     case "get_weekly_business_snapshot":
       return [
         {
           input: {},
-          output: await executeWeeklyBusinessSnapshotTool(),
+          output: await executeWeeklyBusinessSnapshotTool(storeId),
           toolCallId: "fallback-weekly-snapshot",
           toolName,
         },
@@ -1248,9 +1358,14 @@ export async function generateAnalystResponse(
   const preparedMessages = trimMessages(messages);
   const latestUserMessage = getLatestUserMessage(messages);
   const unsupportedIntentResponse = getUnsupportedIntentResponse(latestUserMessage);
+  const ambiguousTopProductsResponse = getAmbiguousTopProductsResponse(latestUserMessage);
 
   if (unsupportedIntentResponse) {
     return unsupportedIntentResponse;
+  }
+
+  if (ambiguousTopProductsResponse) {
+    return ambiguousTopProductsResponse;
   }
 
   const toolSelection = getIntentToolSelection(latestUserMessage);
@@ -1359,7 +1474,10 @@ export async function generateAnalystResponse(
       stopWhen: stepCountIs(2),
       system: analystSystemPrompt,
       toolChoice: toolSelection.toolChoice,
-      tools: buildAiTools({ storeId: options?.storeId }),
+      tools: buildAiTools({
+        storeId: options?.storeId,
+        topProductsSortBy: "topProductsSortBy" in toolSelection ? toolSelection.topProductsSortBy : undefined,
+      }),
     });
 
     const toolResults = extractAllToolResults(result);
@@ -1385,7 +1503,7 @@ export async function generateAnalystResponse(
     const errorMessage = error instanceof Error ? error.message : "Unknown AI error";
 
     if (forcedToolName && errorMessage.includes("Failed to call a function")) {
-      const fallbackToolResults = await executeForcedToolFallback(forcedToolName);
+      const fallbackToolResults = await executeForcedToolFallback(forcedToolName, options?.storeId);
 
       if (fallbackToolResults) {
         const fallbackResponse = buildResponseFromToolResults("", fallbackToolResults);

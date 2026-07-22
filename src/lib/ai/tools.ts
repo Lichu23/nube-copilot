@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { getActiveTiendanubeConnection } from "@/lib/db/client";
 import { comparePeriods, getLowStockOpportunities, getSalesSummary, getSalesTrend, getTopProducts } from "@/lib/db/queries/metrics";
+import type { TopProductsSortBy } from "@/lib/db/queries/metrics";
 
 export const aiToolNames = [
   "get_sales_summary",
@@ -30,6 +31,8 @@ const dateWindowSchema = z.object({
     .optional()
     .describe("Optional end date in YYYY-MM-DD format. Omit to use today."),
 });
+
+const topProductsSortBySchema = z.enum(["revenue", "unitsSold", "orderCount"]);
 
 function resolveDateWindow(input: z.infer<typeof dateWindowSchema>) {
   const endDate = input.endDate ? new Date(`${input.endDate}T23:59:59.999Z`) : new Date();
@@ -174,24 +177,27 @@ export async function executeSalesSummaryTool(
 }
 
 export async function executeTopProductsTool(
-  input: z.infer<typeof dateWindowSchema> & { limit?: number | string },
+  input: z.infer<typeof dateWindowSchema> & { limit?: number | string; sortBy?: TopProductsSortBy },
   storeId?: string,
 ) {
   const resolvedStoreId = await requireActiveStoreId(storeId);
   const { days, endDate, startDate } = resolveDateWindow(input);
   const limit = toInteger(input.limit, 5);
+  const sortBy = input.sortBy ?? "revenue";
 
   console.info("[ai-tools] top products", {
     days,
     endDate: endDate.toISOString(),
     limit,
     resolvedStoreId,
+    sortBy,
     startDate: startDate.toISOString(),
   });
 
   const products = await getTopProducts({
     endDate,
     limit,
+    sortBy,
     startDate,
     storeId: resolvedStoreId,
   });
@@ -211,6 +217,7 @@ export async function executeTopProductsTool(
       days,
       endDate: endDate.toISOString().slice(0, 10),
       limit,
+      sortBy,
       startDate: startDate.toISOString().slice(0, 10),
     },
   };
@@ -435,7 +442,7 @@ export async function executeNextWeekPrioritiesTool(storeId?: string) {
   };
 }
 
-export function buildAiTools(options?: { storeId?: string }) {
+export function buildAiTools(options?: { storeId?: string; topProductsSortBy?: TopProductsSortBy }) {
   const storeId = options?.storeId;
   return {
     compare_periods: tool({
@@ -469,11 +476,19 @@ export function buildAiTools(options?: { storeId?: string }) {
       execute: () => executeMonthlyTrendTool(storeId),
     }),
     get_top_products: tool({
-      description: "Get top products by revenue for a trailing date window.",
+      description: "Get top products for a trailing date window, sorted by revenue, units sold, or order count.",
       inputSchema: dateWindowSchema.extend({
         limit: numericIntegerSchema(1, 10).default(5).optional(),
+        sortBy: topProductsSortBySchema.default("revenue").optional(),
       }),
-      execute: (input) => executeTopProductsTool(input, storeId),
+      execute: (input) =>
+        executeTopProductsTool(
+          {
+            ...input,
+            sortBy: options?.topProductsSortBy ?? input.sortBy,
+          },
+          storeId,
+        ),
     }),
     get_weekly_business_snapshot: tool({
       description: "Get a weekly business snapshot with summary metrics, trend comparison, and top products.",
