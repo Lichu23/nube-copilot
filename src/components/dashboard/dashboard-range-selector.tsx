@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useTransition, type FormEvent } from "react";
+import { useCallback, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -22,6 +22,7 @@ export function DashboardRangeSelector({
 }: DashboardRangeSelectorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [pendingWindow, setPendingWindow] = useState<CompareWindowKey | null>(null);
 
   const buttons = useMemo(
     () => Object.entries(compareWindowConfig) as Array<[CompareWindowKey, (typeof compareWindowConfig)[CompareWindowKey]]>,
@@ -50,6 +51,7 @@ export function DashboardRangeSelector({
 
   const navigate = useCallback(
     (nextWindow: CompareWindowKey) => {
+      setPendingWindow(nextWindow);
       startTransition(() => {
         router.replace(buildDashboardHref(nextWindow, showAsOfControl ? asOfInputValue : null, storeId));
       });
@@ -82,9 +84,14 @@ export function DashboardRangeSelector({
         </form>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        {buttons.map(([key, config]) => {
+      <div
+        className="inline-flex self-start overflow-hidden rounded-xl border border-border bg-white"
+        role="group"
+        aria-label="Comparar con"
+      >
+        {buttons.map(([key, config], index) => {
           const isActive = compareWindow === key;
+          const isLoading = isPending && pendingWindow === key;
 
           return (
             <button
@@ -93,13 +100,14 @@ export function DashboardRangeSelector({
               onClick={() => navigate(key)}
               disabled={isPending}
               aria-pressed={isActive}
-              className={`inline-flex h-10 min-w-28 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold whitespace-nowrap transition disabled:cursor-wait disabled:opacity-70 ${
+              className={`inline-flex h-9 items-center justify-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition disabled:cursor-wait disabled:opacity-70 ${
+                index > 0 ? "border-l border-border" : ""} ${
                 isActive
-                  ? "bg-ink-navy !text-white shadow-sm"
-                  : "border border-border bg-white text-muted-foreground hover:text-foreground"
+                  ? "bg-ink-navy !text-white"
+                  : "text-muted-foreground hover:bg-zinc-50 hover:text-foreground"
               }`}
             >
-              {isPending && isActive ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {config.title}
             </button>
           );
