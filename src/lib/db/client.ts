@@ -821,6 +821,31 @@ export async function getAnalystPreferencesForActiveStore(storeId?: string) {
   return preferences ? toAnalystPreferences(preferences) : defaultAnalystPreferences;
 }
 
+export async function getChatBootstrapContext(storeId: string) {
+  const db = getDb();
+
+  const [latestSyncJob, preferences] = await Promise.all([
+    db
+      .select({
+        finishedAt: syncJobs.finishedAt,
+      })
+      .from(syncJobs)
+      .where(eq(syncJobs.storeId, storeId))
+      .orderBy(desc(syncJobs.startedAt))
+      .limit(1),
+    db
+      .select()
+      .from(analystPreferences)
+      .where(eq(analystPreferences.storeId, storeId))
+      .limit(1),
+  ]);
+
+  return {
+    latestSyncFinishedAt: latestSyncJob[0]?.finishedAt ?? null,
+    preferences: preferences[0] ? toAnalystPreferences(preferences[0]) : defaultAnalystPreferences,
+  };
+}
+
 export async function upsertAnalystPreferencesForActiveStore(input: AnalystPreferences, storeId?: string) {
   const connection = await getActiveTiendanubeConnection(storeId);
 
