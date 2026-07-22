@@ -13,6 +13,8 @@ type AppShellProps = {
   description: string;
   meta?: ReactNode;
   sidebarAction?: ReactNode;
+  chatHref?: string;
+  dashboardHref?: string;
   storeId?: string;
   children: ReactNode;
 };
@@ -30,18 +32,22 @@ function buildTenantHref(path: string, storeId?: string) {
 
 export function AppSidebar({
   active = "dashboard",
+  chatHref,
   meta,
   sidebarAction,
+  dashboardHref,
   storeId,
 }: {
   active?: AppShellActive;
+  chatHref?: string;
   meta?: ReactNode;
   sidebarAction?: ReactNode;
+  dashboardHref?: string;
   storeId?: string;
 }) {
   return (
     <aside className="hidden border-r border-border bg-card px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
-      <Link href={buildTenantHref("/chat", storeId)} className="flex items-center gap-3 px-2">
+      <Link href={chatHref ?? buildTenantHref("/chat", storeId)} className="flex items-center gap-3 px-2">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-navy !text-white shadow-sm">
           <Sparkles className="h-5 w-5" />
         </span>
@@ -62,7 +68,13 @@ export function AppSidebar({
           return (
             <Link
               key={item.href}
-              href={buildTenantHref(item.href, storeId)}
+              href={
+                item.key === "chat" && chatHref
+                  ? chatHref
+                  : item.key === "dashboard" && dashboardHref
+                    ? dashboardHref
+                    : buildTenantHref(item.href, storeId)
+              }
               aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
                 isActive
@@ -96,12 +108,14 @@ export function AppShell({
   description,
   meta,
   sidebarAction,
+  chatHref,
+  dashboardHref,
   storeId,
   children,
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[244px_minmax(0,1fr)]">
-      <AppSidebar active={active} meta={meta} sidebarAction={sidebarAction} storeId={storeId} />
+      <AppSidebar active={active} chatHref={chatHref} dashboardHref={dashboardHref} meta={meta} sidebarAction={sidebarAction} storeId={storeId} />
 
       <div className="min-w-0">
         <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur lg:hidden">
