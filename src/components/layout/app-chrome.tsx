@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -30,6 +30,35 @@ function getActiveRoute(pathname: string): AppShellActive {
 
 function buildTenantHref(path: string, storeId?: string) {
   return storeId ? `${path}?storeId=${storeId}` : path;
+}
+
+function buildDashboardHrefFromReturnParams(searchParams: ReadonlyURLSearchParams, storeId?: string) {
+  const compareWindow = searchParams.get("returnCompareWindow");
+
+  if (compareWindow !== "7d" && compareWindow !== "30d") {
+    return buildTenantHref("/dashboard", storeId);
+  }
+
+  const params = new URLSearchParams({ compareWindow });
+  const asOf = searchParams.get("returnAsOf");
+
+  if (asOf) params.set("asOf", asOf);
+  if (storeId) params.set("storeId", storeId);
+
+  return `/dashboard?${params.toString()}`;
+}
+
+function buildChatHrefFromDashboard(searchParams: ReadonlyURLSearchParams, storeId?: string) {
+  const params = new URLSearchParams();
+  const compareWindow = searchParams.get("compareWindow");
+  const asOf = searchParams.get("asOf");
+
+  if (storeId) params.set("storeId", storeId);
+  if (compareWindow === "7d" || compareWindow === "30d") params.set("returnCompareWindow", compareWindow);
+  if (asOf) params.set("returnAsOf", asOf);
+
+  const query = params.toString();
+  return query ? `/chat?${query}` : "/chat";
 }
 
 function StoreMeta({ error, summary }: { error: string | null; summary: SidebarSummary | null }) {
@@ -156,6 +185,12 @@ export function AppChrome({ children }: { children: ReactNode }) {
   useEffect(() => refreshSidebarSummary(), [refreshSidebarSummary]);
 
   const resolvedStoreId = summary?.storeId ?? requestedStoreId;
+  const dashboardHref = active === "dashboard"
+    ? buildTenantHref("/dashboard", resolvedStoreId)
+    : buildDashboardHrefFromReturnParams(searchParams, resolvedStoreId);
+  const chatHref = active === "dashboard"
+    ? buildChatHrefFromDashboard(searchParams, resolvedStoreId)
+    : buildTenantHref("/chat", resolvedStoreId);
   const meta = useMemo(() => <StoreMeta error={sidebarError} summary={summary} />, [sidebarError, summary]);
   const sidebarAction = useMemo(
     () => (
@@ -171,7 +206,14 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[244px_minmax(0,1fr)]">
-      <AppSidebar active={active} meta={meta} sidebarAction={sidebarAction} storeId={resolvedStoreId} />
+      <AppSidebar
+        active={active}
+        chatHref={chatHref}
+        dashboardHref={dashboardHref}
+        meta={meta}
+        sidebarAction={sidebarAction}
+        storeId={resolvedStoreId}
+      />
 
       <div className="min-w-0">
         <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur lg:hidden">
@@ -185,7 +227,13 @@ export function AppChrome({ children }: { children: ReactNode }) {
               return (
                 <Link
                   key={item.href}
-                  href={buildTenantHref(item.href, resolvedStoreId)}
+                  href={
+                    item.key === "dashboard"
+                      ? dashboardHref
+                      : item.key === "chat"
+                        ? chatHref
+                        : buildTenantHref(item.href, resolvedStoreId)
+                  }
                   aria-current={isActive ? "page" : undefined}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                     isActive ? "bg-ink-navy !text-white" : "bg-surface-muted text-muted-foreground"
