@@ -141,7 +141,7 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
                   />
                 ) : null}
                 <div
-                  className="w-full max-w-8 rounded-t-2xl bg-accent"
+                  className="w-full max-w-8 rounded-t-2xl bg-primary"
                   style={{ height: `${currentHeight}%` }}
                   title={`${chart.currentLabel ?? "Actual"} · ${item.label}`}
                 />
@@ -161,7 +161,7 @@ export function MiniBarChart({ chart }: { chart: ChartModel }) {
           ) : null}
           {chart.currentLabel ? (
             <span className="inline-flex items-center gap-2">
-              <span className="h-3 w-3 rounded-sm bg-accent" />
+              <span className="h-3 w-3 rounded-sm bg-primary" />
               {chart.currentLabel}
             </span>
           ) : null}

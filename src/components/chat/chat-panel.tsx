@@ -21,7 +21,7 @@ import {
 } from "@/lib/analyst/preferences";
 import { formatDateTimeLabel } from "@/lib/formatting";
 import { copyReportSummary, exportReportCsv, pinReport } from "@/lib/reports/actions";
-import type { AnalystResponse, ChatMessage } from "@/lib/types";
+import type { AnalystResponse, CanvasModel, ChatMessage } from "@/lib/types";
 import { AnalysisCanvas } from "./analysis-canvas";
 import { ReportPreviewCard } from "./report-preview-card";
 
@@ -32,6 +32,11 @@ type ChatPanelProps = {
   lastSyncAt: string | null;
   storeId?: string;
   storeName: string;
+};
+
+type DisplayChatMessage = ChatMessage & {
+  analystResult?: AnalystResponse;
+  reportModel?: CanvasModel;
 };
 
 const emptyStatePrompts = [
@@ -125,25 +130,17 @@ export function ChatPanel({
   storeId,
   storeName,
 }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<DisplayChatMessage[]>([]);
   const [input, setInput] = useState(initialInput);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [latestResult, setLatestResult] = useState<AnalystResponse | null>(null);
-  const [latestQuestion, setLatestQuestion] = useState("");
+  const [activeCanvasModel, setActiveCanvasModel] = useState<CanvasModel | null>(null);
   const [preferences] = useState(initialPreferences);
   const [actionState, setActionState] = useState<"already-pinned" | "copied" | "error" | "exported" | "idle" | "pinned">("idle");
   const [isChatVisible, setIsChatVisible] = useState(true);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
-  const canvasModel = useMemo(
-    () => buildCanvasModel(latestResult, latestQuestion),
-    [latestQuestion, latestResult],
-  );
-  const lastAssistantIndex = [...messages].reverse().findIndex((message) => message.role === "assistant");
-  const resolvedLastAssistantIndex =
-    lastAssistantIndex === -1 ? -1 : messages.length - 1 - lastAssistantIndex;
   const lastSyncLabel = getLastSyncLabel(lastSyncAt);
   const personalizedPrompts = useMemo(() => buildPromptCards(preferences), [preferences]);
   useEffect(() => {
@@ -186,17 +183,20 @@ export function ChatPanel({
       return;
     }
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmedInput }];
+    const nextMessages: DisplayChatMessage[] = [...messages, { role: "user", content: trimmedInput }];
+    const requestMessages = nextMessages.map((message) => ({
+      content: message.content ?? "",
+      role: message.role === "assistant" ? "assistant" as const : "user" as const,
+    }));
 
     setMessages(nextMessages);
     setInput("");
     setError(null);
     setIsPending(true);
-    setLatestQuestion(trimmedInput);
 
     try {
       const response = await fetch("/api/chat", {
-        body: JSON.stringify({ messages: nextMessages, storeId }),
+        body: JSON.stringify({ messages: requestMessages, storeId }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -217,14 +217,18 @@ export function ChatPanel({
         throw new Error(payload.ok ? "Falló la solicitud del chat." : (payload.message ?? "Falló la solicitud del chat."));
       }
 
+      const reportModel = buildCanvasModel(payload.result, trimmedInput);
+
       setMessages((current) => [
         ...current,
         {
+          analystResult: payload.result,
           role: "assistant",
           content: payload.result.answer,
+          reportModel: reportModel ?? undefined,
         },
       ]);
-      setLatestResult(payload.result);
+      setActiveCanvasModel(reportModel);
       if (payload.result.toolResults.length > 0) {
         setIsChatVisible(false);
       }
@@ -243,25 +247,21 @@ export function ChatPanel({
     }
   }
 
-  async function handleCopySummary() {
-    if (!canvasModel) return;
-    await copyReportSummary(canvasModel);
+  async function handleCopySummary(model: CanvasModel) {
+    await copyReportSummary(model);
     setActionState("copied");
     window.setTimeout(() => setActionState("idle"), 1500);
   }
 
-  function handleExportCsv() {
-    if (!canvasModel) return;
-    exportReportCsv(canvasModel);
+  function handleExportCsv(model: CanvasModel) {
+    exportReportCsv(model);
     setActionState("exported");
     window.setTimeout(() => setActionState("idle"), 1500);
   }
 
-  async function handlePinReport() {
-    if (!canvasModel) return;
-
+  async function handlePinReport(model: CanvasModel) {
     try {
-      const result = await pinReport(canvasModel, storeId);
+      const result = await pinReport(model, storeId);
       setActionState(result.status);
     } catch {
       setActionState("error");
@@ -343,9 +343,6 @@ export function ChatPanel({
           ) : (
             <div className="mx-auto max-w-3xl space-y-5 pb-6">
               {messages.map((message, index) => {
-                const isLastStructuredAssistant =
-                  message.role === "assistant" && index === resolvedLastAssistantIndex && canvasModel;
-
                 if (message.role === "user") {
                   return (
                     <div key={`${message.role}-${index}`} className="flex justify-end">
@@ -356,7 +353,9 @@ export function ChatPanel({
                   );
                 }
 
-                if (isLastStructuredAssistant && canvasModel) {
+                if (message.reportModel) {
+                  const reportModel = message.reportModel;
+
                   return (
                     <div key={`${message.role}-${index}`} className="space-y-3">
                       <div className="flex items-start gap-3">
@@ -368,11 +367,14 @@ export function ChatPanel({
                         </p>
                       </div>
                       <ReportPreviewCard
-                        model={canvasModel}
-                        onCopiarSummary={handleCopySummary}
-                        onExportCsv={handleExportCsv}
-                        onOpenAnalysis={() => window.scrollTo({ behavior: "smooth", top: 0 })}
-                        onPinReport={handlePinReport}
+                        model={reportModel}
+                        onCopiarSummary={() => handleCopySummary(reportModel)}
+                        onExportCsv={() => handleExportCsv(reportModel)}
+                        onOpenAnalysis={() => {
+                          setActiveCanvasModel(reportModel);
+                          window.scrollTo({ behavior: "smooth", top: 0 });
+                        }}
+                        onPinReport={() => handlePinReport(reportModel)}
                         onSuggestedQuestionClick={handlePromptClick}
                       />
                     </div>
@@ -381,16 +383,15 @@ export function ChatPanel({
 
                 if (
                   message.role === "assistant" &&
-                  index === resolvedLastAssistantIndex &&
-                  latestResult &&
-                  latestResult.toolResults.length === 0
+                  message.analystResult &&
+                  message.analystResult.toolResults.length === 0
                 ) {
                   return (
                     <UnsupportedFeedbackCard
                       key={`${message.role}-${index}`}
-                      answer={latestResult.answer}
+                      answer={message.analystResult.answer}
                       onSuggestedQuestionClick={handlePromptClick}
-                      suggestions={latestResult.recommendedActions}
+                      suggestions={message.analystResult.recommendedActions}
                     />
                   );
                 }
@@ -470,14 +471,14 @@ export function ChatPanel({
                   : actionState === "error"
                     ? "No se pudo guardar el reporte."
                     : actionState === "already-pinned"
-                      ? "Este reporte ya estaba fijado."
-                      : "Reporte fijado."}
+                      ? "Este reporte ya estaba guardado."
+                      : "Reporte guardado."}
             </p>
           ) : null}
         </div>
       </section>
 
-      <aside className={`relative hidden h-screen overflow-y-auto bg-background transition-opacity duration-300 lg:block ${canvasModel || isPending ? "opacity-100" : "opacity-70"}`}>
+      <aside className={`relative hidden h-screen overflow-y-auto bg-background transition-opacity duration-300 lg:block ${activeCanvasModel || isPending ? "opacity-100" : "opacity-70"}`}>
         <button
           type="button"
           onClick={() => setIsChatVisible((visible) => !visible)}
@@ -491,7 +492,7 @@ export function ChatPanel({
           {isChatVisible ? <ChevronLeft className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </button>
 
-          <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={canvasModel} isPending={isPending} storeId={storeId} />
+          <AnalysisCanvas lastSyncLabel={lastSyncLabel} model={activeCanvasModel} isPending={isPending} storeId={storeId} />
       </aside>
     </div>
   );
