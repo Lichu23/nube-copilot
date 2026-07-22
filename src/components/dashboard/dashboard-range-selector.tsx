@@ -14,6 +14,8 @@ type DashboardRangeSelectorProps = {
   storeId: string;
 };
 
+const DASHBOARD_COMPARE_WINDOW_STORAGE_KEY = "nube-copilot:dashboard-compare-window";
+
 export function DashboardRangeSelector({
   asOfInputValue,
   compareWindow,
@@ -36,6 +38,8 @@ export function DashboardRangeSelector({
       const formData = new FormData(event.currentTarget);
       const nextAsOf = formData.get("asOf");
 
+      window.localStorage.setItem(DASHBOARD_COMPARE_WINDOW_STORAGE_KEY, compareWindow);
+
       startTransition(() => {
         router.replace(
           buildDashboardHref(
@@ -56,6 +60,7 @@ export function DashboardRangeSelector({
       }
 
       setPendingWindow(nextWindow);
+      window.localStorage.setItem(DASHBOARD_COMPARE_WINDOW_STORAGE_KEY, nextWindow);
       startTransition(() => {
         router.replace(buildDashboardHref(nextWindow, showAsOfControl ? asOfInputValue : null, storeId));
       });

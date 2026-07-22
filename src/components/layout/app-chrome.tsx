@@ -21,6 +21,21 @@ type SidebarSummary = {
   variantCount: number;
 };
 
+const DASHBOARD_COMPARE_WINDOW_STORAGE_KEY = "nube-copilot:dashboard-compare-window";
+
+function isCompareWindow(value: string | null): value is "7d" | "30d" {
+  return value === "7d" || value === "30d";
+}
+
+function getStoredDashboardCompareWindow() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const savedCompareWindow = window.localStorage.getItem(DASHBOARD_COMPARE_WINDOW_STORAGE_KEY);
+  return isCompareWindow(savedCompareWindow) ? savedCompareWindow : null;
+}
+
 function getActiveRoute(pathname: string): AppShellActive {
   if (pathname.startsWith("/chat")) return "chat";
   if (pathname.startsWith("/saved")) return "saved";
@@ -32,15 +47,33 @@ function buildTenantHref(path: string, storeId?: string) {
   return storeId ? `${path}?storeId=${storeId}` : path;
 }
 
-function buildDashboardHrefFromReturnParams(searchParams: ReadonlyURLSearchParams, storeId?: string) {
+function buildDashboardHrefFromReturnParams(searchParams: ReadonlyURLSearchParams, storeId?: string, fallbackCompareWindow?: "7d" | "30d" | null) {
   const compareWindow = searchParams.get("returnCompareWindow");
+  const resolvedCompareWindow = isCompareWindow(compareWindow) ? compareWindow : fallbackCompareWindow;
 
-  if (compareWindow !== "7d" && compareWindow !== "30d") {
+  if (!resolvedCompareWindow) {
     return buildTenantHref("/dashboard", storeId);
   }
 
-  const params = new URLSearchParams({ compareWindow });
+  const params = new URLSearchParams({ compareWindow: resolvedCompareWindow });
   const asOf = searchParams.get("returnAsOf");
+
+  if (asOf) params.set("asOf", asOf);
+  if (storeId) params.set("storeId", storeId);
+
+  return `/dashboard?${params.toString()}`;
+}
+
+function buildDashboardHrefFromCurrentParams(searchParams: ReadonlyURLSearchParams, storeId?: string, fallbackCompareWindow?: "7d" | "30d" | null) {
+  const compareWindow = searchParams.get("compareWindow");
+  const resolvedCompareWindow = isCompareWindow(compareWindow) ? compareWindow : fallbackCompareWindow;
+
+  if (!resolvedCompareWindow) {
+    return buildTenantHref("/dashboard", storeId);
+  }
+
+  const params = new URLSearchParams({ compareWindow: resolvedCompareWindow });
+  const asOf = searchParams.get("asOf");
 
   if (asOf) params.set("asOf", asOf);
   if (storeId) params.set("storeId", storeId);
@@ -146,6 +179,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const autoSync = active === "dashboard" && searchParams.get("autoSync") === "1";
   const [summary, setSummary] = useState<SidebarSummary | null>(null);
   const [sidebarError, setSidebarError] = useState<string | null>(null);
+  const [storedDashboardCompareWindow, setStoredDashboardCompareWindow] = useState<"7d" | "30d" | null>(getStoredDashboardCompareWindow);
 
   const refreshSidebarSummary = useCallback(() => {
     const controller = new AbortController();
@@ -184,10 +218,19 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
   useEffect(() => refreshSidebarSummary(), [refreshSidebarSummary]);
 
+  useEffect(() => {
+    const compareWindow = searchParams.get("compareWindow");
+
+    if (active === "dashboard" && isCompareWindow(compareWindow)) {
+      window.localStorage.setItem(DASHBOARD_COMPARE_WINDOW_STORAGE_KEY, compareWindow);
+      queueMicrotask(() => setStoredDashboardCompareWindow(compareWindow));
+    }
+  }, [active, searchParams]);
+
   const resolvedStoreId = summary?.storeId ?? requestedStoreId;
   const dashboardHref = active === "dashboard"
-    ? buildTenantHref("/dashboard", resolvedStoreId)
-    : buildDashboardHrefFromReturnParams(searchParams, resolvedStoreId);
+    ? buildDashboardHrefFromCurrentParams(searchParams, resolvedStoreId, storedDashboardCompareWindow)
+    : buildDashboardHrefFromReturnParams(searchParams, resolvedStoreId, storedDashboardCompareWindow);
   const chatHref = active === "dashboard"
     ? buildChatHrefFromDashboard(searchParams, resolvedStoreId)
     : buildTenantHref("/chat", resolvedStoreId);
