@@ -128,17 +128,15 @@ export default async function DashboardPage({
 
       <AnalystProfileCard preferences={preferences} storeId={storeId} />
 
-      <section className="rounded-2xl border border-border bg-card/70 p-4 shadow-soft">
-        <div className="space-y-3">
-          <div className="min-w-0 space-y-3">
-            <div>
+      <section className="border-b border-border pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Período
               </p>
               <h2 className="mt-1 text-base font-semibold text-foreground">
                 Comparación de período
               </h2>
-            </div>
           </div>
           <DashboardRangeSelector
             asOfInputValue={asOfInputValue}
