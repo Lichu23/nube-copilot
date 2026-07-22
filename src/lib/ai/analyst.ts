@@ -266,6 +266,11 @@ function describePeriodChange(metricLabel: string, currentLabel: string, previou
   return `${metricLabel} ${direction} ${formatPercent(Math.abs(percentageChange))} frente a ${previousLabel.toLowerCase()}.`;
 }
 
+function formatCappedPercentValue(value: number) {
+  const cappedValue = Math.min(Math.abs(value), 999);
+  return `${Number.isInteger(cappedValue) ? cappedValue.toFixed(0) : cappedValue.toFixed(1)}%`;
+}
+
 function normalizeDescriptor(value: string | null | undefined) {
   if (!value) {
     return null;
@@ -856,7 +861,7 @@ function buildMonthlyTrendResponse(
     revenueChange > 0 ? "subió" : revenueChange < 0 ? "bajó" : "se mantuvo";
   const revenuePct =
     output.comparison.revenue.previous > 0
-      ? `${Math.abs((revenueChange / output.comparison.revenue.previous) * 100).toFixed(1)}%`
+      ? formatCappedPercentValue((revenueChange / output.comparison.revenue.previous) * 100)
       : null;
 
   return {

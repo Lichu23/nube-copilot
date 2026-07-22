@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Copy, Download, Image as ImageIcon, Pin, Sparkles, Store } from "lucide-react";
+import { Bookmark, Copy, Download, Image as ImageIcon, Sparkles, Store } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { copyReportSummary, exportReportCsv, exportReportImage, pinReport } from "@/lib/reports/actions";
@@ -104,8 +104,8 @@ export function AnalysisCanvas({
 
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
               <button type="button" onClick={handlePinReport} className="rounded-full border border-border bg-card px-3 py-1.5 transition hover:border-border-strong">
-                <Pin className="mr-1.5 inline h-4 w-4" />
-                Fijar
+                <Bookmark className="mr-1.5 inline h-4 w-4" />
+                Guardar
               </button>
               <button type="button" onClick={handleExportCsv} className="rounded-full border border-border bg-card px-3 py-1.5 transition hover:border-border-strong">
                 <Download className="mr-1.5 inline h-4 w-4" />
@@ -132,8 +132,8 @@ export function AnalysisCanvas({
                     : actionState === "error"
                       ? "No se pudo guardar el reporte."
                       : actionState === "already-pinned"
-                        ? "Este reporte ya estaba fijado."
-                        : "Reporte fijado."}
+                        ? "Este reporte ya estaba guardado."
+                        : "Reporte guardado."}
             </p>
           ) : null}
 

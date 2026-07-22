@@ -1,6 +1,17 @@
 ﻿import type { AnalystResponse, CanvasModel, ChartDatum, ToolResult } from "@/lib/types";
 import { metricDefinitions } from "@/lib/metrics/definitions";
-import { asNumber, asRecord, buildIntentTitle, formatCurrency, formatDateLabel, formatScalar } from "./helpers";
+import { asNumber, asRecord, buildIntentTitle, formatCurrency, formatDateLabel, formatScalar, normalizeIntentText } from "./helpers";
+
+function formatCappedRevenueChange(currentRevenue: number, previousRevenue: number) {
+  if (previousRevenue <= 0) {
+    return "—";
+  }
+
+  const percentageChange = ((currentRevenue - previousRevenue) / previousRevenue) * 100;
+  const cappedChange = Math.min(Math.abs(Math.round(percentageChange)), 999);
+
+  return `${cappedChange}%`;
+}
 
 export function buildMonthlyTrendCanvas(
   result: AnalystResponse,
@@ -17,11 +28,20 @@ export function buildMonthlyTrendCanvas(
   const previousWindow = asRecord(output.previousWindow);
   const currency = typeof summary?.currency === "string" ? summary.currency : null;
   const peakDay = asRecord(output.peakDay);
+  const peakDayLabel = typeof peakDay?.day === "string" ? formatDateLabel(peakDay.day) : "-";
+  const peakDayRevenue = asNumber(peakDay?.revenue) ?? 0;
+  const peakDayOrders = asNumber(peakDay?.orderCount) ?? 0;
   const comparisonRevenue = asRecord(comparison?.revenue);
   const currentRevenue = asNumber(comparisonRevenue?.current) ?? 0;
   const previousRevenue = asNumber(comparisonRevenue?.previous) ?? 0;
-  const revenueChangeLabel =
-    previousRevenue > 0 ? `${Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100)}%` : "—";
+  const revenueChangeLabel = formatCappedRevenueChange(currentRevenue, previousRevenue);
+  const normalizedQuestion = normalizeIntentText(userQuestion);
+  const isPeakDayQuestion =
+    normalizedQuestion.includes("que dia") ||
+    normalizedQuestion.includes("dia que") ||
+    normalizedQuestion.includes("dia tuv") ||
+    normalizedQuestion.includes("mejor dia") ||
+    normalizedQuestion.includes("pico de ventas");
 
   const rows = trend
     .map((item) => {
@@ -35,20 +55,32 @@ export function buildMonthlyTrendCanvas(
       ];
     })
     .filter((row): row is string[] => Boolean(row));
+  const peakDayRows =
+    typeof peakDay?.day === "string"
+      ? [[peakDayLabel, formatCurrency(peakDayRevenue, currency), formatScalar(peakDayOrders)]]
+      : rows;
 
   return {
     chart: {
-      data: trend
-        .map((item) => {
-          const record = asRecord(item);
-          if (!record || typeof record.day !== "string") return null;
-          return {
-            current: asNumber(record.revenue) ?? 0,
-            label: formatDateLabel(record.day),
-          };
-        })
-        .filter((item): item is ChartDatum => Boolean(item)),
-      title: "Tendencia mensual por día",
+      data: isPeakDayQuestion && typeof peakDay?.day === "string"
+        ? [
+            {
+              current: peakDayRevenue,
+              label: peakDayLabel,
+            },
+          ]
+        : trend
+            .map((item) => {
+              const record = asRecord(item);
+              if (!record || typeof record.day !== "string") return null;
+              return {
+                current: asNumber(record.revenue) ?? 0,
+                label: formatDateLabel(record.day),
+              };
+            })
+            .filter((item): item is ChartDatum => Boolean(item)),
+      title: isPeakDayQuestion ? "Día con más ventas" : "Tendencia mensual por día",
+      variant: isPeakDayQuestion ? "ranking" : undefined,
     },
     definitions: [metricDefinitions.netRevenue, metricDefinitions.orderCount, metricDefinitions.averageOrderValue, metricDefinitions.unitsSold],
     filters: ["Mes actual", "Comparación contra período equivalente"],
@@ -66,7 +98,7 @@ export function buildMonthlyTrendCanvas(
       {
         definition: metricDefinitions.orderCount,
         label: "Día pico",
-        value: typeof peakDay?.day === "string" ? formatDateLabel(peakDay.day) : "-",
+        value: peakDayLabel,
       },
       {
         definition: metricDefinitions.orderCount,
@@ -79,7 +111,7 @@ export function buildMonthlyTrendCanvas(
     summaryPoints: result.recommendedActions,
     table: {
       columns: ["Día", "Facturación", "Pedidos"],
-      rows,
+      rows: isPeakDayQuestion ? peakDayRows : rows,
     },
     title: buildIntentTitle(primary.toolName, userQuestion, { days: asNumber(window?.days) ?? undefined }),
     userQuestion,

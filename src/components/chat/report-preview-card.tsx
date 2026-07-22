@@ -1,4 +1,4 @@
-﻿import { ChartColumn, Copy, Download, Pin } from "lucide-react";
+﻿import { Bookmark, ChartColumn, Copy, Download } from "lucide-react";
 import type { CanvasModel } from "@/lib/types";
 
 export function ReportPreviewCard({
@@ -33,7 +33,7 @@ export function ReportPreviewCard({
             type="button"
             onClick={onOpenAnalysis}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:text-foreground"
-            aria-label="Abrír análisis"
+            aria-label="Abrir análisis"
           >
             <ChartColumn className="h-4 w-4" />
           </button>
@@ -48,8 +48,8 @@ export function ReportPreviewCard({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <button type="button" onClick={onPinReport} className="inline-flex items-center gap-2 transition hover:text-foreground">
-              <Pin className="h-4 w-4" />
-              Fijar
+              <Bookmark className="h-4 w-4" />
+              Guardar
             </button>
             <button type="button" onClick={onExportCsv} className="inline-flex items-center gap-2 transition hover:text-foreground">
               <Download className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function ReportPreviewCard({
             onClick={onOpenAnalysis}
             className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
           >
-            Abrír análisis
+            Abrir análisis
           </button>
         </div>
 
@@ -97,4 +97,5 @@ export function ReportPreviewCard({
     </article>
   );
 }
+
 

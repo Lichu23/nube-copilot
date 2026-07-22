@@ -14,7 +14,15 @@ export function normalizeIntentText(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-export function buildIntentTitle(toolName: string, userQuestion: string, options?: { days?: number; isSkuRisk?: boolean }) {
+export function buildIntentTitle(
+  toolName: string,
+  userQuestion: string,
+  options?: {
+    days?: number;
+    isSkuRisk?: boolean;
+    topProductsSortBy?: "orderCount" | "revenue" | "unitsSold";
+  },
+) {
   const normalized = normalizeIntentText(userQuestion);
 
   switch (toolName) {
@@ -29,6 +37,18 @@ export function buildIntentTitle(toolName: string, userQuestion: string, options
     case "get_monthly_trend":
       return "Tendencia mensual";
     case "get_top_products":
+      if (options?.topProductsSortBy === "unitsSold") {
+        return options.days
+          ? `Productos más vendidos de los últimos ${options.days} días`
+          : "Productos más vendidos";
+      }
+
+      if (options?.topProductsSortBy === "orderCount") {
+        return options.days
+          ? `Productos con más pedidos de los últimos ${options.days} días`
+          : "Productos con más pedidos";
+      }
+
       return options?.days
         ? `Productos top por facturación de los últimos ${options.days} días`
         : "Productos top por facturación";

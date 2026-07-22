@@ -84,6 +84,7 @@ export function buildTopProductsCanvas(result: AnalystResponse, primary: ToolRes
     },
     title: buildIntentTitle(primary.toolName, userQuestion, {
       days: asNumber(window?.days) ?? undefined,
+      topProductsSortBy: sortBy,
     }),
     userQuestion,
     windowLabel: formatDateRange(
