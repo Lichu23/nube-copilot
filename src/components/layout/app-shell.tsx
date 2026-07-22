@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Bookmark, LayoutDashboard, MessageSquare, Settings, Sparkles } from "lucide-react";
+import { Bookmark, ExternalLink, LayoutDashboard, Mail, MessageSquare, Settings, Sparkles } from "lucide-react";
 import { t } from "@/lib/i18n/t";
 import { defaultLocale } from "@/lib/i18n/messages";
 
@@ -91,12 +91,31 @@ export function AppSidebar({
 
       {sidebarAction ? <div className="mt-6">{sidebarAction}</div> : null}
 
-      <Link
-        href={buildTenantHref("/settings", storeId)}
-        className="mt-auto inline-flex items-center justify-center rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground transition hover:border-border-strong hover:bg-surface-muted"
-      >
-        Ajustar analista
-      </Link>
+      <div className="mt-auto space-y-4">
+        <div className="rounded-2xl border border-border bg-background px-4 py-3 text-sm">
+          <p className="font-semibold text-foreground">Enviame feedback:</p>
+          <a href="mailto:landingchee@gmail.com" className="mt-1 block text-muted-foreground transition hover:text-foreground">
+            landingchee@gmail.com
+          </a>
+        </div>
+
+        <nav className="flex flex-wrap gap-x-3 gap-y-2 px-2 text-xs text-muted-foreground">
+          <Link href="/terms" className="transition hover:text-foreground">
+            Términos
+          </Link>
+          <Link href="/privacy" className="transition hover:text-foreground">
+            Privacidad
+          </Link>
+          <a href="mailto:landingchee@gmail.com" className="inline-flex items-center gap-1 transition hover:text-foreground">
+            <Mail className="h-3.5 w-3.5" />
+            Soporte
+          </a>
+          <a href="https://github.com/Lichu23" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 transition hover:text-foreground">
+            <ExternalLink className="h-3.5 w-3.5" />
+            GitHub
+          </a>
+        </nav>
+      </div>
     </aside>
   );
 }
